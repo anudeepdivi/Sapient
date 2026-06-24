@@ -5,6 +5,7 @@ from orchestration.state import SapientState
 from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import ADAM_SKELETON
 from config import GEMINI_API_KEY, CODEGEN_MODEL
+from knowledge.vector_store import query_ig
 
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel(CODEGEN_MODEL)
@@ -24,13 +25,15 @@ DATASET: {dataset}
 LOT ENTRY: {lot_entry}
 SKELETON:
 {skeleton}
+
+ADAMIG REFERENCE CONTEXT:
+{ig_context}
 """
 
 
 def run(state: SapientState) -> SapientState:
     adam_programs = {}
 
-    # collect unique datasets across all lot entries
     datasets = set()
     for entry in state["lot_entries"]:
         for ds in entry.get("data_source", []):
@@ -42,13 +45,21 @@ def run(state: SapientState) -> SapientState:
             if dataset in e.get("data_source", [])
         ]
 
+        # pull relevant ADaMIG context for this dataset
+        ig_context = query_ig(
+            query=f"{dataset} derivation rules population flags",
+            doc_type="adamig",
+            n_results=5
+        )
+        ig_text = "\n\n".join(ig_context)
+
         prompt = ADAM_PROMPT.format(
             dataset=dataset,
             lot_entry=json.dumps(relevant_entries[0], indent=2),
-            skeleton=ADAM_SKELETON
+            skeleton=ADAM_SKELETON,
+            ig_context=ig_text
         )
 
-        # check cache first
         cache_key = hashlib.sha256(prompt.encode()).hexdigest()
         cached = get_cached(cache_key)
 

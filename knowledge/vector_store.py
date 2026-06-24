@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 from config import CHROMA_DIR
 
 embedder = SentenceTransformer("pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb")
-client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+client = chromadb.Client(path=str(CHROMA_DIR))
 
 sap_collection = client.get_or_create_collection("sapient_sap_chunks")
 ig_collection = client.get_or_create_collection("sapient_ig_chunks")

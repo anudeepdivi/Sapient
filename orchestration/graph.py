@@ -11,10 +11,9 @@ from orchestration.nodes import (
 
 
 def should_regenerate(state: SapientState) -> str:
-    if state.get("needs_regeneration"):
+    if state.get("needs_regeneration") and not state.get("completed"):
         return "regenerate"
     return "done"
-
 
 def build_graph() -> StateGraph:
     graph = StateGraph(SapientState)
@@ -37,13 +36,13 @@ def build_graph() -> StateGraph:
 
     # ── Conditional Routing ───────────────────────────────────
     graph.add_conditional_edges(
-        "validator",
-        should_regenerate,
-        {
-            "regenerate": "adam_generator",
-            "done": END,
-        }
-    )
+    "validator",
+    should_regenerate,
+    {
+        "regenerate": END,
+        "done": END,
+    }
+)
 
     return graph.compile()
 

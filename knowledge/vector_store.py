@@ -1,9 +1,11 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
 from config import CHROMA_DIR
-
+from config import HF_TOKEN
+import os
+os.environ["HF_TOKEN"] = HF_TOKEN
 embedder = SentenceTransformer("pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb")
-client = chromadb.Client(path=str(CHROMA_DIR))
+client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
 sap_collection = client.get_or_create_collection("sapient_sap_chunks")
 ig_collection = client.get_or_create_collection("sapient_ig_chunks")

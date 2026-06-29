@@ -1,0 +1,29 @@
+# Virtual environment
+.venv/
+
+# Environment variables
+.env
+
+#pycache
+__pycache__/
+*.pyc
+
+# Cache and vector store
+cache_store/
+chroma_store/
+chroma_store/chroma.sqlite3
+
+# Data (never commit clinical data)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# R
+*.Rhistory
+*.RData
+
+# OS
+.DS_Store

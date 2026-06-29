@@ -1,3 +1,4 @@
+dotenv
 langgraph
 langchain-google-genai
 chromadb

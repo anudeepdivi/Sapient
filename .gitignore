@@ -33,3 +33,7 @@ a_b_test.py
 sapient_ab_raw.json
 sapient_ab_results.csv
 small_program.py
+
+# Internal docs (not for repo)
+CLAUDE.md
+project_context.md

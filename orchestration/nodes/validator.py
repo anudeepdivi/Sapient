@@ -2,7 +2,7 @@ import json
 from openai import OpenAI
 from orchestration.state import SapientState
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
-
+from r_layer.runner import run_all_adam_programs
 client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
 
 VALIDATOR_PROMPT = """
@@ -30,6 +30,8 @@ R PROGRAM: {program}
 def run(state: SapientState) -> SapientState:
     if state.get("completed"):
         return state
+    r_results = run_all_adam_programs(state.get("adam_programs", {}))
+    print(f"validator: R execution results: {r_results}")
     validation_results = {}
     needs_regeneration = []
     all_programs = {**state.get("adam_programs", {}), **state.get("tlf_programs", {})}

@@ -7,7 +7,7 @@ from templates.adam_templates import ADAM_SKELETON
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, TEMPERATURE, MAX_TOKENS
 from knowledge.vector_store import query_ig
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
+client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0)
 
 ADAM_PROMPT = """
 You are an expert clinical programmer generating R code for ADaM dataset: {dataset}
@@ -25,7 +25,17 @@ STRICT RULES:
 - NO placeholder comments — generate real derivation code
 - For non-standard domains, derive population flag by merging ADSL and using SAFFL, FASFL, or PPROTFL as appropriate per the LoT entry population field
 - Output must contain only ASCII characters. No unicode, no non-English characters anywhere in the code.
-
+EXAMPLE of correct dynamic derivation pattern:
+adsl <- adsl |>
+  derive_vars_merged(
+    dataset_add = ex,
+    filter_add = !is.na(EXSTDTC),
+    new_vars = exprs(TRTSDT = convert_dtc_to_dt(EXSTDTC)),
+    order = exprs(EXSTDTC),
+    mode = "first",
+    by_vars = exprs(STUDYID, USUBJID)
+  )
+  
 DATASET: {dataset}
 LOT ENTRY: {lot_entry}
 SKELETON: {skeleton}

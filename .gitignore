@@ -27,3 +27,9 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Scratch / A-B test artifacts
+a_b_test.py
+sapient_ab_raw.json
+sapient_ab_results.csv
+small_program.py

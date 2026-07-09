@@ -17,6 +17,7 @@ class SapientState(TypedDict):
     tlf_programs: Optional[dict[str, str]]  # table_number -> R code
     validation_results: Optional[dict]      # program_name -> pass/fail/issues
     needs_regeneration: Optional[list[str]] # programs flagged for retry
+    real_pass_rate: Optional[float]         # execution + metacore pass rate, ADaM programs only
     
     # Pipeline Control
     current_node: str

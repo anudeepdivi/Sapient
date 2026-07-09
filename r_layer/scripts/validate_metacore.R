@@ -1,0 +1,16 @@
+library(metacore)
+library(haven)
+
+args <- commandArgs(trailingOnly = TRUE)
+dataset_name <- args[1]
+
+tryCatch({
+  mc <- metacore::load_metacore("specs/metacore_spec.rds")
+  ds <- haven::read_xpt(sprintf("data/adam/%s.xpt", dataset_name))
+  result <- metacore::check_variables(ds, mc)
+  print(result)
+  cat("SUCCESS: metacore check complete\n")
+}, error = function(e) {
+  cat(sprintf("ERROR: %s\n", conditionMessage(e)))
+  quit(status = 1)
+})

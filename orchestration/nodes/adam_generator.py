@@ -25,7 +25,11 @@ STRICT RULES:
 - NO placeholder comments — generate real derivation code
 - For non-standard domains, derive population flag by merging ADSL and using SAFFL, FASFL, or PPROTFL as appropriate per the LoT entry population field
 - Output must contain only ASCII characters. No unicode, no non-English characters anywhere in the code.
-EXAMPLE of correct dynamic derivation pattern:
+- ONLY generate ADSL's own population flags (SAFFL, FASFL, PPROTFL) when {dataset} IS ADSL, by deriving them directly from SDTM (e.g. treatment start date present). Do NOT read SAFFL.xpt/FASFL.xpt/PPROTFL.xpt as SDTM input files — those are variables, not datasets.
+
+These admiral functions have DIFFERENT argument shapes. Do not copy one function's arguments onto another:
+
+EXAMPLE 1 — merge shape (derive_vars_merged, derive_var_merged_exist_flag):
 adsl <- adsl |>
   derive_vars_merged(
     dataset_add = ex,
@@ -35,7 +39,21 @@ adsl <- adsl |>
     mode = "first",
     by_vars = exprs(STUDYID, USUBJID)
   )
-  
+
+EXAMPLE 2 — single-date-column shape (derive_vars_dt, derive_vars_dtm): dtc takes ONE column symbol, never c(...); the prefix is a string, not a new_vars list:
+adsl <- adsl |>
+  derive_vars_dt(
+    new_vars_prefix = "TRTS",
+    dtc = RFSTDTC
+  )
+
+EXAMPLE 3 — named single-variable shape (derive_var_age_years, derive_vars_duration): one input column and one output column, no by_vars/mode:
+adsl <- adsl |>
+  derive_var_age_years(
+    age_var = AGE,
+    new_var = AAGE
+  )
+
 DATASET: {dataset}
 LOT ENTRY: {lot_entry}
 SKELETON: {skeleton}

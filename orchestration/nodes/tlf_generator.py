@@ -19,7 +19,8 @@ STRICT RULES:
 - Match row structure EXACTLY as specified in mockshell
 - Export MUST use exactly: formatters::export_as_txt(tbl, file = "output/{table_number}.txt")
 - DO NOT use rtables::export_as_txt or any other export function
-- NO hardcoded patient counts or statistics
+- NO hardcoded values anywhere — all values from metacore or SDTM input
+- NO placeholder comments — generate real derivation code
 - Column headers must use variable-driven labels, never hardcoded n=XX placeholders
 - Output must contain only ASCII characters. No unicode, no non-English characters anywhere in the code.
 - Treatment group column labels must be derived from unique values of TRTP or TRTPN in the data, never hardcoded strings

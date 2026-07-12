@@ -87,7 +87,7 @@ result <- dm |>
                        TRUE ~ "DISCONTINUED"),
     DISCONFL = if_else(EOSSTT == "DISCONTINUED", "Y", ""),
     DSRAEFL = if_else(coalesce(DCDECOD, "") == "ADVERSE EVENT", "Y", ""),
-    DTHFL = coalesce(na_if(DTHFL, ""), "N"),
+    DTHFL = na_if(DTHFL, ""),
     HEIGHTBL = round(HEIGHT, 1),
     WEIGHTBL = round(WEIGHT, 1),
     BMIBL = round(WEIGHTBL / ((HEIGHTBL / 100)^2), 1),

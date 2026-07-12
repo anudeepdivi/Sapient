@@ -8,7 +8,8 @@ from r_layer.deterministic_checks import fix_quoted_symbol_args, strip_markdown_
 from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
-    render_header, render_footer, get_admiral_template, input_columns_block
+    render_header, render_footer, get_admiral_template, input_columns_block,
+    DETERMINISTIC_DERIVATIONS
 )
 from specs.metacore_loader import get_spec_variables
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
@@ -169,6 +170,10 @@ def run(state: SapientState) -> SapientState:
     print(f"adam_generator: datasets to generate: {datasets}")
     for dataset in datasets:
         print(f"adam_generator: generating {dataset}")
+        if dataset in DETERMINISTIC_DERIVATIONS:
+            body = DETERMINISTIC_DERIVATIONS[dataset].read_text()
+            adam_programs[dataset] = f"{render_header(dataset)}\n\n{body}\n\n{render_footer(dataset)}"
+            continue
         relevant_entries = [e for e in state["lot_entries"] if dataset in e.get("data_source", [])]
         ig_context = query_ig(query=f"{dataset} derivation rules population flags", doc_type="adamig", n_results=5)
         ig_text = "\n\n".join(ig_context)

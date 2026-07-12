@@ -1,3 +1,5 @@
+from pathlib import Path
+
 ADAM_SKELETON = """
 library(admiral)
 library(metacore)
@@ -13,7 +15,7 @@ sdtm <- haven::read_xpt("data/sdtm/{dataset}.xpt")
 # --- Derivations go here ---
 
 # Metacore compliance check
-metacore::check_variables(dataset, mc)
+metatools::check_variables(dataset, mc)
 # Export
 xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt")
 """
@@ -45,6 +47,12 @@ def render_header(dataset: str) -> str:
         f"{load_lines}"
     )
 
+
+# Hand-written derivation bodies (hybrid plan): datasets listed here skip the
+# LLM entirely — the body is spliced between the deterministic header/footer.
+DETERMINISTIC_DERIVATIONS = {
+    "ADSL": Path(__file__).parent / "derivations" / "ADSL.R",
+}
 
 _input_columns_cache = {}
 
@@ -93,7 +101,7 @@ def get_admiral_template(dataset: str) -> str:
 def render_footer(dataset: str) -> str:
     return (
         "# Metacore compliance check\n"
-        "metacore::check_variables(result, mc)\n"
+        f'metatools::check_variables(result, metacore::select_dataset(mc, "{dataset}"))\n'
         "# Export\n"
         f'xportr::xportr_write(result, path = "data/adam/{dataset}.xpt", domain = "{dataset}")'
     )

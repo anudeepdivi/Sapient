@@ -130,6 +130,7 @@ REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — 
 
 TARGET VARIABLES (from the study metacore spec — {dataset} must end up with these columns, no others invented):
 {spec_variables}
+Every target variable MUST exist in `result`. If a variable's source data is not among the loaded inputs (e.g. questionnaire or education data), create it as typed NA in a final mutate: MMSETOT = NA_real_ — never invent a derivation for data that is not loaded.
 
 DATASET: {dataset}
 LOT ENTRY: {lot_entry}

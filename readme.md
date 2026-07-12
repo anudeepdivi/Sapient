@@ -27,7 +27,7 @@ Four principles do most of the work, each a response to a failure mode we measur
 
 **2. Controlled vocabularies over free generation.** Left to free-form generation, the models hallucinate — inventing ADaM dataset names, variable names, and function calls (a documented 21–50% hallucination rate on clinical LLM tasks). Sapient bounds every such choice to a real vocabulary: dataset names come from a controlled ADaM registry, standard variables from the public CDISC ADaMIG structure, and function calls from signatures extracted directly from the target R package's namespace. Anything off-vocabulary is flagged for human review rather than silently generated. (Extracting function signatures from the package namespace also makes the system package-agnostic — point it at an internal ADaM package instead of `admiral` and it re-grounds automatically, with no knowledge graph required.)
 
-**3. Rules-first conformance.** The durable error class in generated clinical code is not derivation logic — it is *conformance*: variable type, length, format, and controlled terminology. Sapient precompiles these rules from the study's metacore specification, injects them into the code-generation prompt as constraints, checks the built dataset against them deterministically (the same class of rules a Pinnacle 21 / CDISC CORE validator encodes, run in reverse from the specification), and coerces types/lengths/formats at write time with `xportr`.
+**3. Rules-first conformance.** The durable error class in generated clinical code is not derivation logic — it is *conformance*: variable type, length, format, and controlled terminology. Sapient precompiles these rules, injects them into the code-generation prompt as constraints, checks the built dataset against them deterministically (the same class of rules a Pinnacle 21 / CDISC CORE validator encodes), and coerces types at write time with `xportr` (length is derived from the data, since R — unlike SAS — has no fixed character length). Controlled terminology is validated against the free, versioned CDISC CT published by NCI-EVS, independent of the specification's own codelists — so terminology is enforced even for a generated specification that carries none. Dictionary-coded variables (MedDRA, WHODrug) are validated against the dictionary named in the SAP, not an enumerated list.
 
 **4. Constraints over exemplars.** At temperature 0 the model *transcribes* a worked example or reference template rather than reasoning from it — copying arguments and columns that do not apply. So prompts ground the model on machine-checkable constraints (real function signatures, the actual input columns available, the specification's type and terminology rules) and a deterministic repair-and-regenerate loop, rather than on templates to imitate.
 
@@ -131,11 +131,13 @@ sapient/
 
 The generation pipeline runs end-to-end, with a deterministic validation gate, real R execution, and conformance checking. Specification generation — the core research problem — is the strongest result at ~0.77 average F1 across all ADaM classes.
 
+The loop is closed: a generated specification can drive the full grounding, validation, and conformance path (selected with an environment variable), with controlled terminology enforced from the public NCI-EVS CT regardless of what the generated specification carries.
+
 Near-term work, in order:
 
-- **Close the loop:** let a *generated* specification drive ADaM code generation end-to-end, so the pilot Define-XML is only an evaluation target (today code generation still grounds on the reference specification).
 - **Value-match** generated ADaM datasets against `pharmaverseadam`, the correctness bar beyond execution and conformance.
-- **SDTM generation** from raw data via `sdtm.oak` — the same specification-driven pattern one layer upstream.
+- Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding for the two exercised datasets.
+- **SDTM generation** from raw data via `sdtm.oak` — the same specification-driven pattern one layer upstream (pending `sdtm.oak` maturity).
 - Score derivation and type correctness, not only variable presence; extend LoT recall.
 
 Deferred by design: a Neo4j knowledge graph (package signature extraction covers the package-swap use case more cheaply), FastAPI / MCP exposure, and CRF-annotation-to-SDTM mapping.

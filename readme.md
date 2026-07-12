@@ -1,67 +1,81 @@
 # Sapient
 
-Clinical reporting automation pipeline that reads Statistical Analysis Plans and generates submission-ready R programs for ADaM datasets and TLF outputs.
+An agentic pipeline that reads clinical study documents and generates the R programs that produce submission-ready analysis datasets and outputs. Given a Statistical Analysis Plan, Sapient plans the List of Tables, generates ADaM dataset specifications, and generates the R programs that build those datasets and the tables, listings, and figures (TLFs) derived from them.
+
+The design goal is **consistency by construction**: the language model never generates clinical values — it generates R code that runs deterministically, so the same inputs produce the same outputs on every run.
 
 ---
 
-## What it does
+## The pipeline
 
-Given a SAP PDF, Sapient runs an agentic pipeline that:
+```
+SAP (+ Protocol) ──▶ List of Tables ──▶ Mockshells ──▶ ADaM spec ──▶ ADaM programs ──▶ TLF programs ──▶ outputs
+                        (reasoning)                     (reasoning)      (mechanical)      (mechanical)
+        └── domain-aware RAG over SAP sections ──┘        │                  │
+                                                   metacore spec        admiral / rtables
+```
 
-1. Reads and chunks the SAP by clinical section boundaries
-2. Embeds chunks into ChromaDB using PubMedBERT embeddings
-3. Extracts study metadata — compound, therapeutic area, populations
-4. Generates a structured List of Tables (LoT) — one entry per TLF
-5. Generates mockshell blueprints for each TLF
-6. Generates R programs for each ADaM dataset using admiral
-7. Generates R programs for each TLF using rtables
-8. Validates generated programs for admiral compliance and spec adherence
+Every stage is either a **reasoning stage** (planning the List of Tables, authoring dataset specifications — the model must comprehend the study) or a **mechanical stage** (generating code from a specification — deterministic given clean upstream metadata). Mechanical stages inherit the reasoning stages' errors silently, so the accuracy of the whole system is set upstream. The two hardest, highest-leverage problems are therefore **List-of-Tables generation** and **specification generation** — and specification generation is the novel contribution, since generating ADaM programs *from* a specification is already well understood.
+
+---
+
+## Methodology
+
+Four principles do most of the work, each a response to a failure mode we measured.
+
+**1. The model writes code, not values.** Temperature is locked at 0, the model version is pinned, and every output is cached by a hash of its prompt. Clinical values come out of deterministic R execution, not the model. This is the consistency guarantee.
+
+**2. Controlled vocabularies over free generation.** Left to free-form generation, the models hallucinate — inventing ADaM dataset names, variable names, and function calls (a documented 21–50% hallucination rate on clinical LLM tasks). Sapient bounds every such choice to a real vocabulary: dataset names come from a controlled ADaM registry, standard variables from the public CDISC ADaMIG structure, and function calls from signatures extracted directly from the target R package's namespace. Anything off-vocabulary is flagged for human review rather than silently generated. (Extracting function signatures from the package namespace also makes the system package-agnostic — point it at an internal ADaM package instead of `admiral` and it re-grounds automatically, with no knowledge graph required.)
+
+**3. Rules-first conformance.** The durable error class in generated clinical code is not derivation logic — it is *conformance*: variable type, length, format, and controlled terminology. Sapient precompiles these rules from the study's metacore specification, injects them into the code-generation prompt as constraints, checks the built dataset against them deterministically (the same class of rules a Pinnacle 21 / CDISC CORE validator encodes, run in reverse from the specification), and coerces types/lengths/formats at write time with `xportr`.
+
+**4. Constraints over exemplars.** At temperature 0 the model *transcribes* a worked example or reference template rather than reasoning from it — copying arguments and columns that do not apply. So prompts ground the model on machine-checkable constraints (real function signatures, the actual input columns available, the specification's type and terminology rules) and a deterministic repair-and-regenerate loop, rather than on templates to imitate.
+
+A validation gate enforces these deterministically *before* any expensive check: R syntax, ASCII-only, package allowlist, no hardcoded treatment labels, input-file existence, allowed-function list, and quoted-symbol repair. Gate failures never reach the model.
+
+---
+
+## Results
+
+Evaluated against the public CDISC pilot study (the metacore specification and TLF list are held out as evaluation targets, never used as generation inputs).
+
+**Specification generation** — variable-set F1 against the pilot Define-XML specification, across all four ADaM structural classes. Grounding on the public ADaMIG standard skeleton lifted the average from a 0.31 baseline to ~0.77:
+
+| Dataset | Class | Precision | Recall | F1 |
+|---------|-------|-----------|--------|-----|
+| ADSL | Subject-level | 0.89 | 0.63 | 0.74 |
+| ADAE | Occurrence (OCCDS) | 0.73 | 0.66 | 0.69 |
+| ADADAS | Basic data structure (BDS) | 0.76 | 0.78 | 0.77 |
+| ADLBC | Basic data structure (BDS) | 0.81 | 0.72 | 0.76 |
+| ADTTE | Time-to-event | 0.81 | 0.96 | 0.88 |
+
+**List-of-Tables generation** — F1 ~0.5–0.64 against the pilot's known TLF list. Precision is high; recall is the ceiling, and it is partly fundamental — a real submission LoT is part convention (the standard safety and disposition tables) and part study-specific enumeration that the SAP implies rather than states.
+
+**ADaM program generation** — for the datasets exercised end-to-end, generated programs execute against pharmaverse SDTM data and pass metacore variable and conformance checks (type / length / controlled terminology). Reproducing the *reference values* in `pharmaverseadam` is a stricter bar than execution-and-conformance and remains the primary open problem, as it depends on the accuracy of the study-specific derivation metadata extracted from the SAP.
+
+One methodological finding worth stating plainly: on these tasks the **reasoning model, not the prompt, was the accuracy ceiling** — a weaker model truncated and hallucinated variable names (one dataset scored 0.20 vs 0.77 on a stronger model with an identical prompt).
+
+---
+
+## Evaluation targets (all public, legally clean)
+
+- **SDTM input:** `pharmaversesdtm` (CRAN)
+- **ADaM reference values:** `pharmaverseadam` (CRAN)
+- **Specification & TLF list ground truth:** CDISC SDTM/ADaM pilot project
+- **TLF reference:** atorus-research CDISC pilot replication
+- **SAP:** publicly registered, clinicaltrials.gov (NCT02616185)
+
+Specifications and outputs are scored against these; none of them is used as a generation input.
 
 ---
 
 ## Stack
 
 - **Orchestration:** Python + LangGraph
-- **LLM:** DiffusionGemma 26B A4B via NVIDIA Build API
-- **Embeddings:** PubMedBERT (pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb)
-- **Vector store:** ChromaDB (persistent)
-- **Knowledge graph:** networkx (Phase 1), Neo4j (Phase 2)
-- **Generated programs:** R — admiral, metacore, xportr, rtables
-- **Caching:** SHA256 prompt hashing with JSON file store
-- **API:** FastAPI (Phase 2)
-
----
-
-## Public data sources
-
-- SDTM: pharmaversesdtm (CRAN)
-- ADaM: pharmaverseadam (CRAN)
-- Raw data: pharmaverseraw (CRAN)
-- CDISC pilot: github.com/cdisc-org/sdtm-adam-pilot-project
-- TLF reference: github.com/atorus-research/CDISC_pilot_replication
-- SAP: clinicaltrials.gov (NCT02616185)
-
----
-
-## Phase 1 scope (current)
-
-- SAP ingestion and chunking
-- LoT generation from SAP
-- Mockshell generation from LoT
-- ADaM program generation using admiral templates
-- TLF program generation using rtables
-- LLM-based validation with compliance checking
-- Prompt caching for consistency
-
-## Phase 2 scope (planned)
-
-- SDTM generation from raw data via sdtm.oak
-- R program execution against pharmaverse SDTM data
-- Output comparison against pharmaverseadam reference datasets
-- Neo4j knowledge graph replacing networkx
-- MCP server exposure
-- FastAPI endpoints
-- Internal R package knowledge graph integration
+- **Models (NVIDIA Build API, OpenAI-compatible):** a reasoning model for study comprehension and planning, a code model (Mistral Nemotron) for R and specification generation. Temperature 0, pinned, cached by prompt hash.
+- **Retrieval:** ChromaDB with PubMedBERT embeddings, chunked on clinical-section boundaries
+- **Generated programs:** R — `admiral`, `metacore`, `metatools`, `xportr`, `rtables`
+- **Conformance:** metacore/metatools checks + a deterministic type/length/controlled-terminology checker derived from the study specification
 
 ---
 
@@ -73,23 +87,26 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Set environment variables in `.env`:
+Set credentials in `.env`:
+
 ```
 NVIDIA_API_KEY=your_key_here
 HF_TOKEN=your_key_here
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_password
 ```
 
-Ingest clinical implementation guides before first run:
+Ingest the CDISC implementation guides once before the first run, then run the pipeline:
+
 ```bash
 python scripts/ingest_ig.py
+python test.py
 ```
 
-Run the pipeline:
+Generate and score a specification for a single dataset:
+
 ```bash
-python main.py
+python scripts/gen_spec.py ADSL          # propose  -> specs/proposed/ADSL.json
+python scripts/gen_spec.py ADSL --approve # sign off -> specs/approved/ADSL.json
+python scripts/eval_spec.py ADSL          # score vs pilot Define-XML
 ```
 
 ---
@@ -99,30 +116,26 @@ python main.py
 ```
 sapient/
 ├── orchestration/     # LangGraph graph, state, agent nodes
-├── knowledge/         # ChromaDB vector store, document parser
-├── specs/             # metacore loader, define reader, LoT builder
-├── templates/         # ADaM and TLF R code skeletons
-├── r_layer/           # R script runner and validator
-├── cache/             # Prompt hash cache
-├── api/               # FastAPI app
-├── scripts/           # Ingestion utilities
-├── tests/             # Test suite
-└── data/              # Input data (gitignored)
+├── knowledge/         # vector store, ADaM registry, ADaMIG standard, package signatures
+├── specs/             # metacore loader, spec-rule extraction, generation
+├── templates/         # code skeletons and derivation bodies
+├── r_layer/           # R runner, validator, deterministic checks, conformance
+├── cache/             # prompt-hash cache
+├── scripts/           # generation + evaluation entrypoints
+└── data/              # input / reference data (gitignored)
 ```
 
 ---
 
-## Architecture decisions
+## Status and roadmap
 
-- LLM generates R code using template functions, not clinical values — determinism by construction
-- Temperature locked at 0, model version pinned, outputs cached by prompt hash
-- Domain-aware chunking by clinical section boundaries, not token count
-- BDS vs OCCDS classification encoded as lookup, not LLM reasoning
-- metacore enforces spec compliance on all generated ADaM programs
-- Two LLM roles planned: reasoning model for SAP comprehension, code model for generation
+The generation pipeline runs end-to-end, with a deterministic validation gate, real R execution, and conformance checking. Specification generation — the core research problem — is the strongest result at ~0.77 average F1 across all ADaM classes.
 
----
+Near-term work, in order:
 
-## Status
+- **Close the loop:** let a *generated* specification drive ADaM code generation end-to-end, so the pilot Define-XML is only an evaluation target (today code generation still grounds on the reference specification).
+- **Value-match** generated ADaM datasets against `pharmaverseadam`, the correctness bar beyond execution and conformance.
+- **SDTM generation** from raw data via `sdtm.oak` — the same specification-driven pattern one layer upstream.
+- Score derivation and type correctness, not only variable presence; extend LoT recall.
 
-Phase 1 generation pipeline complete. Validation pass rate approximately 28% on current runs — primary failure modes are hardcoded treatment group labels in TLF column headers and intermittent non-ASCII characters in generated code. Phase 2 begins with R program execution and reference dataset comparison.
+Deferred by design: a Neo4j knowledge graph (package signature extraction covers the package-swap use case more cheaply), FastAPI / MCP exposure, and CRF-annotation-to-SDTM mapping.

@@ -51,7 +51,26 @@ Evaluated against the public CDISC pilot study (the metacore specification and T
 
 **List-of-Tables generation** — F1 ~0.5–0.64 against the pilot's known TLF list. Precision is high; recall is the ceiling, and it is partly fundamental — a real submission LoT is part convention (the standard safety and disposition tables) and part study-specific enumeration that the SAP implies rather than states.
 
-**ADaM program generation** — for the datasets exercised end-to-end, generated programs execute against pharmaverse SDTM data and pass metacore variable and conformance checks (type / length / controlled terminology). Reproducing the *reference values* in `pharmaverseadam` is a stricter bar than execution-and-conformance and remains the primary open problem, as it depends on the accuracy of the study-specific derivation metadata extracted from the SAP.
+**ADaM program generation** — for the datasets exercised end-to-end, generated programs execute against pharmaverse SDTM data, pass metacore variable and conformance checks (type / length / controlled terminology), and are then **value-matched** against `pharmaverseadam` (per-variable cell agreement on key-joined records — a stricter bar than execution-and-conformance):
+
+| Dataset | Cell agreement | Notes |
+|---------|---------------|-------|
+| ADSL | 94.4% | every common variable 100% except AGEGR1 |
+| ADAE | 97.8% | AGEGR1, plus small date-imputation-flag gaps |
+
+The residual gaps are largely **eval-target conflicts, not derivation errors**: `pharmaverseadam` itself deviates from the pilot study's Define-XML specification (its AGEGR1 age bands and ADURU unit casing contradict the spec's codelists — where the two disagree, code generated *from the spec* cannot match both). Value-match and conformance-to-spec are therefore reported side by side.
+
+**SDTM generation** — the same pattern one layer upstream: raw EDC-shaped data (`pharmaverseraw`) mapped to SDTM with `sdtm.oak`, controlled terminology fed from the same NCI-EVS CT layer in oak's `ct_spec` format, value-matched against `pharmaversesdtm`:
+
+| Domain | Cell agreement | Notes |
+|--------|---------------|-------|
+| DS | 100.0% | |
+| EX | 100.0% | |
+| VS | 99.9% | 29,635 / 29,643 records aligned |
+| DM | 98.9% | RFPENDTC's true source (SV) has no raw form |
+| AE | 98.3% | reference AESEQ ordering is internally inconsistent |
+
+DM is derived from the *generated* EX and DS, so the raw → SDTM chain closes end-to-end. Remaining gaps are structural ceilings of the public raw data (variables whose source domain or column was never collected), documented per domain.
 
 One methodological finding worth stating plainly: on these tasks the **reasoning model, not the prompt, was the accuracy ceiling** — a weaker model truncated and hallucinated variable names (one dataset scored 0.20 vs 0.77 on a stronger model with an identical prompt).
 
@@ -133,11 +152,12 @@ The generation pipeline runs end-to-end, with a deterministic validation gate, r
 
 The loop is closed: a generated specification can drive the full grounding, validation, and conformance path (selected with an environment variable), with controlled terminology enforced from the public NCI-EVS CT regardless of what the generated specification carries.
 
+The SDTM layer runs raw → SDTM across all five available raw domains at 98–100% value-match, and generated ADaM datasets value-match their references at 94–98%.
+
 Near-term work, in order:
 
-- **Value-match** generated ADaM datasets against `pharmaverseadam`, the correctness bar beyond execution and conformance.
-- Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding for the two exercised datasets.
-- **SDTM generation** from raw data via `sdtm.oak` — the same specification-driven pattern one layer upstream (pending `sdtm.oak` maturity).
+- Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding (for both the ADaM and SDTM layers — the function-signature grounding for both is already in place).
+- **TLF generation** grounded on real `tern`/`rtables` signatures — the earlier free-form prompt produced programs that hallucinated a nonexistent table API (0/29 executed), the clearest demonstration yet of the controlled-vocabulary principle.
 - Score derivation and type correctness, not only variable presence; extend LoT recall.
 
 Deferred by design: a Neo4j knowledge graph (package signature extraction covers the package-swap use case more cheaply), FastAPI / MCP exposure, and CRF-annotation-to-SDTM mapping.

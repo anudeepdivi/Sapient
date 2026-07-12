@@ -34,6 +34,8 @@ Return a JSON array only, one object per variable, fields exactly:
 
 Rules:
 - Only variables justified by the LoT entries below or required by ADaMIG core for {dataset}
+- Be COMPLETE: include every standard ADaMIG variable group for {dataset} — identifiers, treatment variables with their numeric companions (e.g. TRT01P/TRT01PN), all timing/date variables (treatment start/end, reference end, first visit), treatment duration, every population flag, demographic grouping variables with numeric companions (e.g. AGEGR1/AGEGR1N, RACEN), baseline value variables, and site grouping
+- Variable names must be exact, complete ADaMIG names — never truncate (SAFFL not SAFF, ITTFL not ITF)
 - predecessor origins must reference only the SDTM columns listed below
 - No markdown, no explanation.
 

@@ -1,0 +1,18 @@
+{
+ "assign_ct": "assign_ct(tgt_dat = NULL, tgt_var, raw_dat, raw_var, ct_spec, ct_clst, id_vars = oak_id_vars())",
+ "assign_no_ct": "assign_no_ct(tgt_dat = NULL, tgt_var, raw_dat, raw_var, id_vars = oak_id_vars())",
+ "assign_datetime": "assign_datetime(tgt_dat = NULL, tgt_var, raw_dat, raw_var, raw_fmt, raw_unk = c(\"UN\", \"UNK\"), id_vars = oak_id_vars(), .warn = TRUE)",
+ "hardcode_ct": "hardcode_ct(tgt_dat = NULL, tgt_val, raw_dat, raw_var, tgt_var, ct_spec, ct_clst, id_vars = oak_id_vars())",
+ "hardcode_no_ct": "hardcode_no_ct(tgt_dat = NULL, tgt_val, raw_dat, raw_var, tgt_var, id_vars = oak_id_vars())",
+ "condition_add": "condition_add(dat, ..., .na = NA, .dat2 = rlang::env())",
+ "derive_seq": "derive_seq(tgt_dat, tgt_var, rec_vars, sbj_vars = sdtm.oak::sbj_vars(), start_at = 1L)",
+ "derive_study_day": "derive_study_day(sdtm_in, dm_domain, tgdt, refdt, study_day_var, merge_key = \"USUBJID\")",
+ "derive_blfl": "derive_blfl(sdtm_in, dm_domain, tgt_var, ref_var, baseline_visits = character(), baseline_timepoints = character())",
+ "generate_oak_id_vars": "generate_oak_id_vars(raw_dat, pat_var, raw_src)",
+ "create_iso8601": "create_iso8601(..., .format, .fmt_c = fmt_cmp(), .na = NULL, .cutoff_2000 = 68L, .check_format = FALSE, .warn = TRUE)",
+ "ct_map": "ct_map(x, ct_spec = NULL, ct_clst = NULL, from = ct_spec_vars(\"from\"), to = ct_spec_vars(\"to\"))",
+ "read_ct_spec": "read_ct_spec(file = cli::cli_abort(\"`file` must be specified\"))",
+ "oak_cal_ref_dates": "oak_cal_ref_dates(ds_in = dm, der_var, min_max = \"min\", ref_date_config_df, raw_source)",
+ "cal_min_max_date": "cal_min_max_date(raw_dataset, date_variable, time_variable, val_type = \"min\", date_format, time_format)",
+ "generate_sdtm_supp": "generate_sdtm_supp(sdtm_dataset, idvar = NULL, supp_qual_info, qnam_var, label_var, orig_var)"
+}

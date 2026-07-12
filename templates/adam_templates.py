@@ -46,6 +46,28 @@ def render_header(dataset: str) -> str:
     )
 
 
+_input_columns_cache = {}
+
+
+def input_columns_block(dataset: str) -> str:
+    import subprocess
+    from config import R_EXECUTABLE, BASE_DIR
+    if dataset not in _input_columns_cache:
+        lines = []
+        for var, path in ADAM_INPUTS[dataset]:
+            full = BASE_DIR / path
+            if full.exists():
+                r = subprocess.run(
+                    [R_EXECUTABLE, "-e", f'cat(names(haven::read_xpt("{path}")), sep=", ")'],
+                    capture_output=True, text=True, timeout=60, cwd=BASE_DIR)
+                cols = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "?"
+                lines.append(f"{var}: {cols}")
+            else:
+                lines.append(f"{var}: (produced upstream at run time)")
+        _input_columns_cache[dataset] = "\n".join(lines)
+    return _input_columns_cache[dataset]
+
+
 ADMIRAL_TEMPLATE_FILES = {
     "ADSL": "ad_adsl.R",
     "ADAE": "ad_adae.R",

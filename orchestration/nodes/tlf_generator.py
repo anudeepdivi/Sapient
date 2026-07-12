@@ -5,6 +5,7 @@ from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from cache.prompt_cache import get_cached, set_cached
 from templates.tlf_templates import TLF_SKELETON
+from r_layer.deterministic_checks import strip_markdown_fences
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
 
 client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
@@ -63,7 +64,7 @@ def run(state: SapientState) -> SapientState:
                 temperature=TEMPERATURE,
                 max_tokens=MAX_TOKENS
             )
-            code = response.choices[0].message.content.strip().replace("```r", "").replace("```", "")
+            code = strip_markdown_fences(response.choices[0].message.content.strip())
             tlf_programs[table_number] = code
             set_cached(cache_key, code)
     return {**state, "tlf_programs": tlf_programs, "current_node": "tlf_generator"}

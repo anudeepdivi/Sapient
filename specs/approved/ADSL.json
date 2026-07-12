@@ -1,0 +1,233 @@
+[
+ {
+  "variable": "STUDYID",
+  "label": "Study Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-STUDYID"
+ },
+ {
+  "variable": "USUBJID",
+  "label": "Unique Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-USUBJID"
+ },
+ {
+  "variable": "SUBJID",
+  "label": "Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-SUBJID"
+ },
+ {
+  "variable": "SITEID",
+  "label": "Site Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-SITEID"
+ },
+ {
+  "variable": "AGE",
+  "label": "Age",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM-AGE"
+ },
+ {
+  "variable": "AGEU",
+  "label": "Age Units",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-AGEU"
+ },
+ {
+  "variable": "AGEGR1",
+  "label": "Age Group",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Based on AGE"
+ },
+ {
+  "variable": "AGEGR1N",
+  "label": "Age Group Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Numeric code representative of AGEGR1"
+ },
+ {
+  "variable": "SEX",
+  "label": "Sex",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-SEX"
+ },
+ {
+  "variable": "RACE",
+  "label": "Race",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-RACE"
+ },
+ {
+  "variable": "RACEN",
+  "label": "Race Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Numeric code representative of RACE"
+ },
+ {
+  "variable": "ETHNIC",
+  "label": "Ethnicity",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ETHNIC"
+ },
+ {
+  "variable": "COUNTRY",
+  "label": "Country",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-COUNTRY"
+ },
+ {
+  "variable": "BRTHDTC",
+  "label": "Birth Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM-BRTHDTC"
+ },
+ {
+  "variable": "ARMCD",
+  "label": "Planned Arm Code",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ARMCD"
+ },
+ {
+  "variable": "ARM",
+  "label": "Planned Arm",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ARM"
+ },
+ {
+  "variable": "TRT01P",
+  "label": "Treatment Planned",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ARM"
+ },
+ {
+  "variable": "TRT01PN",
+  "label": "Treatment Planned Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Numeric code representative of TRT01P"
+ },
+ {
+  "variable": "ACTARMCD",
+  "label": "Actual Arm Code",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ACTARMCD"
+ },
+ {
+  "variable": "ACTARM",
+  "label": "Actual Arm",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ACTARM"
+ },
+ {
+  "variable": "TRT01",
+  "label": "Treatment Actual",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-ACTARM"
+ },
+ {
+  "variable": "TRT01N",
+  "label": "Treatment Actual Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Numeric code representative of TRT01"
+ },
+ {
+  "variable": "SASTDTC",
+  "label": "Subject Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM-RFSTDTC"
+ },
+ {
+  "variable": "SAENDTC",
+  "label": "Subject End Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM-RFENDTC"
+ },
+ {
+  "variable": "TRTSSTDTC",
+  "label": "Treatment Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM-RFXSTDTC"
+ },
+ {
+  "variable": "TRXENDTC",
+  "label": "Treatment End Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM-RFXENDTC"
+ },
+ {
+  "variable": "DTHDTC",
+  "label": "Date of Death",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM-DTHDTC"
+ },
+ {
+  "variable": "DTHFL",
+  "label": "Death Flag",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM-DTHFL"
+ },
+ {
+  "variable": "SAFFL",
+  "label": "Safety Population Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "'Y' if subject received at least one dose, else ''"
+ },
+ {
+  "variable": "ITTFL",
+  "label": "Intent-to-Treat Population Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "'Y' if subject meets ITT criteria, else ''"
+ },
+ {
+  "variable": "MITTFL",
+  "label": "Modified Intent-to-Treat Population Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "'Y' if subject meets mITT criteria, else ''"
+ },
+ {
+  "variable": "PFDSFFL",
+  "label": "Pharmacodynamics Analysis Population Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "'Y' if subject meets PD criteria, else ''"
+ },
+ {
+  "variable": "AVISTC",
+  "label": "First Visit Date",
+  "type": "date",
+  "origin": "derived",
+  "derivation": "Minimum of DS-DSTDTC"
+ }
+]

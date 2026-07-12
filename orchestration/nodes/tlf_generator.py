@@ -56,7 +56,7 @@ def run(state: SapientState) -> SapientState:
         cache_key = hashlib.sha256(prompt.encode()).hexdigest()
         cached = get_cached(cache_key)
         if cached:
-            tlf_programs[table_number] = cached
+            tlf_programs[table_number] = strip_markdown_fences(cached)
         else:
             response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
                 model=CODEGEN_MODEL,

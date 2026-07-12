@@ -8,7 +8,7 @@ from r_layer.deterministic_checks import fix_quoted_symbol_args, strip_markdown_
 from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
-    render_header, render_footer, get_admiral_template
+    render_header, render_footer, get_admiral_template, input_columns_block
 )
 from specs.metacore_loader import get_spec_variables
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
@@ -75,6 +75,9 @@ You are an expert clinical programmer writing ONLY the derivation logic for ADaM
 
 This code already exists and runs before yours — do NOT repeat it, do NOT write library() calls, do NOT write read_xpt() calls, do NOT load the metacore spec yourself:
 {header}
+
+EXACT COLUMNS of each loaded input — these are the ONLY columns that exist; never reference a column not listed here (no TRSTDTC, no TRTENDT — check this list before every column reference):
+{input_columns}
 
 STRICT RULES:
 - Use ONLY these admiral functions for derivations:
@@ -180,6 +183,7 @@ def run(state: SapientState) -> SapientState:
                 admiral_template=admiral_template,
                 spec_variables=spec_variables,
                 signatures=signatures_block(),
+                input_columns=input_columns_block(dataset),
                 lot_entry=json.dumps(relevant_entries[0], indent=2),
                 ig_context=ig_text
             )

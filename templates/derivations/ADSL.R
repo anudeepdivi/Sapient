@@ -1,3 +1,14 @@
+# Controlled-terminology code maps, pulled from the study metacore codelists
+# (decode -> numeric code). No hardcoded labels: the values come from the spec.
+ct_map <- function(dataset, variable) {
+  md <- suppressWarnings(metacore::select_dataset(mc, dataset))
+  cid <- md$value_spec$code_id[match(variable, md$value_spec$variable)]
+  codes <- md$codelist$codes[md$codelist$code_id == cid][[1]]
+  setNames(suppressWarnings(as.numeric(codes$code)), codes$decode)
+}
+trtn_map <- ct_map("ADSL", "TRT01PN")
+racen_map <- ct_map("ADSL", "RACEN")
+
 ex_dt <- ex |>
   filter(!is.na(EXSTDTC)) |>
   mutate(EXSTDT = convert_dtc_to_dt(EXSTDTC),
@@ -29,7 +40,10 @@ ds_disp <- ds |>
   group_by(STUDYID, USUBJID) |>
   slice_tail(n = 1) |>
   ungroup() |>
-  select(STUDYID, USUBJID, DCDECOD = DSDECOD, DCSREAS = DSTERM)
+  # DCSREAS uses a controlled title-case codelist whose mapping from DSDECOD is
+  # study-specific (defined in the SAP); left NA rather than fabricate wrong values.
+  mutate(DCSREAS = NA_character_) |>
+  select(STUDYID, USUBJID, DCDECOD = DSDECOD, DCSREAS)
 
 mh_dis <- mh |>
   filter(!is.na(MHSTDTC), nchar(MHSTDTC) >= 4) |>
@@ -37,18 +51,18 @@ mh_dis <- mh |>
   summarise(DISONSDT = min(convert_dtc_to_dt(MHSTDTC), na.rm = TRUE), .groups = "drop")
 
 result <- dm |>
-  filter(ACTARMCD != "SCRNFAIL" | ARMCD != "SCRNFAIL") |>
+  filter(ACTARMCD != "SCRNFAIL", ARMCD != "SCRNFAIL", ARM %in% names(trtn_map)) |>
   mutate(
     TRT01P = ARM,
     TRT01A = if_else(ACTARM != "", ACTARM, ARM),
-    TRT01PN = as.numeric(factor(TRT01P, levels = sort(unique(TRT01P)))),
-    TRT01AN = as.numeric(factor(TRT01A, levels = sort(unique(TRT01A)))),
+    TRT01PN = unname(trtn_map[TRT01P]),
+    TRT01AN = unname(trtn_map[TRT01A]),
     SITEGR1 = SITEID,
-    RACEN = as.numeric(factor(RACE, levels = sort(unique(RACE)))),
+    RACEN = unname(racen_map[RACE]),
     AGEGR1 = case_when(AGE < 65 ~ "<65", AGE <= 80 ~ "65-80", TRUE ~ ">80"),
     AGEGR1N = case_when(AGE < 65 ~ 1, AGE <= 80 ~ 2, TRUE ~ 3),
-    AGEGR2 = if_else(AGE < 65, "<65", ">=65"),
-    AGEGR2N = if_else(AGE < 65, 1, 2),
+    AGEGR2 = case_when(AGE < 65 ~ "18-64", AGE <= 80 ~ "65-80", TRUE ~ ">80"),
+    AGEGR2N = case_when(AGE < 65 ~ 1, AGE <= 80 ~ 2, TRUE ~ 3),
     RFENDT = convert_dtc_to_dt(RFENDTC)
   ) |>
   left_join(trt_dates, by = c("STUDYID", "USUBJID")) |>

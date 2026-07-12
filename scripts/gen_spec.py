@@ -19,7 +19,7 @@ from orchestration.llm_retry import create_with_retry
 from cache.prompt_cache import get_cached, set_cached
 from knowledge.adam_registry import classify
 from knowledge.adamig_standard import standard_block
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
+from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, CODEGEN_MODEL, TEMPERATURE, MAX_TOKENS
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
 APPROVED_DIR = BASE_DIR / "specs/approved"
@@ -68,11 +68,11 @@ def propose(dataset: str) -> Path:
                                 standard_variables=standard_block(adam_class),
                                 lot_entries=json.dumps(relevant, indent=1),
                                 sdtm_columns=sdtm_columns())
-    cache_key = hashlib.sha256(prompt.encode()).hexdigest()
+    cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()
     content = get_cached(cache_key)
     if content is None:
         client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
-        response = create_with_retry(client, model=REASONING_MODEL,
+        response = create_with_retry(client, model=CODEGEN_MODEL,  # nemotron: reliable for spec-gen; DiffusionGemma truncates/hallucinates var names
                                      messages=[{"role": "user", "content": prompt}],
                                      temperature=TEMPERATURE, max_tokens=MAX_TOKENS)
         content = response.choices[0].message.content

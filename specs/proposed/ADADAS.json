@@ -1,0 +1,289 @@
+[
+ {
+  "variable": "STUDYID",
+  "label": "Study Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.STUDYID"
+ },
+ {
+  "variable": "USUBJID",
+  "label": "Unique Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.USUBJID"
+ },
+ {
+  "variable": "SUBJID",
+  "label": "Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SUBJID"
+ },
+ {
+  "variable": "SITEID",
+  "label": "Site Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SITEID"
+ },
+ {
+  "variable": "TRTP",
+  "label": "Treatment Group (Planned)",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ARMCD"
+ },
+ {
+  "variable": "TRTPN",
+  "label": "Treatment Group (Planned) Numeric",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.ARMNRS"
+ },
+ {
+  "variable": "TRTA",
+  "label": "Treatment Group (Actual)",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ACTARMCD"
+ },
+ {
+  "variable": "TRTAN",
+  "label": "Treatment Group (Actual) Numeric",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.ACTARMUD"
+ },
+ {
+  "variable": "TRTSDT",
+  "label": "Treatment Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "EX.EXSTDTC"
+ },
+ {
+  "variable": "TRTEDT",
+  "label": "Treatment End Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "EX.EXENDTC"
+ },
+ {
+  "variable": "AGE",
+  "label": "Age",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.AGE"
+ },
+ {
+  "variable": "AGEGR1",
+  "label": "Age Group 1",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Derived from DM.AGE"
+ },
+ {
+  "variable": "AGEGR1N",
+  "label": "Age Group 1 Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Derived from DM.AGE"
+ },
+ {
+  "variable": "SEX",
+  "label": "Sex",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SEX"
+ },
+ {
+  "variable": "RACE",
+  "label": "Race",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.RACE"
+ },
+ {
+  "variable": "RACEN",
+  "label": "Race Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Derived from DM.RACE"
+ },
+ {
+  "variable": "ETHNIC",
+  "label": "Ethnic Origin",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ETHNIC"
+ },
+ {
+  "variable": "SAFFL",
+  "label": "Safety Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "ITTFL",
+  "label": "Intent-to-Treat Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "EFFFL",
+  "label": "Efficacy Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "PARAMCD",
+  "label": "Parameter Code",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "VS.VSTESTCD"
+ },
+ {
+  "variable": "PARAM",
+  "label": "Parameter",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "VS.VSTEST"
+ },
+ {
+  "variable": "PARAMN",
+  "label": "Parameter Numeric",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Derived from VS.VSTESTCD"
+ },
+ {
+  "variable": "PARCAT1",
+  "label": "Parameter Category 1",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Derived from VS.VSTESTCD"
+ },
+ {
+  "variable": "AVAL",
+  "label": "Analyzed Value",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "VS.VSORRES"
+ },
+ {
+  "variable": "AVALC",
+  "label": "Analyzed Value Character",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "VS.VSORRES"
+ },
+ {
+  "variable": "BASE",
+  "label": "Baseline Value",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "VS.VSORRES"
+ },
+ {
+  "variable": "BASETYPE",
+  "label": "Baseline Type",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "CHG",
+  "label": "Change from Baseline",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AVAL - BASE"
+ },
+ {
+  "variable": "PCHG",
+  "label": "Percent Change from Baseline",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "(AVAL - BASE) / BASE * 100"
+ },
+ {
+  "variable": "ABLFL",
+  "label": "Above Baseline Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Derived from CHG"
+ },
+ {
+  "variable": "AVISIT",
+  "label": "Analysis Visit",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "VS.VISIT"
+ },
+ {
+  "variable": "AVISITN",
+  "label": "Analysis Visit Numeric",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "VS.VISITNUM"
+ },
+ {
+  "variable": "VISIT",
+  "label": "Visit",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "VS.VISIT"
+ },
+ {
+  "variable": "VISITNUM",
+  "label": "Visit Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "VS.VISITNUM"
+ },
+ {
+  "variable": "ADT",
+  "label": "Analysis Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "VS.VSDTC"
+ },
+ {
+  "variable": "ADY",
+  "label": "Analysis Day",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "VS.VSDY"
+ },
+ {
+  "variable": "ANRIND",
+  "label": "Analysis Record Indicator",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "BNRIND",
+  "label": "Baseline Record Indicator",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "ANL01FL",
+  "label": "Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ },
+ {
+  "variable": "DTYPE",
+  "label": "Data Type",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Assigned value"
+ }
+]

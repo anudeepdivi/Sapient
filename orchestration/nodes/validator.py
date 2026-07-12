@@ -4,7 +4,7 @@ from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
 from r_layer.runner import run_all_adam_programs
-from r_layer.validator import validate_metacore
+from r_layer.validator import validate_metacore, compare_reference
 from r_layer.deterministic_checks import run_gate
 from templates.adam_templates import ADAM_INPUTS
 client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
@@ -107,6 +107,7 @@ def run(state: SapientState) -> SapientState:
             if name not in needs_regeneration:
                 needs_regeneration.append(name)
             continue
+        entry["reference"] = compare_reference(name)  # report-only oracle, does not gate
         real_pass_count += 1
 
     total_adam = len(supported_adam)

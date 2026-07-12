@@ -49,6 +49,24 @@ for (i in seq_len(nrow(vs))) {
   }
 }
 
+# Supplementary CT check against the free NCI-EVS CDISC controlled terminology
+# (knowledge/ct/variable_ct.json), independent of the spec's own codelists — so CT is
+# validated even when the (generated) spec carries no codelists.
+ct_file <- "knowledge/ct/variable_ct.json"
+if (file.exists(ct_file)) {
+  var_ct <- jsonlite::fromJSON(ct_file, simplifyVector = FALSE)
+  for (v in names(var_ct)) {
+    if (!v %in% names(ds)) next
+    allowed <- toupper(unlist(var_ct[[v]]))
+    present <- unique(toupper(as.character(ds[[v]][!is.na(ds[[v]])])))
+    present <- present[present != ""]
+    bad <- setdiff(present, allowed)
+    if (length(bad) > 0)
+      findings <- c(findings, sprintf("%s: values not in CDISC CT (%s): %s",
+                                      v, "NCI-EVS", paste(head(bad, 5), collapse = ", ")))
+  }
+}
+
 if (length(findings) == 0) {
   cat("CONFORMANCE PASS\n")
 } else {

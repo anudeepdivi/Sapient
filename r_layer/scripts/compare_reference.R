@@ -13,14 +13,19 @@ gen <- read_xpt(sprintf("%s/%s.xpt", gen_dir, dataset))
 ref <- read_xpt(sprintf("data/reference/%s.xpt", dataset))
 
 keys <- list(ADAE = c("USUBJID", "AESEQ"),
-             VS = c("USUBJID", "VSTESTCD", "VISITNUM", "VSTPTNUM"))
+             VS = c("USUBJID", "VSTESTCD", "VISITNUM", "VSTPTNUM"),
+             AE = c("USUBJID", "AETERM", "AESTDTC", "AEENDTC"))
 key <- if (dataset %in% names(keys)) keys[[dataset]] else "USUBJID"
 
 common_vars <- setdiff(intersect(names(gen), names(ref)), key)
+# occurrence index disambiguates records that share a key (e.g. same AE term
+# reported twice with identical dates); no-op wherever keys are already unique
+add_occ <- function(d) d %>% group_by(across(all_of(key))) %>%
+  mutate(.occ = row_number()) %>% ungroup()
 merged <- inner_join(
-  gen %>% select(all_of(c(key, common_vars))),
-  ref %>% select(all_of(c(key, common_vars))),
-  by = key, suffix = c(".gen", ".ref"))
+  add_occ(gen %>% select(all_of(c(key, common_vars)))),
+  add_occ(ref %>% select(all_of(c(key, common_vars)))),
+  by = c(key, ".occ"), suffix = c(".gen", ".ref"))
 
 if (nrow(merged) == 0) {
   cat(sprintf("VALUE-MATCH %s: no overlapping keys (gen %d rows, ref %d rows)\n",

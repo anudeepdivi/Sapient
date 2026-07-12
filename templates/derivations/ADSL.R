@@ -3,7 +3,10 @@
 ct_map <- function(dataset, variable) {
   md <- suppressWarnings(metacore::select_dataset(mc, dataset))
   cid <- md$value_spec$code_id[match(variable, md$value_spec$variable)]
-  codes <- md$codelist$codes[md$codelist$code_id == cid][[1]]
+  rows <- which(!is.na(cid) & md$codelist$code_id == cid)
+  if (length(rows) == 0) return(setNames(numeric(0), character(0)))  # spec carries no CT
+  codes <- md$codelist$codes[[rows[1]]]
+  if (is.null(codes) || !"code" %in% names(codes)) return(setNames(numeric(0), character(0)))
   setNames(suppressWarnings(as.numeric(codes$code)), codes$decode)
 }
 trtn_map <- ct_map("ADSL", "TRT01PN")
@@ -51,7 +54,7 @@ mh_dis <- mh |>
   summarise(DISONSDT = min(convert_dtc_to_dt(MHSTDTC), na.rm = TRUE), .groups = "drop")
 
 result <- dm |>
-  filter(ACTARMCD != "SCRNFAIL", ARMCD != "SCRNFAIL", ARM %in% names(trtn_map)) |>
+  filter(ACTARMCD != "SCRNFAIL", ARMCD != "SCRNFAIL", !grepl("SCREEN", toupper(ARM))) |>
   mutate(
     TRT01P = ARM,
     TRT01A = if_else(ACTARM != "", ACTARM, ARM),

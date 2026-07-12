@@ -39,6 +39,7 @@ for (i in seq_len(nrow(vs))) {
       if (!is.null(codes) && "code" %in% names(codes)) {
         allowed <- codes$code
         present <- unique(as.character(col[!is.na(col)]))
+        present <- present[present != ""]  # "" is SAS missing for character, not a CT value
         bad <- setdiff(present, allowed)
         if (length(bad) > 0)
           findings <- c(findings, sprintf("%s: values not in controlled terminology: %s",

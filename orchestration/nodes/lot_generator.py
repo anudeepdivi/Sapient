@@ -20,6 +20,12 @@ For each TLF return a JSON object with exactly these fields:
 - statistical_method: string (e.g. "Descriptive statistics", "Kaplan-Meier")
 - tlf_type: string — one of "table", "listing", "figure"
 - primary_endpoint: boolean
+Completeness rules — a submission LoT is exhaustive, not representative:
+- One table per endpoint PER analysis type: primary analysis, each sensitivity analysis, each subgroup analysis, and each timepoint/visit analysis the SAP mentions gets its OWN numbered table
+- Efficacy endpoints typically produce a 14.3.x series with many entries (10+ in a real study) — enumerate them all: primary, secondary, per-parameter, per-visit, responder/categorical versions
+- Standard safety set: AE summary, AEs by SOC/PT, severity, relatedness, serious AEs, deaths, discontinuations due to AE, labs (with shift tables), vital signs
+- Standard baseline set: disposition, demographics, baseline characteristics, medical history, concomitant medications, protocol deviations
+- If the SAP names N endpoints and M populations, expect roughly one table per endpoint-population-analysis combination — err on the side of MORE tables
 Return a JSON array of these objects only. No explanation. No markdown.
 STUDY METADATA:
 {metadata}
@@ -32,7 +38,7 @@ def build_prompt(state: SapientState) -> str:
     priority_sections = ["endpoint", "objective", "analysis", "statistical method", "population"]
     chunks = state["sap_chunks"]
     sorted_chunks = sorted(chunks, key=lambda c: any(p in c["section"].lower() for p in priority_sections), reverse=True)
-    sap_text = "\n\n---\n\n".join([f"[{c['section']}]\n{c['text']}" for c in sorted_chunks[:20]])
+    sap_text = "\n\n---\n\n".join([f"[{c['section']}]\n{c['text']}" for c in sorted_chunks[:30]])
     return LOT_PROMPT.format(metadata=metadata, sap_text=sap_text)
 
 def validate_lot(lot_entries: list[dict]) -> list[dict]:

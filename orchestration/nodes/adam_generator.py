@@ -4,6 +4,7 @@ from openai import OpenAI
 from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from knowledge.admiral_functions import signatures_block
+from r_layer.deterministic_checks import fix_quoted_symbol_args
 from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
@@ -203,6 +204,7 @@ def run(state: SapientState) -> SapientState:
             body = response.choices[0].message.content.strip().replace("```r", "").replace("```", "")
             set_cached(cache_key, body)
 
+        body = fix_quoted_symbol_args(body)
         if dataset in ADAM_INPUTS:
             code = f"{header}\n\n{body}\n\n{render_footer(dataset)}"
         else:

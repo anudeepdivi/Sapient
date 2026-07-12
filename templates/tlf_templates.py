@@ -1,13 +1,15 @@
 TLF_SKELETON = """
-library(tidyverse)
+library(dplyr)
 library(rtables)
+library(tern)
 library(haven)
 
-# Load ADaM
+# Load ADaM (only datasets that exist in data/adam/)
 adsl <- haven::read_xpt("data/adam/ADSL.xpt")
 
-# --- Table generation goes here ---
+# --- build an rtables layout with the tern/rtables functions from the
+# --- SIGNATURES block, then: tbl <- build_table(lyt, <analysis dataset>)
 
 # Export
-rtables::export_as_txt(tbl, file = "output/{table_number}.txt")
+formatters::export_as_txt(tbl, file = "output/{table_number}.txt")
 """

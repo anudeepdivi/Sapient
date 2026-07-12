@@ -1,0 +1,11 @@
+{
+ "basic_table": "basic_table(title = \"\", subtitles = character(), main_footer = character(), prov_footer = character(), show_colcounts = NA, colcount_format = \"(N=xx)\", header_section_div = NA_character_, top_level_section_div = NA_character_, inset = 0L, round_type = valid_round_type)",
+ "split_cols_by": "split_cols_by(lyt, var, labels_var = var, split_label = var, split_fun = NULL, format = NULL, nested = TRUE, child_labels = c(\"default\", \"visible\", \"hidden\"), extra_args = list(), ref_group = NULL, show_colcounts = FALSE, colcount_format = NULL)",
+ "split_rows_by": "split_rows_by(lyt, var, labels_var = var, split_label = var, split_fun = NULL, parent_name = var, format = NULL, na_str = NA_character_, nested = TRUE, child_labels = c(\"default\", \"visible\", \"hidden\"), label_pos = \"hidden\", indent_mod = 0L, page_by = FALSE, page_prefix = split_label, section_div = NA_character_)",
+ "add_colcounts": "add_colcounts(lyt, format = \"(N=xx)\")",
+ "add_overall_col": "add_overall_col(lyt, label)",
+ "analyze": "analyze(lyt, vars, afun = simple_analysis, var_labels = vars, table_names = vars, parent_name = NULL, format = NULL, formats_var = NULL, na_str = NA_character_, na_strs_var = NULL, nested = TRUE, inclNAs = FALSE, extra_args = list(), show_labels = c(\"default\", \"visible\", \"hidden\"), indent_mod = 0L, section_div = NA_character_)",
+ "summarize_row_groups": "summarize_row_groups(lyt, var = \"\", label_fstr = \"%s\", format = \"xx (xx.x%)\", na_str = \"-\", cfun = NULL, indent_mod = 0L, extra_args = list())",
+ "build_table": "build_table(lyt, df, alt_counts_df = NULL, col_counts = NULL, col_total = if (is.null(alt_counts_df)) nrow(df) else nrow(alt_counts_df), topleft = NULL, hsep = default_hsep(), round_type = if (is(lyt, \"PreDataTableLayouts\")) obj_round_type(lyt) else valid_round_type, ...)",
+ "append_topleft": "append_topleft(lyt, newlines)"
+}

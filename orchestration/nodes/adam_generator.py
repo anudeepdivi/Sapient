@@ -164,6 +164,14 @@ def run(state: SapientState) -> SapientState:
     for entry in state["lot_entries"]:
         for ds in entry.get("data_source", []):
             datasets.add(ds)
+    # Only generate datasets we can actually build/score (have an input mapping or
+    # a deterministic derivation). Others from the LoT are recorded as unsupported
+    # by the validator; generating them wastes an LLM call and can never pass.
+    supported = set(ADAM_INPUTS) | set(DETERMINISTIC_DERIVATIONS)
+    unsupported = datasets - supported
+    if unsupported:
+        print(f"adam_generator: skipping unsupported (no input mapping): {sorted(unsupported)}")
+    datasets = datasets & supported
     regen = set(state.get("needs_regeneration") or [])
     if adam_programs and regen:
         datasets = datasets & regen

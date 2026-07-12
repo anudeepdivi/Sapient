@@ -100,8 +100,14 @@ def get_admiral_template(dataset: str) -> str:
 
 def render_footer(dataset: str) -> str:
     return (
+        f'mc_ds <- metacore::select_dataset(mc, "{dataset}")\n'
         "# Metacore compliance check\n"
-        f'metatools::check_variables(result, metacore::select_dataset(mc, "{dataset}"))\n'
+        "metatools::check_variables(result, mc_ds)\n"
+        "# Deterministic type/length/format coercion to spec (format-layer conformance)\n"
+        "result <- result |>\n"
+        f'  xportr::xportr_type(mc_ds, domain = "{dataset}") |>\n'
+        f'  xportr::xportr_length(mc_ds, domain = "{dataset}") |>\n'
+        f'  xportr::xportr_format(mc_ds, domain = "{dataset}")\n'
         "# Export\n"
         f'xportr::xportr_write(result, path = "data/adam/{dataset}.xpt", domain = "{dataset}")'
     )

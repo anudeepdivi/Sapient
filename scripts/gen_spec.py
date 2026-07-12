@@ -19,6 +19,7 @@ from orchestration.llm_retry import create_with_retry
 from cache.prompt_cache import get_cached, set_cached
 from knowledge.adam_registry import classify
 from knowledge.adamig_standard import standard_block
+from knowledge.ct_lookup import variable_ct
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, CODEGEN_MODEL, TEMPERATURE, MAX_TOKENS
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
@@ -36,6 +37,10 @@ Return a JSON array only, one object per variable, fields exactly:
 
 This dataset is ADaM class {adam_class}.
 {standard_variables}
+
+CONTROLLED TERMINOLOGY (CDISC CT — these variables may take ONLY these values; derive to them):
+{controlled_terminology}
+Variables coded by an external dictionary (AEDECOD/AEBODSYS via MedDRA, medications via WHODrug) are NOT enumerated here — mark their derivation as "coded per <dictionary> as specified in the SAP".
 
 Rules:
 - START from the standard ADaMIG variables above: include every one the study data supports, with exact complete names (SAFFL not SAFF, ITTFL not ITF).
@@ -63,9 +68,11 @@ def propose(dataset: str) -> Path:
     lot = json.loads((BASE_DIR / "data/lot_entries.json").read_text())
     relevant = [e for e in lot if dataset in e.get("data_source", [])]
     adam_class = classify(dataset) or "UNKNOWN"
+    ct_lines = "\n".join(f"- {var}: {', '.join(vals)}" for var, vals in variable_ct().items())
     prompt = SPEC_PROMPT.format(dataset=dataset,
                                 adam_class=adam_class,
                                 standard_variables=standard_block(adam_class),
+                                controlled_terminology=ct_lines or "(none loaded)",
                                 lot_entries=json.dumps(relevant, indent=1),
                                 sdtm_columns=sdtm_columns())
     cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()

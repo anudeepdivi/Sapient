@@ -68,6 +68,12 @@
    "Y"
   ]
  },
+ "ND": {
+  "name": "Not Done",
+  "values": [
+   "NOT DONE"
+  ]
+ },
  "SEX": {
   "name": "Sex",
   "values": [

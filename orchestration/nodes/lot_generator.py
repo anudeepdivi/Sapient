@@ -4,6 +4,7 @@ from openai import OpenAI
 from cache.prompt_cache import get_cached, set_cached
 from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
+from knowledge.adam_registry import allowed_datasets_block, constrain_data_source
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
 
 client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
@@ -16,7 +17,7 @@ For each TLF return a JSON object with exactly these fields:
 - table_number: string (e.g. "14.1.1")
 - title: string
 - population: string (e.g. "Safety Population", "Full Analysis Set")
-- data_source: list of strings (ADaM datasets needed e.g. ["ADAE", "ADSL"])
+- data_source: list of strings — ADaM datasets needed, chosen ONLY from the ALLOWED ADaM DATASETS list below. Never invent a dataset name; if none fits, use the closest standard one and note it. ADSL is required by almost every table.
 - statistical_method: string (e.g. "Descriptive statistics", "Kaplan-Meier")
 - tlf_type: string — one of "table", "listing", "figure"
 - primary_endpoint: boolean
@@ -27,6 +28,8 @@ Completeness rules — a submission LoT is exhaustive, not representative:
 - Standard baseline set: disposition, demographics, baseline characteristics, medical history, concomitant medications, protocol deviations
 - If the SAP names N endpoints and M populations, expect roughly one table per endpoint-population-analysis combination — err on the side of MORE tables
 Return a JSON array of these objects only. No explanation. No markdown.
+ALLOWED ADaM DATASETS (data_source must use only these names):
+{allowed_datasets}
 STUDY METADATA:
 {metadata}
 SAP SECTIONS:
@@ -39,7 +42,8 @@ def build_prompt(state: SapientState) -> str:
     chunks = state["sap_chunks"]
     sorted_chunks = sorted(chunks, key=lambda c: any(p in c["section"].lower() for p in priority_sections), reverse=True)
     sap_text = "\n\n---\n\n".join([f"[{c['section']}]\n{c['text']}" for c in sorted_chunks[:30]])
-    return LOT_PROMPT.format(metadata=metadata, sap_text=sap_text)
+    return LOT_PROMPT.format(metadata=metadata, sap_text=sap_text,
+                             allowed_datasets=allowed_datasets_block())
 
 def validate_lot(lot_entries: list[dict]) -> list[dict]:
     required_fields = {"table_number", "title", "population", "data_source", "statistical_method", "tlf_type", "primary_endpoint"}
@@ -76,4 +80,7 @@ def run(state: SapientState) -> SapientState:
     except json.JSONDecodeError:
         return {**state, "errors": state.get("errors", []) + ["lot_generator: failed to parse LLM response"], "current_node": "lot_generator"}
     lot_entries = validate_lot(lot_entries)
+    lot_entries, flagged = constrain_data_source(lot_entries)
+    if flagged:
+        print(f"lot_generator: off-registry datasets flagged for review: {sorted(flagged)}")
     return {**state, "lot_entries": lot_entries, "current_node": "lot_generator"}

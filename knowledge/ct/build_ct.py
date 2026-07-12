@@ -25,7 +25,7 @@ SOURCES = {
 # current release are the granular "as collected" verbatim lists — hundreds of values,
 # not analysis CT — so they are intentionally excluded.)
 WANTED = {
-    "SEX", "NCOMPLT", "NY", "AGEU", "DTYPE", "ND",
+    "SEX", "NCOMPLT", "NY", "AGEU", "DTYPE", "ND", "SBJTSTAT",
 }
 
 

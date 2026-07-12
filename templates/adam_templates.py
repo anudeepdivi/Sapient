@@ -8,7 +8,7 @@ library(tidyverse)
 library(haven)
 
 # Load spec
-mc <- metacore::load_metacore("specs/metacore_spec.rds")
+mc <- metacore::load_metacore(Sys.getenv("SAPIENT_SPEC_RDS", unset = "specs/metacore_spec.rds"))
 # Load SDTM
 sdtm <- haven::read_xpt("data/sdtm/{dataset}.xpt")
 
@@ -42,7 +42,7 @@ def render_header(dataset: str) -> str:
         "library(tidyverse)\n"
         "library(haven)\n\n"
         "# Load spec\n"
-        'mc <- metacore::load_metacore("specs/metacore_spec.rds")\n'
+        'mc <- metacore::load_metacore(Sys.getenv("SAPIENT_SPEC_RDS", unset = "specs/metacore_spec.rds"))\n'
         "# Load SDTM\n"
         f"{load_lines}"
     )

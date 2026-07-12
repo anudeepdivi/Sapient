@@ -7,7 +7,7 @@ suppressMessages({library(metacore); library(haven); library(jsonlite)})
 args <- commandArgs(trailingOnly = TRUE)
 dataset <- args[1]
 
-mc <- load_metacore("specs/metacore_spec.rds")
+mc <- load_metacore(Sys.getenv("SAPIENT_SPEC_RDS", unset = "specs/metacore_spec.rds"))
 m <- suppressWarnings(select_dataset(mc, dataset))
 ds <- read_xpt(sprintf("data/adam/%s.xpt", dataset))
 vs <- m$var_spec

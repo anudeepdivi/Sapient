@@ -5,7 +5,7 @@ args <- commandArgs(trailingOnly = TRUE)
 dataset_name <- args[1]
 
 tryCatch({
-  mc <- metacore::load_metacore("specs/metacore_spec.rds")
+  mc <- metacore::load_metacore(Sys.getenv("SAPIENT_SPEC_RDS", unset = "specs/metacore_spec.rds"))
   mc <- metacore::select_dataset(mc, dataset_name)
   ds <- haven::read_xpt(sprintf("data/adam/%s.xpt", dataset_name))
   result <- metatools::check_variables(ds, mc)

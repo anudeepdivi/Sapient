@@ -94,6 +94,12 @@ QUOTED_SYMBOL_ARG_PATTERN = re.compile(
 )
 
 
+def fix_quoted_symbol_args(code: str) -> str:
+    return re.sub(
+        r'\b(new_var|new_var_unit|age_var|start_date|end_date|dtc)\s*=\s*["\']([A-Za-z][A-Za-z0-9_.]*)["\']',
+        r'\1 = \2', code)
+
+
 def check_quoted_symbol_args(code: str) -> list[str]:
     return [f'{arg} = "..." — this admiral argument takes a bare symbol, not a quoted string'
             for arg in QUOTED_SYMBOL_ARG_PATTERN.findall(code)]

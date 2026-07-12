@@ -9,6 +9,15 @@ HARDCODED_LABEL_PATTERN = re.compile(
 )
 LIBRARY_CALL_PATTERN = re.compile(r'library\(\s*([A-Za-z0-9._]+)\s*\)')
 READ_XPT_PATTERN = re.compile(r'read_xpt\(\s*["\']([^"\']+)["\']\s*\)')
+DERIVE_CALL_PATTERN = re.compile(r'\b((?:derive_|restrict_)[A-Za-z0-9_]+)\s*\(')
+ALLOWED_DERIVE_FUNCTIONS = {
+    "derive_vars_merged", "derive_var_merged_exist_flag",
+    "derive_vars_dt", "derive_vars_dtm",
+    "derive_var_age_years", "derive_vars_duration",
+    "derive_param_computed", "derive_extreme_records",
+    "derive_var_extreme_flag", "restrict_derivation",
+    "derive_param_exist_flag",
+}
 
 _installed_packages_cache = None
 
@@ -64,10 +73,30 @@ def check_hardcoded_labels(code: str) -> list[str]:
 def check_input_files_exist(code: str) -> list[str]:
     issues = []
     for path in READ_XPT_PATTERN.findall(code):
+        if path.startswith("data/adam/"):
+            continue  # pipeline output, produced at run time
         full_path = BASE_DIR / path
         if not full_path.exists():
             issues.append(f"read_xpt(\"{path}\") — file does not exist")
     return issues
+
+
+def check_derive_function_allowlist(code: str) -> list[str]:
+    issues = []
+    for fn in DERIVE_CALL_PATTERN.findall(code):
+        if fn not in ALLOWED_DERIVE_FUNCTIONS:
+            issues.append(f"{fn}() — admiral function not in allowed list")
+    return issues
+
+
+QUOTED_SYMBOL_ARG_PATTERN = re.compile(
+    r'\b(new_var|new_var_unit|age_var|start_date|end_date|dtc)\s*=\s*["\']'
+)
+
+
+def check_quoted_symbol_args(code: str) -> list[str]:
+    return [f'{arg} = "..." — this admiral argument takes a bare symbol, not a quoted string'
+            for arg in QUOTED_SYMBOL_ARG_PATTERN.findall(code)]
 
 
 def run_gate(code: str) -> dict:
@@ -77,6 +106,8 @@ def run_gate(code: str) -> dict:
         "package_allowlist": check_package_allowlist(code),
         "hardcoded_labels": check_hardcoded_labels(code),
         "input_files_exist": check_input_files_exist(code),
+        "derive_function_allowlist": check_derive_function_allowlist(code),
+        "quoted_symbol_args": check_quoted_symbol_args(code),
     }
     all_issues = [issue for issues in checks.values() for issue in issues]
     return {"passed": len(all_issues) == 0, "checks": checks, "issues": all_issues}

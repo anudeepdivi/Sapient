@@ -25,6 +25,6 @@ def run_adam_program(dataset_name: str, program_code: str) -> dict:
 
 def run_all_adam_programs(adam_programs: dict) -> dict:
     results = {}
-    for dataset_name, code in adam_programs.items():
+    for dataset_name, code in sorted(adam_programs.items(), key=lambda kv: kv[0] != "ADSL"):
         results[dataset_name] = run_adam_program(dataset_name, code)
     return results

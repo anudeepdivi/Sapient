@@ -16,6 +16,9 @@ state = {
     "completed": False
 }
 result = pipeline.invoke(state)
+import json
+with open("data/lot_entries.json", "w") as f:
+    json.dump(result["lot_entries"], f, indent=1)
 print("Pipeline completed:", result["completed"])
 print("LoT entries generated:", len(result["lot_entries"]))
 print("ADaM programs:", list(result["adam_programs"].keys()))

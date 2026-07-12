@@ -11,11 +11,13 @@ Class comes from knowledge.adam_registry.classify(). Study-specific variables
 and SDTM availability, which is exactly the part spec-gen must reason about.
 """
 
-# Variable groups shared across every ADaM dataset.
-_COMMON = [
-    "STUDYID", "USUBJID", "SUBJID", "SITEID",
-    "TRT01P", "TRT01PN", "TRT01A", "TRT01AN",
-]
+# Identifiers shared across every ADaM dataset (treatment vars differ by class:
+# ADSL carries subject-level TRT01P/TRT01A; BDS/OCCDS carry period/occurrence-level
+# TRTP/TRTPN/TRTA/TRTAN, which is why they were missed before this split).
+_COMMON = ["STUDYID", "USUBJID", "SUBJID", "SITEID"]
+
+# Analysis treatment + timing carried from ADSL onto every non-subject dataset.
+_ANALYSIS_TRT = ["TRTP", "TRTPN", "TRTA", "TRTAN", "TRTSDT", "TRTEDT"]
 
 _DEMOG = ["AGE", "AGEGR1", "AGEGR1N", "SEX", "RACE", "RACEN", "ETHNIC",
           "SAFFL", "ITTFL", "EFFFL"]
@@ -24,6 +26,7 @@ ADAMIG_STANDARD = {
     "SUBJECT": {  # ADSL
         "structure": "one row per subject",
         "variables": _COMMON + [
+            "TRT01P", "TRT01PN", "TRT01A", "TRT01AN",
             "ARM", "ACTARM", "TRTSDT", "TRTEDT", "TRTDURD",
             "AGE", "AGEGR1", "AGEGR1N", "AGEGR2", "AGEGR2N", "AGEU",
             "SEX", "RACE", "RACEN", "ETHNIC",
@@ -34,24 +37,23 @@ ADAMIG_STANDARD = {
     },
     "OCCDS": {  # ADAE, ADCM, ADMH
         "structure": "one row per record (event/intervention) per subject",
-        "variables": _COMMON + _DEMOG + [
-            "TRTA", "TRTAN", "TRTSDT", "TRTEDT",
+        "variables": _COMMON + _ANALYSIS_TRT + _DEMOG + [
             "ASTDT", "ASTDTF", "ASTDY", "AENDT", "AENDY", "ADURN", "ADURU",
             "AESEQ", "TRTEMFL", "AOCCFL", "AOCCPFL", "AOCCSFL",
         ],
     },
     "BDS": {  # ADVS, ADLB, ADADAS, ADEG, ADQS, ...
         "structure": "one row per subject per parameter per analysis timepoint",
-        "variables": _COMMON + _DEMOG + [
+        "variables": _COMMON + _ANALYSIS_TRT + _DEMOG + [
             "PARAMCD", "PARAM", "PARAMN", "PARCAT1",
             "AVAL", "AVALC", "BASE", "BASETYPE", "CHG", "PCHG",
-            "ABLFL", "AVISIT", "AVISITN", "ADT", "ADY", "ATPT", "ATPTN",
-            "ANL01FL", "DTYPE",
+            "ABLFL", "AVISIT", "AVISITN", "VISIT", "VISITNUM", "ADT", "ADY",
+            "ANRIND", "BNRIND", "ANL01FL", "DTYPE",
         ],
     },
     "TTE": {  # ADTTE
         "structure": "one row per subject per time-to-event parameter",
-        "variables": _COMMON + _DEMOG + [
+        "variables": _COMMON + _ANALYSIS_TRT + _DEMOG + [
             "PARAMCD", "PARAM", "PARAMN",
             "AVAL", "STARTDT", "ADT", "CNSR", "EVNTDESC", "SRCDOM", "SRCVAR", "SRCSEQ",
         ],

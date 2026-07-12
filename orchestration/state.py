@@ -15,6 +15,7 @@ class SapientState(TypedDict):
     mockshells: Optional[list[dict]]        # one mockshell blueprint per TLF
     adam_programs: Optional[dict[str, str]] # dataset_name -> R code
     tlf_programs: Optional[dict[str, str]]  # table_number -> R code
+    tlf_skipped: Optional[dict[str, str]]   # table_number -> reason (e.g. source ADaM not built)
     validation_results: Optional[dict]      # program_name -> pass/fail/issues
     needs_regeneration: Optional[list[str]] # programs flagged for retry
     real_pass_rate: Optional[float]         # execution + metacore pass rate, ADaM programs only

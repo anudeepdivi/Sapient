@@ -52,6 +52,7 @@ def render_header(dataset: str) -> str:
 # LLM entirely — the body is spliced between the deterministic header/footer.
 DETERMINISTIC_DERIVATIONS = {
     "ADSL": Path(__file__).parent / "derivations" / "ADSL.R",
+    "ADAE": Path(__file__).parent / "derivations" / "ADAE.R",
 }
 
 _input_columns_cache = {}

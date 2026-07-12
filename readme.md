@@ -139,3 +139,17 @@ Near-term work, in order:
 - Score derivation and type correctness, not only variable presence; extend LoT recall.
 
 Deferred by design: a Neo4j knowledge graph (package signature extraction covers the package-swap use case more cheaply), FastAPI / MCP exposure, and CRF-annotation-to-SDTM mapping.
+
+---
+
+## References
+
+Prior art and standards this work draws on or is positioned against:
+
+- **CDISC Open Rules Engine (CORE) & CDISC 360i** — open-source, machine-readable conformance rules and standards-driven automation from study design through results. The authoritative source for ADaM variable metadata and controlled terminology. <https://www.cdisc.org/core>
+- **CDISC Rules Engine** (open source, Python, YAML rules) — the conformance-checking engine behind CORE; the open counterpart to the checks Pinnacle 21 encodes. <https://github.com/cdisc-org/cdisc-rules-engine>
+- **Pinnacle 21 — ADaM validation checks** — how the standard ADaM conformance findings (type, length, controlled terminology, define.xml consistency) are implemented in practice. <https://www.pinnacle21.com/blog/how-does-pinnacle-21-implement-adam-validation-checks>
+- **Automation in Clinical Trial Statistical Programming: a scoping review (2020–2025), medRxiv** — survey of TLF generation, validation frameworks, metadata-driven ADaM/SDTM generation, and where AI/ML fits; documents the 21–50% hallucination rates on clinical LLM tasks. <https://www.medrxiv.org/content/10.64898/2025.12.24.25342988v2.full>
+- **Using Large Language Models to Generate Clinical Trial Tables and Figures, arXiv:2409.12046** — LLM-based TLF generation from analysis datasets. <https://arxiv.org/pdf/2409.12046>
+
+**Public data & standards:** pharmaverse (`pharmaversesdtm`, `pharmaverseadam`, `pharmaverseraw`), the CDISC SDTM/ADaM pilot project, the atorus-research CDISC pilot replication, and the CDISC ADaMIG / SDTMIG / Controlled Terminology standards.

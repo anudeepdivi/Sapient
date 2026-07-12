@@ -5,9 +5,12 @@
  "derive_var_age_years": "derive_var_age_years(dataset, age_var, age_unit = NULL, new_var)",
  "derive_var_extreme_flag": "derive_var_extreme_flag(dataset, by_vars, order, new_var, mode, true_value = \"Y\", false_value = NA_character_, flag_all = FALSE, check_type = \"warning\")",
  "derive_var_merged_exist_flag": "derive_var_merged_exist_flag(dataset, dataset_add, by_vars, new_var, condition, true_value = \"Y\", false_value = NA_character_, missing_value = NA_character_, filter_add = NULL)",
+ "derive_var_trtemfl": "derive_var_trtemfl(dataset, new_var = TRTEMFL, start_date = ASTDTM, end_date = AENDTM, trt_start_date = TRTSDTM, trt_end_date = NULL, end_window = NULL, ignore_time_for_trt_end = TRUE, initial_intensity = NULL, intensity = NULL, group_var = NULL, subject_keys = get_admiral_option(\"subject_keys\"))",
  "derive_vars_dt": "derive_vars_dt(dataset, new_vars_prefix, dtc, highest_imputation = \"n\", date_imputation = \"first\", flag_imputation = \"auto\", min_dates = NULL, max_dates = NULL, preserve = FALSE)",
  "derive_vars_dtm": "derive_vars_dtm(dataset, new_vars_prefix, dtc, highest_imputation = \"h\", date_imputation = \"first\", time_imputation = \"first\", flag_imputation = \"auto\", min_dates = NULL, max_dates = NULL, preserve = FALSE, ignore_seconds_flag = TRUE)",
+ "derive_vars_dtm_to_dt": "derive_vars_dtm_to_dt(dataset, source_vars)",
  "derive_vars_duration": "derive_vars_duration(dataset, new_var, new_var_unit = NULL, start_date, end_date, in_unit = \"days\", out_unit = \"DAYS\", floor_in = TRUE, add_one = TRUE, trunc_out = FALSE, type = \"duration\")",
+ "derive_vars_dy": "derive_vars_dy(dataset, reference_date, source_vars)",
  "derive_vars_merged": "derive_vars_merged(dataset, dataset_add, by_vars, order = NULL, new_vars = NULL, filter_add = NULL, mode = NULL, exist_flag = NULL, true_value = \"Y\", false_value = NA_character_, missing_values = NULL, check_type = \"warning\", duplicate_msg = NULL, relationship = NULL)",
  "restrict_derivation": "restrict_derivation(dataset, derivation, args = NULL, filter)"
 }

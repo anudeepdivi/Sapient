@@ -6,6 +6,7 @@ dataset_name <- args[1]
 
 tryCatch({
   mc <- metacore::load_metacore("specs/metacore_spec.rds")
+  mc <- metacore::select_dataset(mc, dataset_name)
   ds <- haven::read_xpt(sprintf("data/adam/%s.xpt", dataset_name))
   result <- metacore::check_variables(ds, mc)
   print(result)

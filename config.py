@@ -16,7 +16,8 @@ REFERENCE_DIR = DATA_DIR / "reference"
 
 # Models
 REASONING_MODEL = "google/diffusiongemma-26b-a4b-it"
-CODEGEN_MODEL = "google/diffusiongemma-26b-a4b-it"
+CODEGEN_MODEL = "google/diffusiongemma-26b-a4b-it"  # gemma-4-31b-it endpoint timing out on free tier 2026-07-12; retry the switch when it responds
+CODEGEN_FALLBACK_MODEL = "google/diffusiongemma-26b-a4b-it"
 # API Keys
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 if not NVIDIA_API_KEY:

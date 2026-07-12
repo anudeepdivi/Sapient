@@ -4,7 +4,7 @@ from openai import OpenAI
 from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from knowledge.admiral_functions import signatures_block
-from r_layer.deterministic_checks import fix_quoted_symbol_args
+from r_layer.deterministic_checks import fix_quoted_symbol_args, strip_markdown_fences
 from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
@@ -95,6 +95,8 @@ STRICT RULES:
 EXACT SIGNATURES of the allowed functions — use only these argument names, never invent arguments:
 {signatures}
 Arguments that name a variable or column (new_var, age_var, start_date, end_date, dtc) take a BARE SYMBOL — never a quoted string: new_var = TRTDURD, not new_var = "TRTDURD".
+Derivation functions in the pipe (derive_vars_dt, derive_var_age_years, derive_vars_duration) see ONLY the piped dataset's columns. To bring a date from another loaded input (ex, ds), never call derive_vars_dt on its column — instead convert inside the merge:
+  derive_vars_merged(dataset_add = ds, by_vars = exprs(STUDYID, USUBJID), filter_add = DSCAT == "DISPOSITION EVENT", new_vars = exprs(EOSDT = convert_dtc_to_dt(DSSTDTC)))
 
 These admiral functions have DIFFERENT argument shapes. Do not copy one function's arguments onto another:
 
@@ -204,7 +206,7 @@ def run(state: SapientState) -> SapientState:
             body = response.choices[0].message.content.strip().replace("```r", "").replace("```", "")
             set_cached(cache_key, body)
 
-        body = fix_quoted_symbol_args(body)
+        body = fix_quoted_symbol_args(strip_markdown_fences(body))
         if dataset in ADAM_INPUTS:
             code = f"{header}\n\n{body}\n\n{render_footer(dataset)}"
         else:

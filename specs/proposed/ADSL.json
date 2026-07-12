@@ -29,28 +29,28 @@
  },
  {
   "variable": "TRT01P",
-  "label": "Treatment Group",
+  "label": "Treatment Arm",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ARM"
  },
  {
   "variable": "TRT01PN",
-  "label": "Treatment Group Number",
+  "label": "Treatment Arm Numeric",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "DM.ARMNRS"
  },
  {
   "variable": "TRT01A",
-  "label": "Actual Treatment Group",
+  "label": "Actual Treatment Arm",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ACTARM"
  },
  {
   "variable": "TRT01AN",
-  "label": "Actual Treatment Group Number",
+  "label": "Actual Treatment Arm Numeric",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "DM.ACTARMUD"
@@ -102,28 +102,28 @@
   "label": "Age Group 1",
   "type": "text",
   "origin": "derived",
-  "derivation": "IF AGE < 18 THEN 'Pediatric' ELSE IF AGE >= 65 THEN 'Geriatric' ELSE 'Adult'"
+  "derivation": "Derived from AGE"
  },
  {
   "variable": "AGEGR1N",
-  "label": "Age Group 1 Number",
+  "label": "Age Group 1 Numeric",
   "type": "integer",
   "origin": "derived",
-  "derivation": "IF AGE < 18 THEN 1 ELSE IF AGE >= 65 THEN 3 ELSE 2"
+  "derivation": "Derived from AGE"
  },
  {
   "variable": "AGEGR2",
   "label": "Age Group 2",
   "type": "text",
   "origin": "derived",
-  "derivation": "IF AGE < 18 THEN 'Pediatric' ELSE IF AGE < 65 THEN 'Adult' ELSE 'Geriatric'"
+  "derivation": "Derived from AGE"
  },
  {
   "variable": "AGEGR2N",
-  "label": "Age Group 2 Number",
+  "label": "Age Group 2 Numeric",
   "type": "integer",
   "origin": "derived",
-  "derivation": "IF AGE < 18 THEN 1 ELSE IF AGE < 65 THEN 2 ELSE 3"
+  "derivation": "Derived from AGE"
  },
  {
   "variable": "AGEU",
@@ -148,10 +148,10 @@
  },
  {
   "variable": "RACEN",
-  "label": "Race Number",
+  "label": "Race Numeric",
   "type": "integer",
   "origin": "derived",
-  "derivation": "IF RACE = 'White' THEN 1 ELSE IF RACE = 'Black or African American' THEN 2 ELSE IF RACE = 'Asian' THEN 3 ELSE IF RACE = 'Other' THEN 4 ELSE 9"
+  "derivation": "Derived from RACE"
  },
  {
   "variable": "ETHNIC",
@@ -165,35 +165,35 @@
   "label": "Safety Analysis Set Flag",
   "type": "text",
   "origin": "assigned",
-  "derivation": "Y"
+  "derivation": "Y/N/NA/U"
  },
  {
   "variable": "ITTFL",
   "label": "Intent-to-Treat Analysis Set Flag",
   "type": "text",
   "origin": "assigned",
-  "derivation": "Y"
+  "derivation": "Y/N/NA/U"
  },
  {
   "variable": "EFFFL",
   "label": "Efficacy Analysis Set Flag",
   "type": "text",
   "origin": "assigned",
-  "derivation": "Y"
+  "derivation": "Y/N/NA/U"
  },
  {
   "variable": "COMPLFL",
   "label": "Completer Flag",
   "type": "text",
-  "origin": "derived",
-  "derivation": "IF DISCONFL = 'N' THEN 'Y' ELSE 'N'"
+  "origin": "assigned",
+  "derivation": "Y/N/NA/U"
  },
  {
   "variable": "DISCONFL",
   "label": "Discontinuation Flag",
   "type": "text",
-  "origin": "derived",
-  "derivation": "IF AE.AEENDTC IS NOT NULL THEN 'Y' ELSE 'N'"
+  "origin": "assigned",
+  "derivation": "Y/N/NA/U"
  },
  {
   "variable": "DTHFL",
@@ -207,21 +207,21 @@
   "label": "End of Study Status",
   "type": "text",
   "origin": "derived",
-  "derivation": "IF DISCONFL = 'Y' THEN 'Discontinued' ELSE IF DTHFL = 'Y' THEN 'Death' ELSE 'Completed'"
+  "derivation": "Derived from DCDECOD"
  },
  {
   "variable": "DCDECOD",
   "label": "Discontinuation Reason",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE.AEDECOD"
+  "origin": "derived",
+  "derivation": "Derived from AE.AEOUT, MH.MHSTAT, etc."
  },
  {
   "variable": "DCSREAS",
   "label": "Discontinuation Reason",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE.AETERM"
+  "origin": "derived",
+  "derivation": "Derived from AE.AEOUT, MH.MHSTAT, etc."
  },
  {
   "variable": "RFSTDTC",

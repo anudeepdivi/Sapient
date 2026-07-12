@@ -1,5 +1,8 @@
 import json
+import hashlib
 from openai import OpenAI
+from cache.prompt_cache import get_cached, set_cached
+from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
 
@@ -46,15 +49,19 @@ def run(state: SapientState) -> SapientState:
     print("lot_generator: starting")
     prompt = build_prompt(state)
     print(f"lot_generator: prompt built, length: {len(prompt)} chars")
-    response = client.chat.completions.create(
-        model=REASONING_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS
-    )
-    print("lot_generator: response received")
-    content = response.choices[0].message.content
-    print(f"lot_generator: raw content: {content}")
+    cache_key = hashlib.sha256(prompt.encode()).hexdigest()
+    content = get_cached(cache_key)
+    if content is None:
+        response = create_with_retry(client,
+            model=REASONING_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS
+        )
+        print("lot_generator: response received")
+        content = response.choices[0].message.content
+        if content:
+            set_cached(cache_key, content)
     if not content:
         return {**state, "errors": state.get("errors", []) + ["lot_generator: empty response from LLM"], "current_node": "lot_generator"}
     raw = content.strip().replace("```json", "").replace("```", "")

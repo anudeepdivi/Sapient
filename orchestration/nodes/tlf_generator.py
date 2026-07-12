@@ -1,12 +1,13 @@
 import json
 import hashlib
 from openai import OpenAI
+from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from cache.prompt_cache import get_cached, set_cached
 from templates.tlf_templates import TLF_SKELETON
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, TEMPERATURE, MAX_TOKENS
+from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
+client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
 TLF_PROMPT = """
 You are an expert clinical programmer generating R code for TLF: {table_number}
@@ -34,10 +35,15 @@ Return R code only. No explanation. No markdown fences.
 """
 
 def run(state: SapientState) -> SapientState:
-    tlf_programs = {}
+    from orchestration.nodes.adam_generator import failure_feedback
+    tlf_programs = dict(state.get("tlf_programs") or {})
+    regen = set(state.get("needs_regeneration") or [])
     mockshell_map = {m["table_number"]: m for m in state["mockshells"]}
     for entry in state["lot_entries"]:
         table_number = entry["table_number"]
+        if tlf_programs and regen and table_number not in regen:
+            continue
+        print(f"tlf_generator: generating {table_number}")
         mockshell = mockshell_map.get(table_number, {})
         prompt = TLF_PROMPT.format(
             table_number=table_number,
@@ -45,12 +51,13 @@ def run(state: SapientState) -> SapientState:
             mockshell=json.dumps(mockshell, indent=2),
             skeleton=TLF_SKELETON
         )
+        prompt += failure_feedback(state, table_number)
         cache_key = hashlib.sha256(prompt.encode()).hexdigest()
         cached = get_cached(cache_key)
         if cached:
             tlf_programs[table_number] = cached
         else:
-            response = client.chat.completions.create(
+            response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
                 model=CODEGEN_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=TEMPERATURE,

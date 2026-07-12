@@ -11,7 +11,7 @@ from orchestration.nodes import (
 
 
 def should_regenerate(state: SapientState) -> str:
-    if state.get("needs_regeneration") and not state.get("completed"):
+    if state.get("needs_regeneration") and not state.get("completed") and state.get("regen_count", 0) < 3:
         return "regenerate"
     return "done"
 
@@ -39,7 +39,7 @@ def build_graph() -> StateGraph:
     "validator",
     should_regenerate,
     {
-        "regenerate": END,
+        "regenerate": "adam_generator",
         "done": END,
     }
 )

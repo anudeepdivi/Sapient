@@ -1,5 +1,6 @@
 import json
 from openai import OpenAI
+from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
 from r_layer.runner import run_all_adam_programs
@@ -37,7 +38,12 @@ def run(state: SapientState) -> SapientState:
     adam_programs = state.get("adam_programs", {})
     all_programs = {**adam_programs, **state.get("tlf_programs", {})}
     lot_map = {e["table_number"]: e for e in state["lot_entries"]}
+    prev_results = state.get("validation_results") or {}
+    prev_regen = set(state.get("needs_regeneration") or [])
     for name, code in all_programs.items():
+        if name in prev_results and name not in prev_regen:
+            validation_results[name] = prev_results[name]
+            continue
         gate = run_gate(code)
         if not gate["passed"]:
             validation_results[name] = {"status": "fail", "stage": "deterministic_gate", "issues": gate["issues"], "severity": "error"}
@@ -46,7 +52,7 @@ def run(state: SapientState) -> SapientState:
 
         lot_entry = lot_map.get(name, {})
         prompt = VALIDATOR_PROMPT.format(lot_entry=json.dumps(lot_entry, indent=2), program=code)
-        response = client.chat.completions.create(
+        response = create_with_retry(client,
             model=REASONING_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=TEMPERATURE,
@@ -101,4 +107,5 @@ def run(state: SapientState) -> SapientState:
     print(f"validator: real pass rate (execution + metacore) = {real_pass_count}/{total_adam} ({real_pass_rate:.0%})")
 
     return {**state, "validation_results": validation_results, "needs_regeneration": needs_regeneration,
-            "real_pass_rate": real_pass_rate, "completed": len(needs_regeneration) == 0, "current_node": "validator"}
+            "real_pass_rate": real_pass_rate, "completed": len(needs_regeneration) == 0,
+            "regen_count": state.get("regen_count", 0) + 1, "current_node": "validator"}

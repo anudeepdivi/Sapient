@@ -11,7 +11,7 @@ from templates.adam_templates import (
     render_header, render_footer, get_admiral_template, input_columns_block,
     DETERMINISTIC_DERIVATIONS
 )
-from specs.metacore_loader import get_spec_variables
+from specs.metacore_loader import get_spec_variables, spec_rules_block
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
 from knowledge.vector_store import query_ig
 
@@ -132,7 +132,10 @@ result <- result |>
 REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — copy its pipe operator style EXACTLY, always `|>` never bare `|`; adapt its derivation logic to the STRICT RULES function list above, do not add functions outside that list. If the template uses any other admiral function — e.g. derive_vars_joined, derive_var_duration — replace it with plain dplyr/mutate code or an allowed function; never call it):
 {admiral_template}
 
-TARGET VARIABLES (from the study metacore spec — {dataset} must end up with these columns, no others invented):
+TARGET VARIABLES with conformance rules (from the study metacore spec — {dataset} must end up with exactly these columns, no others invented). Format per line: NAME  type  len<=N  fmt:FORMAT  CT:{{allowed|values}}. Obey them:
+- type text = character; type integer/float = numeric (dates are numeric with a DATE format, derived via convert_dtc_to_dt / as.numeric of a date, never left as a "YYYY-MM-DD" string)
+- CT:{{...}} means the column may ONLY contain those exact values — derive to them, never invent a label
+- do not exceed the stated length
 {spec_variables}
 Every target variable MUST exist in `result`. If a variable's source data is not among the loaded inputs (e.g. questionnaire or education data), create it as typed NA in a final mutate: MMSETOT = NA_real_ — never invent a derivation for data that is not loaded.
 
@@ -189,7 +192,7 @@ def run(state: SapientState) -> SapientState:
         if dataset in ADAM_INPUTS:
             header = render_header(dataset)
             admiral_template = get_admiral_template(dataset) if dataset in ADMIRAL_TEMPLATE_FILES else "(no reference template available for this dataset)"
-            spec_variables = ", ".join(get_spec_variables(dataset))
+            spec_variables = spec_rules_block(dataset)
             prompt = DERIVATION_PROMPT.format(
                 dataset=dataset,
                 header=header,

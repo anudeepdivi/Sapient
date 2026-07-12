@@ -108,7 +108,9 @@ def render_footer(dataset: str) -> str:
         # type coercion always applies; length/format need spec metadata a generated
         # spec may not carry yet, so they degrade gracefully (closed loop stays runnable).
         f'result <- xportr::xportr_type(result, mc_ds, domain = "{dataset}")\n'
-        f'result <- tryCatch(xportr::xportr_length(result, mc_ds, domain = "{dataset}"), error = function(e) result)\n'
+        # length derives from the data (SAS-ism; R has no fixed char length), so a
+        # generated spec need not author it; format matters only for dates (deterministic).
+        f'result <- tryCatch(xportr::xportr_length(result, mc_ds, domain = "{dataset}", length_source = "data"), error = function(e) result)\n'
         f'result <- tryCatch(xportr::xportr_format(result, mc_ds, domain = "{dataset}"), error = function(e) result)\n'
         "# Export\n"
         f'xportr::xportr_write(result, path = "data/adam/{dataset}.xpt", domain = "{dataset}")'

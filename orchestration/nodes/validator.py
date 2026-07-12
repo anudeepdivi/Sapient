@@ -6,6 +6,7 @@ from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE
 from r_layer.runner import run_all_adam_programs
 from r_layer.validator import validate_metacore
 from r_layer.deterministic_checks import run_gate
+from templates.adam_templates import ADAM_INPUTS
 client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
 
 VALIDATOR_PROMPT = """
@@ -41,6 +42,11 @@ def run(state: SapientState) -> SapientState:
     prev_results = state.get("validation_results") or {}
     prev_regen = set(state.get("needs_regeneration") or [])
     for name, code in all_programs.items():
+        if name in adam_programs and name not in ADAM_INPUTS:
+            validation_results[name] = {"status": "unsupported", "stage": "deterministic_gate",
+                                        "issues": [f"{name} has no input mapping/spec — needs human review, excluded from pass rate"],
+                                        "severity": "warning"}
+            continue
         if name in prev_results and name not in prev_regen:
             validation_results[name] = prev_results[name]
             continue
@@ -76,8 +82,9 @@ def run(state: SapientState) -> SapientState:
 
     # Real pass-rate: R execution + metacore compliance, for ADaM programs that
     # cleared the deterministic gate and the LLM validator.
+    supported_adam = {name: code for name, code in adam_programs.items() if name in ADAM_INPUTS}
     gated_adam = {
-        name: code for name, code in adam_programs.items()
+        name: code for name, code in supported_adam.items()
         if validation_results.get(name, {}).get("status") != "fail"
     }
     r_results = run_all_adam_programs(gated_adam)
@@ -102,7 +109,7 @@ def run(state: SapientState) -> SapientState:
             continue
         real_pass_count += 1
 
-    total_adam = len(adam_programs)
+    total_adam = len(supported_adam)
     real_pass_rate = real_pass_count / total_adam if total_adam else 0.0
     print(f"validator: real pass rate (execution + metacore) = {real_pass_count}/{total_adam} ({real_pass_rate:.0%})")
 

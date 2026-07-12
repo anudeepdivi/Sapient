@@ -102,35 +102,7 @@ Arguments that name a variable or column (new_var, age_var, start_date, end_date
 Derivation functions in the pipe (derive_vars_dt, derive_var_age_years, derive_vars_duration) see ONLY the piped dataset's columns. To bring a date from another loaded input (ex, ds), never call derive_vars_dt on its column — instead convert inside the merge:
   derive_vars_merged(dataset_add = ds, by_vars = exprs(STUDYID, USUBJID), filter_add = DSCAT == "DISPOSITION EVENT", new_vars = exprs(EOSDT = convert_dtc_to_dt(DSSTDTC)))
 
-These admiral functions have DIFFERENT argument shapes. Do not copy one function's arguments onto another:
-
-EXAMPLE 1 — merge shape (derive_vars_merged, derive_var_merged_exist_flag):
-result <- dm |>
-  derive_vars_merged(
-    dataset_add = ex,
-    filter_add = !is.na(EXSTDTC),
-    new_vars = exprs(TRTSDT = convert_dtc_to_dt(EXSTDTC)),
-    order = exprs(EXSTDTC),
-    mode = "first",
-    by_vars = exprs(STUDYID, USUBJID)
-  )
-
-EXAMPLE 2 — single-date-column shape (derive_vars_dt, derive_vars_dtm): dtc takes ONE column symbol, never c(...); the prefix is a string, not a new_vars list:
-result <- result |>
-  derive_vars_dt(
-    new_vars_prefix = "TRTS",
-    dtc = RFSTDTC
-  )
-
-EXAMPLE 3 — named single-variable shape (derive_var_age_years, derive_vars_duration): one input column and one output column, no by_vars/mode:
-result <- result |>
-  derive_var_age_years(
-    age_var = AGE,
-    new_var = AAGE
-  )
-
-REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — copy its pipe operator style EXACTLY, always `|>` never bare `|`; adapt its derivation logic to the STRICT RULES function list above, do not add functions outside that list. If the template uses any other admiral function — e.g. derive_vars_joined, derive_var_duration — replace it with plain dplyr/mutate code or an allowed function; never call it):
-{admiral_template}
+Each function's argument names and shape are fixed by its signature above — read the signature before every call; do not carry one function's arguments onto another. Use the native pipe `|>`, never bare `|`.
 
 TARGET VARIABLES with conformance rules (from the study metacore spec — {dataset} must end up with exactly these columns, no others invented). Format per line: NAME  type  len<=N  fmt:FORMAT  CT:{{allowed|values}}. Obey them:
 - type text = character; type integer/float = numeric (dates are numeric with a DATE format, derived via convert_dtc_to_dt / as.numeric of a date, never left as a "YYYY-MM-DD" string)
@@ -191,12 +163,10 @@ def run(state: SapientState) -> SapientState:
 
         if dataset in ADAM_INPUTS:
             header = render_header(dataset)
-            admiral_template = get_admiral_template(dataset) if dataset in ADMIRAL_TEMPLATE_FILES else "(no reference template available for this dataset)"
             spec_variables = spec_rules_block(dataset)
             prompt = DERIVATION_PROMPT.format(
                 dataset=dataset,
                 header=header,
-                admiral_template=admiral_template,
                 spec_variables=spec_variables,
                 signatures=signatures_block(),
                 input_columns=input_columns_block(dataset),

@@ -15,6 +15,7 @@ ref <- read_xpt(sprintf("data/reference/%s.xpt", dataset))
 keys <- list(ADAE = c("USUBJID", "AESEQ"),
              VS = c("USUBJID", "VSTESTCD", "VISITNUM", "VSTPTNUM"),
              DS = c("USUBJID", "DSDECOD", "DSSTDTC"),
+             EX = c("USUBJID", "EXSTDTC"),
              AE = c("USUBJID", "AETERM", "AESTDTC", "AEENDTC"))
 key <- if (dataset %in% names(keys)) keys[[dataset]] else "USUBJID"
 

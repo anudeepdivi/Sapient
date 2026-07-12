@@ -1,17 +1,19 @@
 import json
 import hashlib
 from openai import OpenAI
+from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
+from knowledge.admiral_functions import signatures_block
 from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
     render_header, render_footer, get_admiral_template
 )
 from specs.metacore_loader import get_spec_variables
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, TEMPERATURE, MAX_TOKENS
+from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
 from knowledge.vector_store import query_ig
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0)
+client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
 ADAM_PROMPT = """
 You are an expert clinical programmer generating R code for ADaM dataset: {dataset}
@@ -21,11 +23,12 @@ STRICT RULES:
   derive_vars_merged(), derive_var_merged_exist_flag(),
   derive_vars_dt(), derive_vars_dtm(),
   derive_var_age_years(), derive_vars_duration(),
-  derive_param_computed(), derive_extreme_records(),derive_vars_extreme_flag(), restrict_derivation(),
-  derive_param_exist()
+  derive_param_computed(), derive_extreme_records(), derive_var_extreme_flag(), restrict_derivation(),
+  derive_param_exist_flag()
 - Load spec via: metacore <- metacore::load_metacore("specs/metacore_spec.rds")
 - Export via: xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt", domain = "{dataset}")
 - NO hardcoded values anywhere — all values from metacore or SDTM input
+- NEVER write a treatment arm name as a string literal (no "PLACEBO", no dose-group names in quotes); treatment variables must come from the ARM/ACTARM columns of dm or from ADSL
 - NO placeholder comments — generate real derivation code
 - For non-standard domains, derive population flag by merging ADSL and using SAFFL, FASFL, or PPROTFL as appropriate per the LoT entry population field
 - Output must contain only ASCII characters. No unicode, no non-English characters anywhere in the code.
@@ -77,14 +80,20 @@ STRICT RULES:
   derive_vars_merged(), derive_var_merged_exist_flag(),
   derive_vars_dt(), derive_vars_dtm(),
   derive_var_age_years(), derive_vars_duration(),
-  derive_param_computed(), derive_extreme_records(),derive_vars_extreme_flag(), restrict_derivation(),
-  derive_param_exist()
+  derive_param_computed(), derive_extreme_records(), derive_var_extreme_flag(), restrict_derivation(),
+  derive_param_exist_flag()
 - Assign your final derived data frame to a variable named exactly `result` — nothing else reads or exports it
 - NO hardcoded values anywhere — all values from metacore or SDTM input
+- NEVER write a treatment arm name as a string literal (no "PLACEBO", no dose-group names in quotes); treatment variables must come from the ARM/ACTARM columns of dm or from ADSL
 - NO placeholder comments — generate real derivation code
+- derive_vars_dt(new_vars_prefix = "X") creates the variable XDT itself (e.g. prefix "TRTE" creates TRTEDT). NEVER rename, reassign, or mutate a date variable after derive_vars_dt — use the created XDT name directly, and never reference any date variable you did not create this way or that is not in the input data.
 - Output must contain only ASCII characters. No unicode, no non-English characters anywhere in the code.
 - For non-standard domains, derive population flag by merging ADSL and using SAFFL, FASFL, or PPROTFL as appropriate per the LoT entry population field
 - ONLY derive ADSL's own population flags (SAFFL, FASFL, PPROTFL) when {dataset} IS ADSL, directly from the loaded SDTM inputs (e.g. treatment start date present) — never read them as separate input files, they are variables, not datasets.
+
+EXACT SIGNATURES of the allowed functions — use only these argument names, never invent arguments:
+{signatures}
+Arguments that name a variable or column (new_var, age_var, start_date, end_date, dtc) take a BARE SYMBOL — never a quoted string: new_var = TRTDURD, not new_var = "TRTDURD".
 
 These admiral functions have DIFFERENT argument shapes. Do not copy one function's arguments onto another:
 
@@ -113,7 +122,7 @@ result <- result |>
     new_var = AAGE
   )
 
-REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — copy its pipe operator style EXACTLY, always `|>` never bare `|`; adapt its derivation logic to the STRICT RULES function list above, do not add functions outside that list):
+REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — copy its pipe operator style EXACTLY, always `|>` never bare `|`; adapt its derivation logic to the STRICT RULES function list above, do not add functions outside that list. If the template uses any other admiral function — e.g. derive_vars_joined, derive_vars_dy, derive_vars_dtm_to_dt, derive_var_trtemfl, derive_var_duration — replace it with plain dplyr/mutate code or an allowed function; never call it):
 {admiral_template}
 
 TARGET VARIABLES (from the study metacore spec — {dataset} must end up with these columns, no others invented):
@@ -126,13 +135,30 @@ ADAMIG CONTEXT: {ig_context}
 Return ONLY the R derivation code (the pipe chain assigning to `result`). No library() calls, no read_xpt() calls, no spec loading, no explanation, no markdown fences.
 """
 
+def failure_feedback(state: SapientState, name: str) -> str:
+    entry = (state.get("validation_results") or {}).get(name, {})
+    issues = [str(i) for i in entry.get("issues", [])]
+    execution = entry.get("execution", {})
+    if execution and not execution.get("success"):
+        issues.append(execution.get("error", ""))
+    metacore = entry.get("metacore", {})
+    if metacore and not metacore.get("success"):
+        issues.append(metacore.get("error", ""))
+    if not issues:
+        return ""
+    return "\n\nYOUR PREVIOUS ATTEMPT FAILED THESE CHECKS — fix every one of them:\n- " + "\n- ".join(i for i in issues if i)
+
+
 def run(state: SapientState) -> SapientState:
     print(f"adam_generator: starting")
-    adam_programs = {}
+    adam_programs = dict(state.get("adam_programs") or {})
     datasets = set()
     for entry in state["lot_entries"]:
         for ds in entry.get("data_source", []):
             datasets.add(ds)
+    regen = set(state.get("needs_regeneration") or [])
+    if adam_programs and regen:
+        datasets = datasets & regen
     print(f"adam_generator: datasets to generate: {datasets}")
     for dataset in datasets:
         print(f"adam_generator: generating {dataset}")
@@ -149,6 +175,7 @@ def run(state: SapientState) -> SapientState:
                 header=header,
                 admiral_template=admiral_template,
                 spec_variables=spec_variables,
+                signatures=signatures_block(),
                 lot_entry=json.dumps(relevant_entries[0], indent=2),
                 ig_context=ig_text
             )
@@ -160,12 +187,13 @@ def run(state: SapientState) -> SapientState:
                 ig_context=ig_text
             )
 
+        prompt += failure_feedback(state, dataset)
         cache_key = hashlib.sha256(prompt.encode()).hexdigest()
         cached = get_cached(cache_key)
         if cached:
             body = cached
         else:
-            response = client.chat.completions.create(
+            response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
                 model=CODEGEN_MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=TEMPERATURE,

@@ -1,7 +1,10 @@
 import fitz
 import json
+import hashlib
+from cache.prompt_cache import get_cached, set_cached
 from openai import OpenAI
 from chromadb import PersistentClient
+from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS, CHROMA_DIR, COLLECTION_NAME
 from config import HF_TOKEN
@@ -61,13 +64,19 @@ Return as valid JSON only. No explanation.
 SAP TEXT:
 {combined}
 """
-    response = client.chat.completions.create(
-        model=REASONING_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS
-    )
-    text = response.choices[0].message.content.strip().replace("```json", "").replace("```", "")
+    cache_key = hashlib.sha256(prompt.encode()).hexdigest()
+    content = get_cached(cache_key)
+    if content is None:
+        response = create_with_retry(client,
+            model=REASONING_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS
+        )
+        content = response.choices[0].message.content
+        if content:
+            set_cached(cache_key, content)
+    text = content.strip().replace("```json", "").replace("```", "")
     try:
         return json.loads(text)
     except json.JSONDecodeError:

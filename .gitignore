@@ -37,3 +37,5 @@ small_program.py
 # Internal docs (not for repo)
 CLAUDE.md
 project_context.md
+# Raw NCI-EVS CT downloads (large; rebuild via knowledge/ct/build_ct.py)
+knowledge/ct/*_Terminology.txt

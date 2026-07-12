@@ -1,0 +1,219 @@
+[
+ {
+  "variable": "STUDYID",
+  "label": "Study Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.STUDYID"
+ },
+ {
+  "variable": "USUBJID",
+  "label": "Unique Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.USUBJID"
+ },
+ {
+  "variable": "SUBJID",
+  "label": "Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SUBJID"
+ },
+ {
+  "variable": "SITEID",
+  "label": "Site Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SITEID"
+ },
+ {
+  "variable": "TRTP",
+  "label": "Treatment Group",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ARMCD"
+ },
+ {
+  "variable": "TRTPN",
+  "label": "Treatment Group Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.ARMNRS"
+ },
+ {
+  "variable": "TRTA",
+  "label": "Actual Treatment",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ACTARMCD"
+ },
+ {
+  "variable": "TRTAN",
+  "label": "Actual Treatment Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.ACTARMUD"
+ },
+ {
+  "variable": "TRTSDT",
+  "label": "Treatment Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM.RFXSTDTC"
+ },
+ {
+  "variable": "TRTEDT",
+  "label": "Treatment End Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM.RFXENDTC"
+ },
+ {
+  "variable": "AGE",
+  "label": "Age",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.AGE"
+ },
+ {
+  "variable": "AGEGR1",
+  "label": "Age Group 1",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.AGEU"
+ },
+ {
+  "variable": "AGEGR1N",
+  "label": "Age Group 1 Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.AGE"
+ },
+ {
+  "variable": "SEX",
+  "label": "Sex",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SEX"
+ },
+ {
+  "variable": "RACE",
+  "label": "Race",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.RACE"
+ },
+ {
+  "variable": "RACEN",
+  "label": "Race Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.RACE"
+ },
+ {
+  "variable": "ETHNIC",
+  "label": "Ethnic Origin",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ETHNIC"
+ },
+ {
+  "variable": "SAFFL",
+  "label": "Safety Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "ITTFL",
+  "label": "Intent-to-Treat Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "EFFFL",
+  "label": "Efficacy Analysis Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "PARAMCD",
+  "label": "Parameter Code",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "TTE"
+ },
+ {
+  "variable": "PARAM",
+  "label": "Parameter",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Time-to-Event"
+ },
+ {
+  "variable": "PARAMN",
+  "label": "Parameter Number",
+  "type": "integer",
+  "origin": "assigned",
+  "derivation": "1"
+ },
+ {
+  "variable": "AVAL",
+  "label": "Analytic Value",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "ADT - STARTDT"
+ },
+ {
+  "variable": "STARTDT",
+  "label": "Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM.RFXSTDTC"
+ },
+ {
+  "variable": "ADT",
+  "label": "Analysis Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "AE.AESTDTC"
+ },
+ {
+  "variable": "CNSR",
+  "label": "Censoring Indicator",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Y if AE.AESDTH = Y, else N"
+ },
+ {
+  "variable": "EVNTDESC",
+  "label": "Event Description",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AETERM"
+ },
+ {
+  "variable": "SRCDOM",
+  "label": "Source Domain",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "AE"
+ },
+ {
+  "variable": "SRCVAR",
+  "label": "Source Variable",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "AESTDTC"
+ },
+ {
+  "variable": "SRCSEQ",
+  "label": "Source Sequence Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "AE.AESEQ"
+ }
+]

@@ -1,261 +1,345 @@
 [
  {
   "variable": "STUDYID",
-  "label": "Study Unique Identifier",
+  "label": "Study Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--STUDYID"
- },
- {
-  "variable": "DOMAIN",
-  "label": "Domain Ab",
-  "type": "text",
-  "origin": "assigned",
-  "derivation": "'ADAE'"
+  "derivation": "AE.STUDYID"
  },
  {
   "variable": "USUBJID",
-  "label": "Unique Subject Subject Identifier",
+  "label": "Unique Subject Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--USUBJID"
+  "derivation": "AE.USUBJID"
+ },
+ {
+  "variable": "SUBJID",
+  "label": "Subject Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SUBJID"
+ },
+ {
+  "variable": "SITEID",
+  "label": "Site Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SITEID"
+ },
+ {
+  "variable": "TRTP",
+  "label": "Treatment Group",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ARMCD"
+ },
+ {
+  "variable": "TRTPN",
+  "label": "Treatment Group Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.ARMNRS"
+ },
+ {
+  "variable": "TRTA",
+  "label": "Actual Treatment",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ACTARMCD"
+ },
+ {
+  "variable": "TRTAN",
+  "label": "Actual Treatment Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.ACTARMUD"
+ },
+ {
+  "variable": "TRTSDT",
+  "label": "Treatment Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "EX.EXSTDTC"
+ },
+ {
+  "variable": "TRTEDT",
+  "label": "Treatment End Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "EX.EXENDTC"
+ },
+ {
+  "variable": "AGE",
+  "label": "Age",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.AGE"
+ },
+ {
+  "variable": "AGEGR1",
+  "label": "Age Group 1",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Derived from DM.AGE"
+ },
+ {
+  "variable": "AGEGR1N",
+  "label": "Age Group 1 Number",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Derived from DM.AGE"
+ },
+ {
+  "variable": "SEX",
+  "label": "Sex",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.SEX"
+ },
+ {
+  "variable": "RACE",
+  "label": "Race",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.RACE"
+ },
+ {
+  "variable": "RACEN",
+  "label": "Race Number",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.RACEN"
+ },
+ {
+  "variable": "ETHNIC",
+  "label": "Ethnic Origin",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DM.ETHNIC"
+ },
+ {
+  "variable": "SAFFL",
+  "label": "Safety Analysis Set Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "ITTFL",
+  "label": "Intent-to-Treat Analysis Set Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "N"
+ },
+ {
+  "variable": "EFFFL",
+  "label": "Efficacy Analysis Set Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "N"
+ },
+ {
+  "variable": "ASTDT",
+  "label": "Analysis Start Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM.RFSTDTC"
+ },
+ {
+  "variable": "ASTDTF",
+  "label": "Analysis Start Date Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "ASTDY",
+  "label": "Analysis Start Day",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.RFDY"
+ },
+ {
+  "variable": "AENDT",
+  "label": "Analysis End Date",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "DM.RFENDTC"
+ },
+ {
+  "variable": "AENDY",
+  "label": "Analysis End Day",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "DM.RFENDY"
+ },
+ {
+  "variable": "ADURN",
+  "label": "Analysis Duration",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "AENDY - ASTDY"
+ },
+ {
+  "variable": "ADURU",
+  "label": "Analysis Duration Unit",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "DAY"
  },
  {
   "variable": "AESEQ",
   "label": "Adverse Event Sequence Number",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "AE--AESEQ"
+  "derivation": "AE.AESEQ"
+ },
+ {
+  "variable": "TRTEMFL",
+  "label": "Treatment Emergent Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Y if AE.AESTDTC >= EX.EXSTDTC, else N"
+ },
+ {
+  "variable": "AOCCFL",
+  "label": "Adverse Event Occurrence Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "AOCCPFL",
+  "label": "Adverse Event Occurrence Primary Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "Y"
+ },
+ {
+  "variable": "AOCCSFL",
+  "label": "Adverse Event Occurrence Secondary Flag",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "N"
  },
  {
   "variable": "AETERM",
   "label": "Adverse Event Term",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AETERM"
+  "derivation": "AE.AETERM"
  },
  {
   "variable": "AEDECOD",
-  "label": "Adverse Event Decoded Term",
+  "label": "Adverse Event Dictionary Code",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AEDECOD"
+  "derivation": "AE.AEDECOD"
  },
  {
-  "variable": "AEHLT",
-  "label": "Adverse Event High Level Term",
+  "variable": "AEPTCD",
+  "label": "Adverse Event Preferred Term Code",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AEHLT"
- },
- {
-  "variable": "AEHLGT",
-  "label": "Adverse Event High Level Term",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE--AEHLGT"
+  "derivation": "AE.AEPTCD"
  },
  {
   "variable": "AEBODSYS",
   "label": "Adverse Event Body System",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AEBODSYS"
+  "derivation": "AE.AEBODSYS"
+ },
+ {
+  "variable": "AEBDSYCD",
+  "label": "Adverse Event Body System Code",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AEBDSYCD"
  },
  {
   "variable": "AESOC",
-  "label": "Adverse Event System Class",
+  "label": "Adverse Event System Organ Class",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AESOC"
+  "derivation": "AE.AESOC"
+ },
+ {
+  "variable": "AESOCCD",
+  "label": "Adverse Event System Organ Class Code",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESOCCD"
  },
  {
   "variable": "AESEV",
   "label": "Adverse Event Severity",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AESEV"
+  "derivation": "AE.AESEV"
  },
  {
   "variable": "AESER",
-  "label": "Serious Adverse Event Serious",
+  "label": "Adverse Event Seriousness",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AESER"
- },
- {
-  "variable": "AEACN",
-  "label": "Adverse Event Action Taken",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE--AEACN"
+  "derivation": "AE.AESER"
  },
  {
   "variable": "AEREL",
-  "label": "Adverse Event Relationship",
+  "label": "Adverse Event Relationship to Study Drug",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AEREL"
+  "derivation": "AE.AEREL"
  },
  {
   "variable": "AEOUT",
   "label": "Adverse Event Outcome",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE--AEOUT"
+  "derivation": "AE.AEOUT"
  },
  {
-  "variable": "AESDISAB",
-  "label": "Adverse Event Disability",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE--AESDISAB"
- },
- {
-  "variable": "AESDTH",
-  "label": "Adverse Event Death",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE--AESDTH"
- },
- {
-  "variable": "AEDTC",
-  "label": "Adverse Event Start Date",
+  "variable": "AESTDTC",
+  "label": "Adverse Event Start Date/Time",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "AE--AESTTC"
+  "derivation": "AE.AESTDTC"
+ },
+ {
+  "variable": "AEENDTC",
+  "label": "Adverse Event End Date/Time",
+  "type": "date",
+  "origin": "predecessor",
+  "derivation": "AE.AEENDTC"
  },
  {
   "variable": "AESTDY",
   "label": "Adverse Event Start Day",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "AE--AESTDY"
- },
- {
-  "variable": "AEENDTC",
-  "label": "Adverse Event End Date",
-  "type": "date",
-  "origin": "predecessor",
-  "derivation": "AE--AEENDTC"
+  "derivation": "AE.AESTDY"
  },
  {
   "variable": "AEENDY",
   "label": "Adverse Event End Day",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "AE--AEENDY"
+  "derivation": "AE.AEENDY"
  },
  {
-  "variable": "SAFFL",
-  "label": "Safety Analysis Set Flag",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "ADSL--SAFFL"
- },
- {
-  "variable": "ITTFL",
-  "label": "Intent to Treat Population Flag",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "ADSL--ITTFL"
- },
- {
-  "variable": "TRT01P",
-  "label": "Treatment Group 0 Actual",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "ADSL--TRT01P"
- },
- {
-  "variable": "TRT01PN",
-  "label": "Treatment Group 0 Actual Numeric",
+  "variable": "AEDUR",
+  "label": "Adverse Event Duration",
   "type": "integer",
-  "origin": "predecessor",
-  "derivation": "ADSL--TRT01PN"
- },
- {
-  "variable": "TRT",
-  "label": "Actual Arm",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "ADSL--TRT"
- },
- {
-  "variable": "TRTNN",
-  "label": "Actual Arm Numeric",
-  "type": "integer",
-  "origin": "predecessor",
-  "derivation": "ADSL--TRTNN"
- },
- {
-  "variable": "TRTEMFL",
-  "label": "Treatment-Emergent Flag",
-  "type": "text",
   "origin": "derived",
-  "derivation": "If AESTDY >= DM--RFXSTDY then 'Y' else 'N'"
+  "derivation": "AEENDY - AESTDY"
  },
  {
-  "variable": "TRTSDTTC",
-  "label": "Treatment Start Date",
-  "type": "date",
-  "origin": "predecessor",
-  "derivation": "ADSL--RFXSTDTC"
- },
- {
-  "variable": "TRENDTC",
-  "label": "Treatment End Date",
-  "type": "date",
-  "origin": "predecessor",
-  "derivation": "ADSL--RFENDTC"
- },
- {
-  "variable": "TRTDUR",
-  "label": "Treatment Duration in Days",
-  "type": "float",
-  "origin": "derived",
-  "derivation": "ADSL--RFENDY - ADSL--RFSTDY"
- },
- {
-  "variable": "AVISDT",
-  "label": "First Visit Date",
-  "type": "date",
-  "origin": "predecessor",
-  "derivation": "Minimum(DS--DSTDTC) grouped by USUBJID"
- },
- {
-  "variable": "AGEGR1",
-  "label": "Age Group 1",
+  "variable": "AEDURU",
+  "label": "Adverse Event Duration Unit",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "ADSL--AGEGR1"
- },
- {
-  "variable": "AGEGR1N",
-  "label": "Age Group 1 Numeric",
-  "type": "integer",
-  "origin": "predecessor",
-  "derivation": "ADSL--AGEGR1N"
- },
- {
-  "variable": "RAC",
-  "label": "Race",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "ADSL--RACE"
- },
- {
-  "variable": "RACEN",
-  "label": "Race Numeric",
-  "type": "integer",
-  "origin": "predecessor",
-  "derivation": "ADSL--RACEN"
- },
- {
-  "variable": "SITEID",
-  "label": "Site ID",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "DM--SITEID"
+  "origin": "assigned",
+  "derivation": "DAY"
  }
 ]

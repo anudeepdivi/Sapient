@@ -21,9 +21,11 @@ SOURCES = {
 }
 
 # Codelists (by CDISC submission value) used by the ADaM datasets we generate.
+# Analysis-level codelists that map cleanly to ADaM variables. (RACEC/ETHNICC in the
+# current release are the granular "as collected" verbatim lists — hundreds of values,
+# not analysis CT — so they are intentionally excluded.)
 WANTED = {
-    "RACE", "SEX", "ETHNIC", "NCOMPLT", "NY", "AGEU", "DTYPE", "PARAMCD",
-    "ADAGE1GR", "TASYSGR", "ANRIND", "BASETYPE", "COUNTRY",
+    "SEX", "NCOMPLT", "NY", "AGEU", "DTYPE", "ND",
 }
 
 

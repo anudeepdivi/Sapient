@@ -24,7 +24,7 @@ xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt")
 # Only datasets listed here get the deterministic header/footer treatment;
 # any other dataset falls back to the full LLM-authored ADAM_SKELETON.
 ADAM_INPUTS = {
-    "ADSL": [("dm", "data/sdtm/DM.xpt"), ("ex", "data/sdtm/EX.xpt")],
+    "ADSL": [("dm", "data/sdtm/DM.xpt"), ("ex", "data/sdtm/EX.xpt"), ("ds", "data/sdtm/DS.xpt")],
     "ADAE": [("sdtm", "data/sdtm/AE.xpt"), ("adsl", "data/adam/ADSL.xpt")],
 }
 

@@ -17,6 +17,8 @@ sys.path.insert(0, str(BASE_DIR))
 from openai import OpenAI
 from orchestration.llm_retry import create_with_retry
 from cache.prompt_cache import get_cached, set_cached
+from knowledge.adam_registry import classify
+from knowledge.adamig_standard import standard_block
 from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
@@ -32,10 +34,12 @@ Return a JSON array only, one object per variable, fields exactly:
 - origin: "predecessor" | "derived" | "assigned"
 - derivation: string (source SDTM column for predecessor, otherwise a one-line derivation rule)
 
+This dataset is ADaM class {adam_class}.
+{standard_variables}
+
 Rules:
-- Only variables justified by the LoT entries below or required by ADaMIG core for {dataset}
-- Be COMPLETE: include every standard ADaMIG variable group for {dataset} — identifiers, treatment variables with their numeric companions (e.g. TRT01P/TRT01PN), all timing/date variables (treatment start/end, reference end, first visit), treatment duration, every population flag, demographic grouping variables with numeric companions (e.g. AGEGR1/AGEGR1N, RACEN), baseline value variables, and site grouping
-- Variable names must be exact, complete ADaMIG names — never truncate (SAFFL not SAFF, ITTFL not ITF)
+- START from the standard ADaMIG variables above: include every one the study data supports, with exact complete names (SAFFL not SAFF, ITTFL not ITF).
+- THEN add study-specific variables justified by the LoT entries (custom parameters, subgroup flags, questionnaire totals) — these are the part not covered by the standard.
 - predecessor origins must reference only the SDTM columns listed below
 - No markdown, no explanation.
 
@@ -58,7 +62,10 @@ def sdtm_columns() -> str:
 def propose(dataset: str) -> Path:
     lot = json.loads((BASE_DIR / "data/lot_entries.json").read_text())
     relevant = [e for e in lot if dataset in e.get("data_source", [])]
+    adam_class = classify(dataset) or "UNKNOWN"
     prompt = SPEC_PROMPT.format(dataset=dataset,
+                                adam_class=adam_class,
+                                standard_variables=standard_block(adam_class),
                                 lot_entries=json.dumps(relevant, indent=1),
                                 sdtm_columns=sdtm_columns())
     cache_key = hashlib.sha256(prompt.encode()).hexdigest()

@@ -94,6 +94,11 @@ QUOTED_SYMBOL_ARG_PATTERN = re.compile(
 )
 
 
+def strip_markdown_fences(code: str) -> str:
+    code = re.sub(r'```+[ \t]*[A-Za-z]*[ \t]*\n?', '', code)
+    return re.sub(r'^[ \t]*[rR][ \t]*\n', '', code.lstrip("\n"))
+
+
 def fix_quoted_symbol_args(code: str) -> str:
     return re.sub(
         r'\b(new_var|new_var_unit|age_var|start_date|end_date|dtc)\s*=\s*["\']([A-Za-z][A-Za-z0-9_.]*)["\']',

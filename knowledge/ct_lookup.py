@@ -23,8 +23,7 @@ VARIABLE_CODELIST = {
     "DTYPE": "DTYPE",
     "DCDECOD": "NCOMPLT",
     "DCSREAS": "NCOMPLT",
-    # EOSSTT (COMPLETED/DISCONTINUED/ONGOING) uses the subject-status codelist,
-    # not NCOMPLT; that codelist isn't loaded, so it's left unchecked rather than mis-mapped.
+    "EOSSTT": "SBJTSTAT", "EOTSTT": "SBJTSTAT",
     "SAFFL": "NY", "ITTFL": "NY", "EFFFL": "NY", "COMPLFL": "NY",
     "DISCONFL": "NY", "DTHFL": "NY", "TRTEMFL": "NY", "ABLFL": "NY",
     "AOCCFL": "NY", "AOCCPFL": "NY", "AOCCSFL": "NY",

@@ -116,5 +116,13 @@
    "WOCF",
    "WOV"
   ]
+ },
+ "SBJTSTAT": {
+  "name": "Subject Trial Status",
+  "values": [
+   "COMPLETED",
+   "DISCONTINUED",
+   "ONGOING"
+  ]
  }
 }

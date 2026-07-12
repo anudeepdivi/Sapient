@@ -137,6 +137,16 @@
   "WITHDRAWAL OF ASSENT",
   "WITHDRAWAL OF CONSENT"
  ],
+ "EOSSTT": [
+  "COMPLETED",
+  "DISCONTINUED",
+  "ONGOING"
+ ],
+ "EOTSTT": [
+  "COMPLETED",
+  "DISCONTINUED",
+  "ONGOING"
+ ],
  "SAFFL": [
   "N",
   "NA",

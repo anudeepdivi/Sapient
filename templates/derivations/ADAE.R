@@ -14,7 +14,7 @@ result <- sdtm |>
     ASTDY = as.numeric(ASTDT - TRTSDT) + if_else(ASTDT >= TRTSDT, 1, 0),
     AENDY = as.numeric(AENDT - TRTSDT) + if_else(AENDT >= TRTSDT, 1, 0),
     ADURN = as.numeric(AENDT - ASTDT) + 1,
-    ADURU = "D",
+    ADURU = if_else(!is.na(ADURN), "days", NA_character_),
     AESEV = AESEV,
     TRTEMFL = if_else(!is.na(ASTDT) & !is.na(TRTSDT) & ASTDT >= TRTSDT, "Y", ""),
     AESER = coalesce(na_if(AESER, ""), "N"),

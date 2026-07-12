@@ -17,6 +17,7 @@ ALLOWED_DERIVE_FUNCTIONS = {
     "derive_param_computed", "derive_extreme_records",
     "derive_var_extreme_flag", "restrict_derivation",
     "derive_param_exist_flag",
+    "derive_vars_dtm_to_dt", "derive_vars_dy", "derive_var_trtemfl",
 }
 
 _installed_packages_cache = None

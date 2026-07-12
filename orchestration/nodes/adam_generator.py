@@ -26,7 +26,7 @@ STRICT RULES:
   derive_vars_dt(), derive_vars_dtm(),
   derive_var_age_years(), derive_vars_duration(),
   derive_param_computed(), derive_extreme_records(), derive_var_extreme_flag(), restrict_derivation(),
-  derive_param_exist_flag()
+  derive_param_exist_flag(), derive_vars_dtm_to_dt(), derive_vars_dy(), derive_var_trtemfl()
 - Load spec via: metacore <- metacore::load_metacore("specs/metacore_spec.rds")
 - Export via: xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt", domain = "{dataset}")
 - NO hardcoded values anywhere — all values from metacore or SDTM input
@@ -86,7 +86,7 @@ STRICT RULES:
   derive_vars_dt(), derive_vars_dtm(),
   derive_var_age_years(), derive_vars_duration(),
   derive_param_computed(), derive_extreme_records(), derive_var_extreme_flag(), restrict_derivation(),
-  derive_param_exist_flag()
+  derive_param_exist_flag(), derive_vars_dtm_to_dt(), derive_vars_dy(), derive_var_trtemfl()
 - Assign your final derived data frame to a variable named exactly `result` — nothing else reads or exports it
 - NO hardcoded values anywhere — all values from metacore or SDTM input
 - NEVER write a treatment arm name as a string literal (no "PLACEBO", no dose-group names in quotes); treatment variables must come from the ARM/ACTARM columns of dm or from ADSL
@@ -129,7 +129,7 @@ result <- result |>
     new_var = AAGE
   )
 
-REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — copy its pipe operator style EXACTLY, always `|>` never bare `|`; adapt its derivation logic to the STRICT RULES function list above, do not add functions outside that list. If the template uses any other admiral function — e.g. derive_vars_joined, derive_vars_dy, derive_vars_dtm_to_dt, derive_var_trtemfl, derive_var_duration — replace it with plain dplyr/mutate code or an allowed function; never call it):
+REFERENCE ADMIRAL TEMPLATE for {dataset} (official admiral package template — copy its pipe operator style EXACTLY, always `|>` never bare `|`; adapt its derivation logic to the STRICT RULES function list above, do not add functions outside that list. If the template uses any other admiral function — e.g. derive_vars_joined, derive_var_duration — replace it with plain dplyr/mutate code or an allowed function; never call it):
 {admiral_template}
 
 TARGET VARIABLES (from the study metacore spec — {dataset} must end up with these columns, no others invented):

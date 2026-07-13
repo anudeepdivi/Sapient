@@ -152,7 +152,7 @@ The generation pipeline runs end-to-end, with a deterministic validation gate, r
 
 The loop is closed: a generated specification can drive the full grounding, validation, and conformance path (selected with an environment variable), with controlled terminology enforced from the public NCI-EVS CT regardless of what the generated specification carries.
 
-The SDTM layer runs raw → SDTM across all five available raw domains at 98–100% value-match, and generated ADaM datasets value-match their references at 94–98%.
+The SDTM layer runs raw → SDTM across all five available raw domains at 98–100% value-match, and generated ADaM datasets value-match their references at 94–98%. The full chain also closes end-to-end: an environment switch points ADaM generation at the *generated* SDTM instead of the reference export, and the chain-built ADSL is identical to the reference-fed build (94.4%) while ADAE holds 97.2% when records are keyed by event identity (its sequence numbers are assigned in a different order than the reference — an alignment artifact, not a value error).
 
 Near-term work, in order:
 

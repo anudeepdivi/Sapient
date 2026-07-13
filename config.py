@@ -10,6 +10,10 @@ BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 SDTM_DIR = DATA_DIR / "sdtm"
+# SDTM source for ADaM generation (relative path embedded in generated R programs).
+# Default: pharmaversesdtm export. Set SAPIENT_SDTM_DIR=data/sdtm_generated to run
+# the full raw->SDTM->ADaM chain on our own generated SDTM (build_sdtm_chain.R).
+SDTM_SOURCE = os.getenv("SAPIENT_SDTM_DIR", "data/sdtm")
 ADAM_DIR = DATA_DIR / "adam"
 SAP_DIR = DATA_DIR / "sap"
 REFERENCE_DIR = DATA_DIR / "reference"

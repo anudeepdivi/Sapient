@@ -1,5 +1,5 @@
 import time
-from openai import RateLimitError, APITimeoutError, APIConnectionError
+from openai import RateLimitError, APITimeoutError, APIConnectionError, InternalServerError, BadRequestError
 
 
 def create_with_retry(client, retries=5, base_delay=30, fallback_model=None, **kwargs):
@@ -13,7 +13,13 @@ def create_with_retry(client, retries=5, base_delay=30, fallback_model=None, **k
                     return create_with_retry(client, retries=retries, base_delay=base_delay,
                                              **{**kwargs, "model": fallback_model})
                 raise
-        except RateLimitError:
+        except (RateLimitError, InternalServerError):
             if attempt == retries - 1:
+                raise
+            time.sleep(base_delay * (2 ** attempt))
+        except BadRequestError as e:
+            # NVIDIA marks a down endpoint "DEGRADED function cannot be invoked" (400);
+            # transient endpoint state, not a bad request — retry like a 5xx
+            if "DEGRADED" not in str(e) or attempt == retries - 1:
                 raise
             time.sleep(base_delay * (2 ** attempt))

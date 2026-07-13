@@ -156,8 +156,13 @@ The SDTM layer runs raw → SDTM across all five available raw domains at 98–1
 
 Near-term work, in order:
 
+<<<<<<< HEAD
 - Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding (for both the ADaM and SDTM layers - the function-signature grounding for both is already in place).
 - **TLF generation** grounded on real `tern`/`rtables` signatures - the earlier free-form prompt produced programs that hallucinated a nonexistent table API (0/29 executed), the clearest demonstration yet of the controlled-vocabulary principle.
+=======
+- Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding (for both the ADaM and SDTM layers — the function-signature grounding for both is already in place).
+- **TLF generation** — grounding on real `tern`/`rtables` signatures eliminated the hallucinated-API failure class entirely (the earlier free-form prompt invented a nonexistent table DSL; 0/29 executed). Generated programs now call the real API, and an availability gate skips tables whose source datasets aren't built yet. The residual failure class is argument-level misuse (wrong argument types, arguments from one function passed to another) — the next constraint layer to close, evidence that controlled vocabularies work one layer at a time.
+>>>>>>> ba01129 (retry NVIDIA 500s and DEGRADED-400 in llm_retry; TLF failure class moved from fake DSL to real-API arg misuse (0/9 exec, 14/26 gated))
 - Score derivation and type correctness, not only variable presence; extend LoT recall.
 
 Deferred by design: a Neo4j knowledge graph (package signature extraction covers the package-swap use case more cheaply), FastAPI / MCP exposure, and CRF-annotation-to-SDTM mapping.

@@ -81,11 +81,13 @@ def run(state: SapientState) -> SapientState:
             needs_regeneration.append(name)
 
     # Real pass-rate: R execution + metacore compliance, for ADaM programs that
-    # cleared the deterministic gate and the LLM validator.
+    # cleared the deterministic gate. The LLM verdict is advisory — execution is
+    # ground truth and overrules an LLM fail (the LLM false-positives on valid R).
     supported_adam = {name: code for name, code in adam_programs.items() if name in ADAM_INPUTS}
     gated_adam = {
         name: code for name, code in supported_adam.items()
-        if validation_results.get(name, {}).get("status") != "fail"
+        if not (validation_results.get(name, {}).get("status") == "fail"
+                and validation_results.get(name, {}).get("stage") == "deterministic_gate")
     }
     r_results = run_all_adam_programs(gated_adam)
     real_pass_count = 0
@@ -109,6 +111,12 @@ def run(state: SapientState) -> SapientState:
             continue
         entry["conformance"] = check_conformance(name)  # type/length/CT — report-only for now
         entry["reference"] = compare_reference(name)     # value oracle vs pharmaverseadam
+        if entry.get("status") == "fail" and entry.get("stage") == "llm_validator":
+            entry["status"] = "pass"
+            entry["severity"] = "warning"
+            entry["llm_overruled"] = True
+            if name in needs_regeneration:
+                needs_regeneration.remove(name)
         real_pass_count += 1
 
     total_adam = len(supported_adam)

@@ -22,6 +22,14 @@ code_values <- function(code_id) {
   head(codes$code, 40)
 }
 
+dv <- m$derivations
+deriv_text <- function(v) {
+  did <- val$derivation_id[match(v, val$variable)]
+  if (is.na(did)) return(NULL)
+  txt <- dv$derivation[match(did, dv$derivation_id)]
+  if (is.na(txt)) NULL else txt
+}
+
 rules <- lapply(seq_len(nrow(vs)), function(i) {
   v <- vs$variable[i]
   code_id <- val$code_id[match(v, val$variable)]
@@ -30,7 +38,9 @@ rules <- lapply(seq_len(nrow(vs)), function(i) {
     type = vs$type[i],
     length = if (is.na(vs$length[i])) NULL else vs$length[i],
     format = if (is.na(vs$format[i])) NULL else vs$format[i],
-    ct = code_values(code_id)
+    ct = code_values(code_id),
+    origin = {o <- val$origin[match(v, val$variable)]; if (is.na(o)) NULL else o},
+    derivation = deriv_text(v)
   )
 })
 cat(toJSON(rules, auto_unbox = TRUE, na = "null"))

@@ -27,10 +27,9 @@ from templates.adam_templates import ADAM_INPUTS, input_columns_block, render_fo
 
 client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
-# Class-keyed structural spine: population + spec-driven CT helper. Not dataset
-# logic — the same 3 lines serve every dataset of the class.
-SPINES = {
-    "ADSL": '''ct_map <- function(dataset, variable) {
+# Spec-driven CT helper — decode->code map from the study spec codelists. Generic
+# across datasets; prepended to every spine via spine().
+CT_MAP = '''ct_map <- function(dataset, variable) {
   md <- suppressWarnings(metacore::select_dataset(mc, dataset))
   cid <- md$value_spec$code_id[match(variable, md$value_spec$variable)]
   rows <- which(!is.na(cid) & md$codelist$code_id == cid)
@@ -38,18 +37,45 @@ SPINES = {
   codes <- md$codelist$codes[[rows[1]]]
   if (is.null(codes) || !"code" %in% names(codes)) return(setNames(numeric(0), character(0)))
   setNames(suppressWarnings(as.numeric(codes$code)), codes$decode)
+}'''
+
+# Class-keyed structural spine (population/base + parent merge). Not dataset logic —
+# the same few lines serve every dataset of the class.
+SPINES = {
+    "ADSL": '''result <- dm |>
+  filter(ACTARMCD != "SCRNFAIL", ARMCD != "SCRNFAIL", !grepl("SCREEN", toupper(ARM)))''',
+    "ADAE": '''adsl_vars <- adsl |>
+  dplyr::transmute(STUDYID, USUBJID, SITEID, TRTSDT, TRTEDT, AGE, AGEGR1, AGEGR1N,
+                   RACE, RACEN, SEX, SAFFL, TRTA = TRT01A, TRTAN = TRT01AN)
+
+result <- sdtm |>
+  filter(!is.na(AETERM)) |>
+  derive_vars_merged(dataset_add = adsl_vars, by_vars = exprs(STUDYID, USUBJID))''',
 }
 
-result <- dm |>
-  filter(ACTARMCD != "SCRNFAIL", ARMCD != "SCRNFAIL", !grepl("SCREEN", toupper(ARM)))''',
-}
+# A spec var already produced by the spine and sourced by a bare `DOMAIN.VAR`
+# reference is inherited (no codegen); anything with real derivation logic is not.
+INHERIT_RE = re.compile(r"^[A-Z][A-Z0-9]*\.[A-Z0-9_]+$")
+
+
+def spine(dataset: str) -> str:
+    return CT_MAP + "\n\n" + SPINES[dataset]
+
+# Verified admiral idioms (shapes tested against the installed package) mined from
+# the RConsortium pharma-skills admiral SKILL.md. Grounds the derivation classes the
+# machinery was missing: --DTC dates, Y/NA flags, and windowed occurrence flags.
+ADMIRAL_CONVENTIONS = """ADMIRAL IDIOMS (verified shapes — a --DTC date, flag, or occurrence-flag step MUST use these):
+- --DTC to numeric date: derive_vars_dt(new_vars_prefix = "<PREFIX>", dtc = <XXDTC>, highest_imputation = "M", date_imputation = "first"|"last", min_dates|max_dates = exprs(...)). The prefix is the target WITHOUT the trailing "DT": prefix "AST" over AESTDTC creates BOTH ASTDT and its imputation flag ASTDTF; prefix "AEN" over AEENDTC creates AENDT + AENDTF. NEVER prefix "ASTDT" (that yields ASTDTDT). Start dates: date_imputation = "first" with min_dates = exprs(TRTSDT). End dates: "last" with max_dates = exprs(TRTEDT). Because this one call also emits the --DTF flag, a separate --DTF step is NOT needed — skip it.
+- NEVER call as.Date() or convert_dtc_to_dt() directly on a --DTC variable (they silently return NA for partial dates).
+- Flags are "Y" or NA_character_, never "N". Simple condition flag: mutate(XXFL = if_else(<condition>, "Y", NA_character_)).
+- First/last occurrence flag (AOCC*): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID), order = exprs(ASTDT, AESEQ), new_var = <AOCCxxFL>, mode = "first"), filter = <population condition, e.g. TRTEMFL == "Y">). derive_var_extreme_flag has NO filter/filter_add arg — the population restriction goes in restrict_derivation(filter = ...)."""
 
 STEP_PROMPT = """You write ONE step of an R derivation pipeline for ADaM dataset {dataset} (CDISC pilot study).
 
 Already in scope:
 - SDTM dataframes (lowercase) with these columns:
 {input_columns}
-- `result`: the {dataset} under construction. It starts from the columns of dm and gains one variable per step.
+- `result`: the {dataset} under construction. It starts from the spine (input SDTM / parent-ADaM columns) and gains one variable per step.
 - Spec variables derived in OTHER steps (you may reference them; steps are reordered automatically): {pending}
 - helper ct_map(dataset, variable): named numeric vector mapping decode labels -> numeric codes from the study spec codelists. Use it for numeric-code variables (e.g. unname(ct_map("{dataset}", "RACEN")[RACE])). NEVER hardcode treatment/arm/race label strings.
 - admiral is loaded. Allowed admiral derivation functions (exact signatures):
@@ -62,9 +88,9 @@ OUTPUT CONSTRAINTS (a deterministic gate rejects violations):
 - exactly ONE R statement, starting with `result <- result |>` and using the native pipe |>
 - dplyr verbs and the allowed admiral functions only; no library(), no read_xpt, no other assignments
 - reference only columns/variables listed above
-- for dates use admiral::convert_dtc_to_dt or derive_vars_dt
 - admiral arg SHAPES (syntax, not task logic): by_vars, new_vars, order take exprs() — e.g. by_vars = exprs(USUBJID), order = exprs(AESEQ), new_vars = exprs(TRT01PN = EXDOSE). filter_add takes a BARE condition, never exprs() — e.g. filter_add = EXSEQ == 1
 - derive_vars_merged has exactly this shape: derive_vars_merged(result, dataset_add = <source sdtm df>, by_vars = exprs(USUBJID), new_vars = exprs(NEW = SRC), filter_add = <condition>) — the SOURCE domain goes in dataset_add (NOT dataset); there is NO `filter` or standalone `new_var` argument
+{conventions}
 Return ONLY the R code. No markdown, no comments, no explanation."""
 
 
@@ -78,7 +104,7 @@ def gen_step(dataset, var, meta, derivation, pending, feedback):
     prompt = STEP_PROMPT.format(
         dataset=dataset, var=var, meta=meta, derivation=derivation,
         pending=", ".join(pending), input_columns=input_columns_block(dataset),
-        signatures=signatures_block())
+        signatures=signatures_block(), conventions=ADMIRAL_CONVENTIONS)
     if feedback:
         prompt += f"\n\nYOUR PREVIOUS ATTEMPT FAILED — fix this exact problem:\n{feedback}\nPrevious attempt:\n{feedback_code.get(var, '')}"
     key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()
@@ -132,7 +158,7 @@ def topo_order(snippets: dict[str, str], spec_order: list[str]) -> list[str]:
 
 def run_steps(dataset, snippets, spec_order, scratch):
     order = topo_order(snippets, spec_order)
-    lines = [render_header(dataset), "", SPINES[dataset], "",
+    lines = [render_header(dataset), "", spine(dataset), "",
              ".status <- list()",
              ".try_step <- function(nm, f) {",
              "  out <- tryCatch(f(result), error = function(e) e)",
@@ -157,14 +183,23 @@ def run_steps(dataset, snippets, spec_order, scratch):
 feedback_code: dict[str, str] = {}
 
 
+def spine_columns(dataset: str, scratch) -> set[str]:
+    probe = "\n".join([render_header(dataset), spine(dataset), "cat(names(result))"])
+    f = scratch / f"probe_{dataset}.R"
+    f.write_text(probe)
+    out = subprocess.run([R_EXECUTABLE, str(f)], capture_output=True, text=True,
+                         timeout=120, cwd=BASE_DIR)
+    if not out.stdout.split():
+        raise RuntimeError(f"spine probe produced no columns:\n{out.stderr[-2000:]}")
+    return set(out.stdout.split())
+
+
 def main(dataset: str):
     scratch = BASE_DIR / "cache_store"
     scratch.mkdir(exist_ok=True)
-    available = {v.upper() for v, _ in ADAM_INPUTS[dataset]} - {"ADSL"}
+    available = {Path(p).stem.upper() for _, p in ADAM_INPUTS[dataset]} | {dataset.upper()}
     rules = get_spec_rules(dataset)
-    dm_cols = set(subprocess.run(
-        [R_EXECUTABLE, "-e", f'cat(names(haven::read_xpt("{dict(ADAM_INPUTS[dataset])["dm"]}")))'],
-        capture_output=True, text=True, timeout=60, cwd=BASE_DIR).stdout.split())
+    spine_cols = spine_columns(dataset, scratch)
 
     status: dict[str, str] = {}
     todo, spec_order = {}, []
@@ -173,11 +208,10 @@ def main(dataset: str):
         spec_order.append(var)
         meta = r.get("type", "?") + (f" len<={r['length']}" if r.get("length") else "") + \
                (f" CT:{{{'|'.join(r['ct'])}}}" if r.get("ct") else "")
-        gap = domain_gap(deriv, available)
-        if gap:
+        if var in spine_cols and INHERIT_RE.match(deriv.strip()):
+            status[var] = "inherited (spine)"
+        elif gap := domain_gap(deriv, available):
             status[var] = f"unavailable-source: no {gap} domain in study data"
-        elif var in dm_cols and re.fullmatch(rf"DM\.{var}", deriv.strip()):
-            status[var] = "inherited from DM"
         else:
             todo[var] = (meta, deriv)
 
@@ -227,7 +261,7 @@ def main(dataset: str):
     footer = render_footer(dataset).replace("data/adam/", "data/adam_experiment/").replace(
         "metatools::check_variables(result, mc_ds)",
         "tryCatch(metatools::check_variables(result, mc_ds), error = function(e) message(conditionMessage(e)))")
-    program = "\n\n".join([render_header(dataset), SPINES[dataset],
+    program = "\n\n".join([render_header(dataset), spine(dataset),
                            *[snippets[v] for v in order], footer])
     out = BASE_DIR / "data" / "adam" / f"{dataset}_pervar.R"
     out.write_text(program)

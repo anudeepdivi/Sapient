@@ -20,7 +20,7 @@ REFERENCE_DIR = DATA_DIR / "reference"
 
 # Models
 REASONING_MODEL = "google/diffusiongemma-26b-a4b-it"
-CODEGEN_MODEL = "mistralai/mistral-nemotron"  # probed 2026-07-12: 2s/call, clean admiral R; gemma-4 down, diffusiongemma quality wall
+CODEGEN_MODEL = "mistralai/mistral-nemotron"  # probed - clean admiral R; gemma-4 down, diffusiongemma quality wall
 CODEGEN_FALLBACK_MODEL = "google/diffusiongemma-26b-a4b-it"
 # API Keys
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")

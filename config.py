@@ -42,10 +42,6 @@ CACHE_DIR = BASE_DIR / "cache_store"
 # R Runtime
 R_EXECUTABLE = os.getenv("R_EXECUTABLE", "Rscript")
 
-NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
-
 TEMPERATURE = 0
 MAX_TOKENS = 8192
 

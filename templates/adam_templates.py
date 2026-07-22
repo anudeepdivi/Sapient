@@ -31,6 +31,7 @@ ADAM_INPUTS = {
     "ADSL": [("dm", f"{SDTM_SOURCE}/DM.xpt"), ("ex", f"{SDTM_SOURCE}/EX.xpt"), ("ds", f"{SDTM_SOURCE}/DS.xpt"),
              ("vs", f"{SDTM_SOURCE}/VS.xpt"), ("mh", f"{SDTM_SOURCE}/MH.xpt"), ("sv", f"{SDTM_SOURCE}/SV.xpt")],
     "ADAE": [("sdtm", f"{SDTM_SOURCE}/AE.xpt"), ("adsl", "data/adam/ADSL.xpt")],
+    "ADLBC": [("sdtm", f"{SDTM_SOURCE}/LB.xpt"), ("adsl", "data/adam/ADSL.xpt")],
 }
 
 

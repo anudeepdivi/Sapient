@@ -8,7 +8,11 @@ rather than silently generating a dataset that can never be built or scored.
 
 Class values: SUBJECT (ADSL only), OCCDS (occurrence/event), BDS (basic data
 structure, value/visit), TTE (time-to-event, a BDS family needing its own template).
+
+Class is resolved by name for known datasets and by variable-structure inference for
+sponsor-defined ones (resolve_class) — the codegen conventions key on class, never name.
 """
+import re
 
 ADAM_REGISTRY = {
     "ADSL": {"class": "SUBJECT", "label": "Subject-Level Analysis Dataset"},
@@ -40,6 +44,38 @@ def allowed_datasets_block() -> str:
 def classify(dataset: str) -> str | None:
     meta = ADAM_REGISTRY.get(dataset.upper())
     return meta["class"] if meta else None
+
+
+# Structural class signatures (ADaMIG). A sponsor-defined dataset carries no
+# recognisable NAME, but its variable list still carries its class — which is what
+# the codegen conventions actually dispatch on. Order matters: TTE and BDS both
+# carry PARAMCD/AVAL, so CNSR is tested first.
+_OCCDS_MARKER = re.compile(r"^[A-Z]{2}(SEQ|DECOD|TERM|BODSYS)$")
+
+
+def infer_class(variables) -> str | None:
+    """Infer the structural class from a dataset's variable names alone.
+
+    Lets non-standard (sponsor-specific) datasets reach the class-keyed codegen
+    conventions, which key on class and never on dataset name."""
+    v = {str(x).upper() for x in variables}
+    if "CNSR" in v:
+        return "TTE"
+    if "PARAMCD" in v and ("AVAL" in v or "AVALC" in v):
+        return "BDS"
+    # period-indexed treatment (TRT01P/TRT01A) is subject-level; BDS/OCCDS/TTE carry
+    # the un-indexed TRTP/TRTA. Tested before the OCCDS markers because subject-level
+    # datasets legitimately carry --DECOD variables (ADSL has DCDECOD).
+    if {"TRT01P", "TRT01A"} & v:
+        return "SUBJECT"
+    if any(_OCCDS_MARKER.match(x) for x in v):
+        return "OCCDS"
+    return None
+
+
+def resolve_class(dataset: str, variables=None) -> str | None:
+    """Registry first (known datasets), structural inference second (everything else)."""
+    return classify(dataset) or (infer_class(variables) if variables else None)
 
 
 def constrain_data_source(entries: list[dict]) -> tuple[list[dict], set[str]]:

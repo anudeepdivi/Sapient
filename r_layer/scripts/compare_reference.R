@@ -12,7 +12,12 @@ gen_dir <- if (length(args) > 1) args[2] else "data/adam"
 gen <- read_xpt(sprintf("%s/%s.xpt", gen_dir, dataset))
 ref <- read_xpt(sprintf("data/reference/%s.xpt", dataset))
 
+# Datasets whose data/reference/*.xpt is a PROXY, not the real pilot dataset
+# (see build_proxy_reference.R). Every figure printed for these is labelled.
+PROXY_REFERENCE <- c("ADLBC")
+
 keys <- list(ADAE = c("USUBJID", "AESEQ"),
+             ADLBC = c("USUBJID", "PARAMCD", "VISITNUM"),
              VS = c("USUBJID", "VSTESTCD", "VISITNUM", "VSTPTNUM"),
              DS = c("USUBJID", "DSDECOD", "DSSTDTC"),
              EX = c("USUBJID", "EXSTDTC"),
@@ -40,7 +45,8 @@ rates <- sapply(common_vars, function(v) {
   mean((a == b) | (is.na(a) & is.na(b)))
 })
 overall <- mean(rates, na.rm = TRUE)
-cat(sprintf("VALUE-MATCH %s: %.1f%% mean cell agreement over %d common vars, %d/%d subjects overlap\n",
+cat(sprintf("VALUE-MATCH%s %s: %.1f%% mean cell agreement over %d common vars, %d/%d rows overlap\n",
+            if (dataset %in% PROXY_REFERENCE) " [PROXY REFERENCE - not the pilot dataset]" else "",
             dataset, 100 * overall, length(common_vars), nrow(merged), nrow(ref)))
 worst <- sort(rates)[seq_len(min(8, length(rates)))]
 cat("lowest-agreement variables:\n")

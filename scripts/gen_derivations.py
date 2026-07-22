@@ -19,6 +19,7 @@ from openai import OpenAI
 from cache.prompt_cache import get_cached, set_cached
 from config import (BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, MAX_TOKENS,
                     NVIDIA_API_KEY, NVIDIA_BASE_URL, R_EXECUTABLE, TEMPERATURE)
+from knowledge.adam_registry import classify
 from knowledge.admiral_functions import signatures_block
 from orchestration.llm_retry import create_with_retry
 from r_layer.deterministic_checks import fix_quoted_symbol_args, run_gate, strip_markdown_fences
@@ -51,6 +52,14 @@ SPINES = {
 result <- sdtm |>
   filter(!is.na(AETERM)) |>
   derive_vars_merged(dataset_add = adsl_vars, by_vars = exprs(STUDYID, USUBJID))''',
+    "ADLBC": '''adsl_vars <- adsl |>
+  dplyr::transmute(STUDYID, USUBJID, SUBJID, TRTSDT, TRTEDT, AGE, AGEGR1, AGEGR1N,
+                   RACE, RACEN, SEX, SAFFL, COMP24FL, DSRAEFL,
+                   TRTP = TRT01P, TRTPN = TRT01PN, TRTA = TRT01A, TRTAN = TRT01AN)
+
+result <- sdtm |>
+  filter(LBCAT == "CHEMISTRY") |>
+  derive_vars_merged(dataset_add = adsl_vars, by_vars = exprs(STUDYID, USUBJID))''',
 }
 
 # A spec var already produced by the spine and sourced by a bare `DOMAIN.VAR`
@@ -62,13 +71,29 @@ def spine(dataset: str) -> str:
     return CT_MAP + "\n\n" + SPINES[dataset]
 
 # Verified admiral idioms (shapes tested against the installed package) mined from
-# the RConsortium pharma-skills admiral SKILL.md. Grounds the derivation classes the
-# machinery was missing: --DTC dates, Y/NA flags, and windowed occurrence flags.
+# the RConsortium pharma-skills admiral skills (admiral, admiral-adsl, admiral-bds).
+# Class-keyed so a BDS idiom never lands in a SUBJECT/OCCDS prompt for the model to
+# transcribe. Grounds the classes the machinery was missing: --DTC dates, Y/NA flags,
+# windowed occurrence flags, categorical groupings, PARAMCD/BASE/CHG machinery.
 ADMIRAL_CONVENTIONS = """ADMIRAL IDIOMS (verified shapes — a --DTC date, flag, or occurrence-flag step MUST use these):
 - --DTC to numeric date: derive_vars_dt(new_vars_prefix = "<PREFIX>", dtc = <XXDTC>, highest_imputation = "M", date_imputation = "first"|"last", min_dates|max_dates = exprs(...)). The prefix is the target WITHOUT the trailing "DT": prefix "AST" over AESTDTC creates BOTH ASTDT and its imputation flag ASTDTF; prefix "AEN" over AEENDTC creates AENDT + AENDTF. NEVER prefix "ASTDT" (that yields ASTDTDT). Start dates: date_imputation = "first" with min_dates = exprs(TRTSDT). End dates: "last" with max_dates = exprs(TRTEDT). Because this one call also emits the --DTF flag, a separate --DTF step is NOT needed — skip it.
 - NEVER call as.Date() or convert_dtc_to_dt() directly on a --DTC variable (they silently return NA for partial dates).
 - Flags are "Y" or NA_character_, never "N". Simple condition flag: mutate(XXFL = if_else(<condition>, "Y", NA_character_)).
-- First/last occurrence flag (AOCC*): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID), order = exprs(ASTDT, AESEQ), new_var = <AOCCxxFL>, mode = "first"), filter = <population condition, e.g. TRTEMFL == "Y">). derive_var_extreme_flag has NO filter/filter_add arg — the population restriction goes in restrict_derivation(filter = ...)."""
+- First/last occurrence flag (AOCC*): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID), order = exprs(ASTDT, AESEQ), new_var = <AOCCxxFL>, mode = "first"), filter = <population condition, e.g. TRTEMFL == "Y">). derive_var_extreme_flag has NO filter/filter_add arg — the population restriction goes in restrict_derivation(filter = ...).
+- A categorical grouping variable is a plain mutate(<VAR> = case_when(...)); NEVER use derive_param_computed or set_values_to (those add PARAMCD rows, not columns). The comparison operators (<, >=, between) apply to the CONTINUOUS source column (AGE, BMIBL), NEVER to a 1/2/3 group code. The numeric group var <VAR>N is case_when over the continuous column returning integers; the text label <VAR> maps the SAME cut-points to strings — either from the continuous column directly, or by case_when(<VAR>N == 1 ~ "...", ...) — but NEVER `<VAR>N < 65`, because <VAR>N holds 1/2/3, not the measurement."""
+
+CLASS_CONVENTIONS = {
+    "SUBJECT": """
+- Planned/actual treatment TEXT: TRT01P = ARM and TRT01A = ACTARM, a plain direct mutate (ARM/ACTARM are ALREADY the decoded labels — do NOT wrap them in ct_map). NEVER source these from EX.EXTRT (raw uppercase).
+- Treatment NUMERIC code ONLY: TRT01PN = unname(ct_map("<ds>", "TRT01PN")[ARM]); TRT01AN = unname(ct_map("<ds>", "TRT01AN")[ACTARM]). ct_map is exclusively for the numeric *N variants, never for the text TRT01P/TRT01A.""",
+    "BDS": """
+- Baseline flag ABLFL (last non-missing on/before TRTSDT): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID, PARAMCD), order = exprs(ADT, VISITNUM), new_var = ABLFL, mode = "last"), filter = !is.na(AVAL) & ADT <= TRTSDT).
+- BASE: derive_var_base(result, by_vars = exprs(USUBJID, PARAMCD), source_var = AVAL, new_var = BASE). BASE must exist before CHG/PCHG.
+- CHG: derive_var_chg(result) — no other args. PCHG: derive_var_pchg(result) — no other args. Both require AVAL and BASE columns.
+- Study day: derive_vars_dy(result, reference_date = TRTSDT, source_vars = exprs(ADY = ADT)).""",
+    "OCCDS": """
+- Treatment-emergent flag: derive_var_trtemfl(result, new_var = TRTEMFL, start_date = ASTDT, end_date = AENDT, trt_start_date = TRTSDT, trt_end_date = TRTEDT, end_window = <days per SAP>).""",
+}
 
 STEP_PROMPT = """You write ONE step of an R derivation pipeline for ADaM dataset {dataset} (CDISC pilot study).
 
@@ -104,7 +129,8 @@ def gen_step(dataset, var, meta, derivation, pending, feedback):
     prompt = STEP_PROMPT.format(
         dataset=dataset, var=var, meta=meta, derivation=derivation,
         pending=", ".join(pending), input_columns=input_columns_block(dataset),
-        signatures=signatures_block(), conventions=ADMIRAL_CONVENTIONS)
+        signatures=signatures_block(),
+        conventions=ADMIRAL_CONVENTIONS + CLASS_CONVENTIONS.get(classify(dataset) or "", ""))
     if feedback:
         prompt += f"\n\nYOUR PREVIOUS ATTEMPT FAILED — fix this exact problem:\n{feedback}\nPrevious attempt:\n{feedback_code.get(var, '')}"
     key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()

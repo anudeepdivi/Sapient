@@ -34,8 +34,7 @@ sapient_ab_raw.json
 sapient_ab_results.csv
 small_program.py
 
-# Internal docs (not for repo)
+# Internal agent guidance (local only)
 CLAUDE.md
-project_context.md
 # Raw NCI-EVS CT downloads (large; rebuild via knowledge/ct/build_ct.py)
 knowledge/ct/*_Terminology.txt

@@ -4,6 +4,8 @@ An agentic pipeline that reads clinical study documents and generates the R prog
 
 The design goal is **consistency by construction**: the language model never generates clinical values - it generates R code that runs deterministically, so the same inputs produce the same outputs on every run.
 
+Sapient is also growing beyond one-shot generation into a **clinical statistical-programming harness**: a control layer that operates *inside* an organization's existing codebase - reusing approved standard programs where they satisfy the study, isolating study-specific changes as explicit traceable deltas, generating only genuinely missing capabilities, verifying by execution, and stopping for a human whenever a safe interpretation cannot be established.
+
 ---
 
 ## The pipeline
@@ -18,6 +20,21 @@ SAP (+ Protocol) ──▶ List of Tables ──▶ Mockshells ──▶ ADaM sp
 Every stage is either a **reasoning stage** (planning the List of Tables, authoring dataset specifications - the model must comprehend the study) or a **mechanical stage** (generating code from a specification - deterministic given clean upstream metadata). Mechanical stages inherit the reasoning stages' errors silently, so the accuracy of the whole system is set upstream. The two hardest, highest-leverage problems are therefore **List-of-Tables generation** and **specification generation** - and specification generation is the novel contribution, since generating ADaM programs *from* a specification is already well understood.
 
 ---
+
+## The sponsor-environment harness
+
+Clinical programming organizations already hold libraries of validated standard programs; regenerating what exists is waste, and the real value is the **study-specific delta**. The harness layer (`harness/`) works against a sponsor-style codebase - exercised here through a committed synthetic sponsor environment (`sponsor_r_env/`: versioned ADaM standard programs with approval and validation metadata, a shared-module registry, and validation rules):
+
+- **Deterministic resolution, no model calls.** Each study requirement is dispatched by metadata comparison: exact match with an approved standard → `REUSE`; a declared difference the standard's anchors cover → `APPLY_DELTA`; no approved implementation → `NOVEL_CAPABILITY` proposal; two equally valid approved standards → `WAITING_FOR_HUMAN`.
+- **Deltas never mutate standards.** A detected delta is applied to a copy (every anchor must match exactly once), executed under Rscript, and traced to its source requirement and SAP section.
+- **Generated capabilities pass a gated lifecycle.** Proposal → implementation → deterministic checks + a testthat suite → execution - then a hard stop at human approval before anything registers into the environment registry. Failed validation blocks registration outright.
+- **Ambiguity escalates instead of guessing.** When approved candidates are indistinguishable, a structured decision request (question, evidence, interpretations, downstream impact) is recorded; a resolved decision is never asked twice.
+- **Standard preservation is measured, not assumed.** The modified program's persisted output frame is compared key-level and cell-level against the unmodified standard's - Standard Preservation Rate, Intended Change Recall, and Unintended Change Rate. A program that executes perfectly but silently corrupts a derivation fails, even though it runs clean.
+
+The repository's automated suite (22 tests) verifies all of the above end-to-end, including two deliberately bad deltas that *execute* and must fail: one that over-restricts the population, and one whose population change is perfect but that quietly overwrites a derived flag on every retained record.
+
+---
+
 
 ## Methodology
 
@@ -37,7 +54,7 @@ A validation gate enforces these deterministically *before* any expensive check:
 
 ## Results
 
-Evaluated against the public CDISC pilot study (the metacore specification and TLF list are held out as evaluation targets, never used as generation inputs).
+Evaluated against the public CDISC pilot study (the metacore specification is held out as an evaluation target, never used as a generation input).
 
 **Specification generation** - variable-set F1 against the pilot Define-XML specification, across all four ADaM structural classes. Grounding on the public ADaMIG standard skeleton lifted the average from a 0.31 baseline to ~0.77:
 
@@ -49,7 +66,7 @@ Evaluated against the public CDISC pilot study (the metacore specification and T
 | ADLBC | Basic data structure (BDS) | 0.81 | 0.72 | 0.76 |
 | ADTTE | Time-to-event | 0.81 | 0.96 | 0.88 |
 
-**List-of-Tables generation** - F1 ~0.5–0.64 against the pilot's known TLF list. Precision is high; recall is the ceiling, and it is partly fundamental - a real submission LoT is part convention (the standard safety and disposition tables) and part study-specific enumeration that the SAP implies rather than states.
+**List-of-Tables generation** — this benchmark was **retired after inspection**: the pilot TLF list we had been scoring against was assembled from another repository's program *filenames*, while the study's SAP contains no table numbers at all - so exact table-number F1 measured information the input never carried, and no prompt improvement can recover it. The layer is being redesigned around what can be verified instead: requirements grounded in cited SAP text, semantic coverage of the SAP's stated analyses, explicit unsupported-inference flagging, and human sign-off - with table numbering assigned downstream by convention rather than extracted.
 
 **ADaM program generation** - for the datasets exercised end-to-end, generated programs execute against pharmaverse SDTM data, pass metacore variable and conformance checks (type / length / controlled terminology), and are then **value-matched** against `pharmaverseadam` (per-variable cell agreement on key-joined records - a stricter bar than execution-and-conformance):
 
@@ -95,6 +112,7 @@ Specifications and outputs are scored against these; none of them is used as a g
 - **Retrieval:** ChromaDB with PubMedBERT embeddings, chunked on clinical-section boundaries
 - **Generated programs:** R - `admiral`, `metacore`, `metatools`, `xportr`, `rtables`
 - **Conformance:** metacore/metatools checks + a deterministic type/length/controlled-terminology checker derived from the study specification
+- **Harness:** filesystem/YAML sponsor-environment adapter; stdlib `unittest`; base-R frame comparators; no model calls in resolution or preservation checking
 
 ---
 
@@ -106,6 +124,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+R is also required (`Rscript` on PATH): the pipeline uses `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak`; the harness suite needs `dplyr` and `testthat`.
+
 Set credentials in `.env`:
 
 ```
@@ -113,11 +133,24 @@ NVIDIA_API_KEY=your_key_here
 HF_TOKEN=your_key_here
 ```
 
+Run the automated test suite (no API calls, no data needed):
+
+```bash
+python -m unittest discover -s tests
+```
+
 Ingest the CDISC implementation guides once before the first run, then run the pipeline:
 
 ```bash
 python scripts/ingest_ig.py
 python test.py
+```
+
+Drive a sponsor-environment case end-to-end (resolve → apply delta → execute; or drive a missing capability to its approval gate):
+
+```bash
+python scripts/harness_case.py tests/cases/TC-R-006.yaml --apply
+python scripts/harness_case.py tests/cases/TC-R-012.yaml --novel-flow
 ```
 
 Generate and score a specification for a single dataset:
@@ -135,12 +168,15 @@ python scripts/eval_spec.py ADSL          # score vs pilot Define-XML
 ```
 sapient/
 ├── orchestration/     # LangGraph graph, state, agent nodes
+├── harness/           # sponsor-env adapter, resolver, deltas, capability lifecycle, preservation oracle
+├── sponsor_r_env/     # synthetic sponsor R environment: standards, module registry, validation rules
 ├── knowledge/         # vector store, ADaM registry, ADaMIG standard, package signatures
 ├── specs/             # metacore loader, spec-rule extraction, generation
 ├── templates/         # code skeletons and derivation bodies
-├── r_layer/           # R runner, validator, deterministic checks, conformance
+├── r_layer/           # R runner, validator, deterministic checks, conformance, preservation comparator
 ├── cache/             # prompt-hash cache
-├── scripts/           # generation + evaluation entrypoints
+├── scripts/           # generation + evaluation + harness-case entrypoints
+├── tests/             # unittest suite; declarative test-case ground truth in tests/cases/
 └── data/              # input / reference data (gitignored)
 ```
 
@@ -154,7 +190,9 @@ The loop is closed: a generated specification can drive the full grounding, vali
 
 The SDTM layer runs raw → SDTM across all five available raw domains at 98–100% value-match, and generated ADaM datasets value-match their references at 94–98%. The full chain also closes end-to-end: an environment switch points ADaM generation at the *generated* SDTM instead of the reference export, and the chain-built ADSL is identical to the reference-fed build (94.4%) while ADAE holds 97.2% when records are keyed by event identity (its sequence numbers are assigned in a different order than the reference  an alignment artifact, not a value error).
 
-Near-term work, in order:
+The harness layer is in place and verified: standard discovery, reuse, explicit delta application with execution-level preservation checking, capability generation gated on human approval, and ambiguity escalation all run against the synthetic sponsor environment under a 22-test automated suite.
+
+Next, the weakest layer gets its measurement before its generator: an evaluation framework for analysis-requirement/TLF extraction built on verifiable grounding metrics (cited-evidence rate, semantic coverage, unsupported-inference rate) - applying the same discipline that retired the table-number benchmark, this time by design rather than after the fact.
 
 ## References
 

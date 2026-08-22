@@ -1,0 +1,26 @@
+test_id: TC-R-008
+scenario: Population delta must preserve all non-population standard behavior
+environment: sponsor_r_env
+standard: standards/adae/ADAE_v2.R
+study_requirement:
+  study_id: STUDY-X008
+  requirements:
+    - requirement_id: R-008
+      type: adam_dataset
+      dataset: ADAE
+      population: 'SAFFL == "Y" & SPECIALFL == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §9.2"]
+key_columns: [USUBJID, AETERM, AESTDT]
+# Ground truth hand-derived from the fixture data, independently of Sapient:
+# BASE keeps S001(Headache,Nausea) + S002(Fatigue,Rash); GOOD additionally
+# drops both S001 rows (SAFFL=Y, SPECIALFL=N); S002 rows keep every cell.
+expected:
+  removed_keys:
+    - "S001|Headache|2024-01-10"
+    - "S001|Nausea|2024-02-01"
+  added_keys: []
+  preserved_count: 2
+  schema_equal: true
+  preserved_identical: true

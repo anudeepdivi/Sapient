@@ -46,3 +46,8 @@ TEMPERATURE = 0
 MAX_TOKENS = 8192
 
 EMBEDDING_MODEL = "pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb"
+
+# Sponsor environment (harness)
+SPONSOR_ENV_DIR = Path(os.getenv("SAPIENT_SPONSOR_ENV", BASE_DIR / "sponsor_r_env"))
+HARNESS_STATE_DIR = BASE_DIR / "harness_runs"
+HARNESS_GENERATOR = os.getenv("SAPIENT_HARNESS_GENERATOR", "stub")

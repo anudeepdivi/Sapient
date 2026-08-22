@@ -1,0 +1,20 @@
+dataset: ADSL
+class: SUBJECT
+purpose: Subject-level analysis dataset
+packages: [dplyr]
+modules: [treatment.R, dates.R]
+versions:
+  - version: "1.0"
+    file: ADSL_v1.R
+    status: deprecated
+    validated: true
+    population: 'SAFFL == "Y"'
+  - version: "2.0"
+    file: ADSL_v2.R
+    status: approved
+    validated: true
+    population: 'SAFFL == "Y"'
+    anchors:
+      population_filter:
+        pattern: 'filter(result, SAFFL == "Y")'
+        replacement: 'filter(result, {population})'

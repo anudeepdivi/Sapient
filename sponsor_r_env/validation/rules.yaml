@@ -1,0 +1,4 @@
+packages_allowed: [dplyr, rlang, testthat]
+checks: [ascii, syntax, package_allowlist, hardcoded_labels]
+execution_timeout_seconds: 120
+test_framework: testthat

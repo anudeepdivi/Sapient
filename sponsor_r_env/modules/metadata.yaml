@@ -1,0 +1,41 @@
+functions:
+  - name: derive_population
+    file: population.R
+    signature: derive_population(data, expr)
+    status: approved
+    validated: true
+    version: "1.0.0"
+    purpose: Apply a population filter expression to a dataset
+    datasets: [ADSL, ADAE]
+  - name: derive_treatment
+    file: treatment.R
+    signature: derive_treatment(data)
+    status: approved
+    validated: true
+    version: "1.0.0"
+    purpose: Assign planned treatment from ARM
+    datasets: [ADSL]
+  - name: derive_teae
+    file: teae.R
+    signature: derive_teae(ae, trt_start)
+    status: approved
+    validated: true
+    version: "1.0.0"
+    purpose: Flag treatment-emergent adverse events
+    datasets: [ADAE]
+  - name: derive_study_day
+    file: dates.R
+    signature: derive_study_day(data)
+    status: approved
+    validated: true
+    version: "1.0.0"
+    purpose: Compute study day from treatment dates
+    datasets: [ADSL]
+  - name: derive_best_response_flag
+    file: response.R
+    signature: derive_best_response_flag(data, response_col)
+    status: approved
+    validated: true
+    version: "1.0.0"
+    purpose: Best overall response (RECIST) flag
+    datasets: [ADRS]

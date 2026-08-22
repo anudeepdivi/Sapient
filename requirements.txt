@@ -1,12 +1,7 @@
 dotenv
 langgraph
-langchain-google-genai
 chromadb
 sentence-transformers
-networkx
-fastapi
-uvicorn
 python-dotenv
 PyMuPDF
-pandas
 pyyaml

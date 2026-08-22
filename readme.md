@@ -152,22 +152,9 @@ The generation pipeline runs end-to-end, with a deterministic validation gate, r
 
 The loop is closed: a generated specification can drive the full grounding, validation, and conformance path (selected with an environment variable), with controlled terminology enforced from the public NCI-EVS CT regardless of what the generated specification carries.
 
-The SDTM layer runs raw → SDTM across all five available raw domains at 98–100% value-match, and generated ADaM datasets value-match their references at 94–98%. The full chain also closes end-to-end: an environment switch points ADaM generation at the *generated* SDTM instead of the reference export, and the chain-built ADSL is identical to the reference-fed build (94.4%) while ADAE holds 97.2% when records are keyed by event identity (its sequence numbers are assigned in a different order than the reference — an alignment artifact, not a value error).
+The SDTM layer runs raw → SDTM across all five available raw domains at 98–100% value-match, and generated ADaM datasets value-match their references at 94–98%. The full chain also closes end-to-end: an environment switch points ADaM generation at the *generated* SDTM instead of the reference export, and the chain-built ADSL is identical to the reference-fed build (94.4%) while ADAE holds 97.2% when records are keyed by event identity (its sequence numbers are assigned in a different order than the reference  an alignment artifact, not a value error).
 
 Near-term work, in order:
-
-<<<<<<< HEAD
-- Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding (for both the ADaM and SDTM layers - the function-signature grounding for both is already in place).
-- **TLF generation** grounded on real `tern`/`rtables` signatures - the earlier free-form prompt produced programs that hallucinated a nonexistent table API (0/29 executed), the clearest demonstration yet of the controlled-vocabulary principle.
-=======
-- Have the generation prompt author derivations reliably enough to replace the current deterministic derivation scaffolding (for both the ADaM and SDTM layers — the function-signature grounding for both is already in place).
-- **TLF generation** — grounding on real `tern`/`rtables` signatures eliminated the hallucinated-API failure class entirely (the earlier free-form prompt invented a nonexistent table DSL; 0/29 executed). Generated programs now call the real API, and an availability gate skips tables whose source datasets aren't built yet. The residual failure class is argument-level misuse (wrong argument types, arguments from one function passed to another) — the next constraint layer to close, evidence that controlled vocabularies work one layer at a time.
->>>>>>> ba01129 (retry NVIDIA 500s and DEGRADED-400 in llm_retry; TLF failure class moved from fake DSL to real-API arg misuse (0/9 exec, 14/26 gated))
-- Score derivation and type correctness, not only variable presence; extend LoT recall.
-
-Deferred by design: a Neo4j knowledge graph (package signature extraction covers the package-swap use case more cheaply), FastAPI / MCP exposure, and CRF-annotation-to-SDTM mapping.
-
----
 
 ## References
 

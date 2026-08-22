@@ -1,0 +1,15 @@
+test_id: TC-R-017
+scenario: Two approved ADTTE standards are equally plausible; study does not discriminate
+environment: sponsor_r_env
+study_requirement:
+  study_id: STUDY-X005
+  requirements:
+    - requirement_id: R-017
+      type: adam_dataset
+      dataset: ADTTE
+      population: 'ITTFL == "Y"'
+      capabilities: []
+      source_sections: ["SAP §9.4"]
+expected:
+  status: WAITING_FOR_HUMAN
+  reason: STANDARD_SELECTION_AMBIGUITY

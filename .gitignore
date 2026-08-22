@@ -38,3 +38,6 @@ small_program.py
 CLAUDE.md
 # Raw NCI-EVS CT downloads (large; rebuild via knowledge/ct/build_ct.py)
 knowledge/ct/*_Terminology.txt
+
+# Harness runtime state (artifacts, proposals, decisions)
+harness_runs/

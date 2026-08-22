@@ -1,0 +1,20 @@
+dataset: ADAE
+class: OCCDS
+purpose: Adverse event analysis dataset
+packages: [dplyr]
+modules: [teae.R]
+versions:
+  - version: "1.0"
+    file: ADAE_v1.R
+    status: deprecated
+    validated: true
+    population: 'SAFFL == "Y"'
+  - version: "2.0"
+    file: ADAE_v2.R
+    status: approved
+    validated: true
+    population: 'SAFFL == "Y"'
+    anchors:
+      population_filter:
+        pattern: 'filter(ae1, SAFFL == "Y")'
+        replacement: 'filter(ae1, {population})'

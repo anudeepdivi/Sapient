@@ -1,0 +1,19 @@
+test_id: TC-R-006
+scenario: Standard filters SAFFL only; study requires SAFFL and SPECIALFL
+environment: sponsor_r_env
+study_requirement:
+  study_id: STUDY-X002
+  requirements:
+    - requirement_id: R-006
+      type: adam_dataset
+      dataset: ADAE
+      population: 'SAFFL == "Y" & SPECIALFL == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §9.2"]
+expected:
+  status: RESOLVED
+  action: APPLY_DELTA
+  standard_match: ADAE_v2.R
+  delta_count: 1
+  delta_types: [population_filter]

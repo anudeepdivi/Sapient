@@ -1,0 +1,21 @@
+test_id: TC-R-007
+scenario: Study needs a population change plus a new variable plus a changed derivation on ADVS
+environment: sponsor_r_env
+standard: standards/advs/ADVS_v5.R
+study_requirement:
+  study_id: STUDY-X013
+  requirements:
+    - requirement_id: R-007
+      type: adam_dataset
+      dataset: ADVS
+      population: 'SAFFL == "Y" & AVISITN == 1'
+      derivation: 'CHG = round(AVAL - BASE, 1)'
+      variables: ['PCHG = round(100 * (AVAL - BASE) / BASE, 1)']
+      capabilities: []
+      source_sections: ["SAP §8.2"]
+expected:
+  status: RESOLVED
+  action: APPLY_DELTA
+  standard_match: ADVS_v5.R
+  delta_count: 3
+  delta_types: [derivation_change, population_filter, variable_addition]

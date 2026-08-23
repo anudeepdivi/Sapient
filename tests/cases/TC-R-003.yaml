@@ -1,0 +1,19 @@
+test_id: TC-R-003
+scenario: ADVS has deprecated v4, approved v5, draft v6 — only v5 may be selected
+environment: sponsor_r_env
+study_requirement:
+  study_id: STUDY-X010
+  requirements:
+    - requirement_id: R-003
+      type: adam_dataset
+      dataset: ADVS
+      population: 'SAFFL == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §8.1"]
+expected:
+  status: RESOLVED
+  action: REUSE
+  standard_match: ADVS_v5.R
+  version: "5.0"
+  delta_count: 0

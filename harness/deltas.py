@@ -1,6 +1,12 @@
 from pathlib import Path
 
-FIELD_TO_DELTA_TYPE = {"population": "population_filter", "variables": "variable_addition"}
+FIELD_TO_DELTA_TYPE = {
+    "population": "population_filter",
+    "variables": "variable_addition",
+    "derivation": "derivation_change",
+}
+DELTAABLE_FIELDS = frozenset(FIELD_TO_DELTA_TYPE)
+LIST_JOINS = {"population": " & ", "variables": ", "}
 
 
 class DeltaAnchorError(Exception):
@@ -9,9 +15,11 @@ class DeltaAnchorError(Exception):
 
 def build_delta(requirement, version_meta, field):
     anchor = version_meta["anchors"][FIELD_TO_DELTA_TYPE[field]]
-    req_text = requirement[field]
-    if isinstance(req_text, list):
-        req_text = " & ".join(req_text)
+    value = requirement[field]
+    if isinstance(value, list):
+        req_text = LIST_JOINS.get(field, ", ").join(str(v) for v in value)
+    else:
+        req_text = str(value)
     return {
         "type": FIELD_TO_DELTA_TYPE[field],
         "source_requirement": requirement.get("requirement_id"),
@@ -21,7 +29,7 @@ def build_delta(requirement, version_meta, field):
             "requirement_text": req_text,
             "source_sections": requirement.get("source_sections", []),
         },
-        "replacement": anchor["replacement"].replace("{population}", req_text),
+        "replacement": anchor["replacement"].replace("{%s}" % field, req_text),
     }
 
 

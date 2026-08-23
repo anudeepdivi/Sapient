@@ -43,6 +43,5 @@ knowledge/ct/*_Terminology.txt
 harness_runs/
 
 # Local documentation (untracked)
-readme.md
 project_context.md
 Sapient_Harness_Agent_Handoff.md

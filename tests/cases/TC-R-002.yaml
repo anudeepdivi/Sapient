@@ -1,0 +1,30 @@
+test_id: TC-R-002
+scenario: Three approved ADEFF variants; the study's declared analysis_scope selects one
+environment: sponsor_r_env
+study_requirement:
+  study_id: STUDY-X009
+  requirements:
+    - requirement_id: R-002A
+      type: adam_dataset
+      dataset: ADEFF
+      analysis_scope: sensitivity
+      population: 'ITTFL == "Y" & COMPLFL == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §10.1"]
+    - requirement_id: R-002B
+      type: adam_dataset
+      dataset: ADEFF
+      analysis_scope: exploratory
+      population: 'ITTFL == "Y" & PPFL == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §10.3"]
+# All three candidates share version 1.0 and near-identical filenames, so only
+# the declared attributes can discriminate.
+expected:
+  status: RESOLVED
+  action: REUSE
+  by_requirement:
+    R-002A: {standard_match: ADEFF_sensitivity_v1.R, delta_count: 0}
+    R-002B: {standard_match: ADEFF_exploratory_v1.R, delta_count: 0}

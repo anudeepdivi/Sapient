@@ -1,14 +1,18 @@
 import json
 
 from config import HARNESS_STATE_DIR
-from harness.deltas import FIELD_TO_DELTA_TYPE, build_delta, build_module_delta
+from harness.deltas import (
+    DELTAABLE_FIELDS,
+    FIELD_TO_DELTA_TYPE,
+    build_delta,
+    build_module_delta,
+)
 from harness.decisions import request_decision
 
 RESERVED_FIELDS = {"file", "version", "status", "validated", "anchors",
                    "purpose", "notes", "module_behaviors"}
 NON_COMPARABLE = RESERVED_FIELDS | {
-    "requirement_id", "study_id", "type", "dataset", "capabilities",
-    "variables", "source_sections",
+    "requirement_id", "study_id", "type", "dataset", "capabilities", "source_sections",
 }
 
 
@@ -29,8 +33,9 @@ def _field_equal(field, req_value, cand_value):
 
 def _contradicts(version, declared):
     for field, value in declared.items():
-        # a population mismatch is delta-able, not a contradiction
-        if field in version and field != "population" and not _field_equal(field, value, version[field]):
+        # a mismatch on a delta-able field is a delta, not a contradiction
+        if field in version and field not in DELTAABLE_FIELDS \
+                and not _field_equal(field, value, version[field]):
             return True
     return False
 
@@ -99,8 +104,11 @@ def resolve(requirement, env, state_dir=None):
         differing = _differing_fields(survivors)
         discriminating = [f for f in differing if f in declared]
         if discriminating:
-            survivors = [v for v in survivors
-                         if all(_field_equal(f, declared[f], v[f]) for f in discriminating)]
+            matched = [v for v in survivors
+                       if all(_field_equal(f, declared[f], v[f]) for f in discriminating)]
+            if matched:
+                # no candidate matches exactly: all remain equally delta-able bases
+                survivors = matched
         if len(survivors) > 1:
             decision = _ambiguity_decision(requirement["dataset"], requirement,
                                            survivors, differing, state_dir)

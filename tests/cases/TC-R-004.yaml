@@ -1,0 +1,20 @@
+test_id: TC-R-004
+scenario: An approved ADAE standard exists but its safety population does not satisfy the study
+environment: sponsor_r_env
+study_requirement:
+  study_id: STUDY-X011
+  requirements:
+    - requirement_id: R-004
+      type: adam_dataset
+      dataset: ADAE
+      population: 'SAFFL == "Y" & AESER == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §9.2"]
+expected:
+  standard_exists: true
+  fully_satisfies: false
+  delta_required: true
+  action: APPLY_DELTA
+  standard_match: ADAE_v2.R
+  delta_types: [population_filter]

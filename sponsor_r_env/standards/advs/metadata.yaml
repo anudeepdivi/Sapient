@@ -1,0 +1,33 @@
+dataset: ADVS
+class: BDS
+purpose: Vital-signs analysis dataset
+packages: [dplyr]
+modules: []
+versions:
+  - version: "4.0"
+    file: ADVS_v4.R
+    status: deprecated
+    validated: true
+    population: 'SAFFL == "Y"'
+  - version: "5.0"
+    file: ADVS_v5.R
+    status: approved
+    validated: true
+    population: 'SAFFL == "Y"'
+    derivation: 'CHG = AVAL - BASE'
+    variables: []
+    anchors:
+      population_filter:
+        pattern: 'filter(advs, SAFFL == "Y")'
+        replacement: 'filter(advs, {population})'
+      derivation_change:
+        pattern: 'mutate(CHG = AVAL - BASE)'
+        replacement: 'mutate({derivation})'
+      variable_addition:
+        pattern: 'arrange(USUBJID, AVISITN)'
+        replacement: 'mutate({variables}) %>% arrange(USUBJID, AVISITN)'
+  - version: "6.0"
+    file: ADVS_v6.R
+    status: draft
+    validated: false
+    population: 'SAFFL == "Y"'

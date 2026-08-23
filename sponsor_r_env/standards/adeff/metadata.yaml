@@ -1,0 +1,24 @@
+dataset: ADEFF
+class: BDS
+purpose: Efficacy analysis dataset
+packages: [dplyr]
+modules: []
+versions:
+  - version: "1.0"
+    file: ADEFF_primary_v1.R
+    status: approved
+    validated: true
+    analysis_scope: primary
+    population: 'ITTFL == "Y"'
+  - version: "1.0"
+    file: ADEFF_sensitivity_v1.R
+    status: approved
+    validated: true
+    analysis_scope: sensitivity
+    population: 'ITTFL == "Y" & COMPLFL == "Y"'
+  - version: "1.0"
+    file: ADEFF_exploratory_v1.R
+    status: approved
+    validated: true
+    analysis_scope: exploratory
+    population: 'ITTFL == "Y" & PPFL == "Y"'

@@ -1,0 +1,36 @@
+test_id: TC-R-009
+scenario: >
+  The population delta must be applied with minimal necessary modification;
+  unrelated standard logic must remain untouched even when a broader rewrite
+  would execute green and produce the identical output frame.
+environment: sponsor_r_env
+standard: standards/adae/ADAE_v2.R
+study_requirement:
+  study_id: STUDY-X014
+  requirements:
+    - requirement_id: R-009
+      type: adam_dataset
+      dataset: ADAE
+      population: 'SAFFL == "Y" & SPECIALFL == "Y"'
+      capabilities: []
+      variables: []
+      source_sections: ["SAP §9.2"]
+# Ground truth hand-derived from the fixture data, independently of Sapient
+# (identical removals to TC-R-008: both S001 rows are SAFFL=Y/SPECIALFL=N).
+expected:
+  action: APPLY_DELTA
+  standard_match: ADAE_v2.R
+  delta_types: [population_filter]
+  removed_keys:
+    - "S001|Headache|2024-01-10"
+    - "S001|Nausea|2024-02-01"
+  added_keys: []
+  good:
+    executes: true
+    required_change_precision: 1.0
+    unnecessary_modification_rate: 0.0
+    modification_scope_accuracy: true
+  bad:
+    executes: true
+    preservation_passes: true
+    modification_scope_accuracy: false

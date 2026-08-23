@@ -1,0 +1,52 @@
+test_id: TC-R-010
+scenario: >
+  Modular reuse: when a study changes one declared module behavior (the TEAE
+  window), the harness must modify exactly the targeted module and leave every
+  other registered module byte-identical — no regeneration of unrelated code,
+  even though broader rewrites would execute green with identical output.
+environment: sponsor_r_env
+standard: standards/adae/ADAE_v2.R
+study_requirement:
+  study_id: STUDY-X015
+  requirements:
+    - requirement_id: R-010
+      type: adam_dataset
+      dataset: ADAE
+      capabilities: [derive_teae]
+      teae_definition: 'TRTEMFL = if_else(AESTDT >= trt_start & AESTDT <= trt_start + 7, "Y", NA_character_)'
+      variables: []
+      source_sections: ["SAP §9.3"]
+# Ground truth hand-derived from the fixture data, independently of Sapient:
+# Headache +5d stays inside the new +7-day window; Nausea (+27d vs S001's
+# 2024-01-05) and Fatigue (+12d vs S002's 2024-01-08) fall outside it, so
+# their TRTEMFL flips Y -> NA. Rash predates treatment (stays NA); Dizziness
+# is SAFFL-filtered out. No rows added/removed.
+expected:
+  action: APPLY_DELTA
+  standard_match: ADAE_v2.R
+  delta_types: [module_behavior]
+  target_file: modules/teae.R
+  modify_modules: [modules/teae.R]
+  reuse_modules: [population.R, treatment.R, dates.R, response.R]
+  cell_diffs:
+    - "S001|Nausea|2024-02-01|TRTEMFL|Y|NA"
+    - "S002|Fatigue|2024-01-20|TRTEMFL|Y|NA"
+  good:
+    executes: true
+    module_reuse_accuracy: 1.0
+    unnecessary_module_modification_rate: 0.0
+    required_module_modification_recall: 1.0
+    modification_scope_accuracy: true
+  bad_a:
+    # unrelated modules rewritten with behavior-preserving implementations;
+    # they are unsourced by ADAE_v2, so nothing downstream changes
+    executes: true
+    preservation_passes: true
+    modification_scope_accuracy: true
+    unnecessary_module_modification_rate_gt: 0.0
+  bad_b:
+    # targeted module fully rewritten instead of minimally delta'd
+    executes: true
+    preservation_passes: true
+    touch_audit_passes: true
+    modification_scope_accuracy: false

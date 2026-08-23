@@ -25,6 +25,24 @@ def build_delta(requirement, version_meta, field):
     }
 
 
+def build_module_delta(requirement, behavior):
+    req_text = str(requirement[behavior["field"]])
+    return {
+        "type": "module_behavior",
+        "source_requirement": requirement.get("requirement_id"),
+        "target": behavior["field"],
+        "target_file": behavior["target_file"],
+        "capability": behavior.get("capability"),
+        "evidence": {
+            "standard_text": behavior["pattern"],
+            "requirement_text": req_text,
+            "source_sections": requirement.get("source_sections", []),
+        },
+        "replacement": behavior["replacement"].replace(
+            "{%s}" % behavior["field"], req_text),
+    }
+
+
 def apply_deltas(code, deltas):
     for delta in deltas:
         pattern = delta["evidence"]["standard_text"]

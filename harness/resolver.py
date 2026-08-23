@@ -1,10 +1,11 @@
 import json
 
 from config import HARNESS_STATE_DIR
-from harness.deltas import FIELD_TO_DELTA_TYPE, build_delta
+from harness.deltas import FIELD_TO_DELTA_TYPE, build_delta, build_module_delta
 from harness.decisions import request_decision
 
-RESERVED_FIELDS = {"file", "version", "status", "validated", "anchors", "purpose", "notes"}
+RESERVED_FIELDS = {"file", "version", "status", "validated", "anchors",
+                   "purpose", "notes", "module_behaviors"}
 NON_COMPARABLE = RESERVED_FIELDS | {
     "requirement_id", "study_id", "type", "dataset", "capabilities",
     "variables", "source_sections",
@@ -109,9 +110,35 @@ def resolve(requirement, env, state_dir=None):
                     "differing_fields": differing, "decision": decision}
 
     version = survivors[0]
+    behaviors = {}
+    for behavior in (version.get("module_behaviors") or []):
+        required = ("field", "value", "target_file", "pattern", "replacement")
+        if any(behavior.get(k) in (None, "") for k in required):
+            return {**base, "status": "WAITING_FOR_HUMAN",
+                    "reason": "BEHAVIOR_DECLARATION_INCOMPLETE",
+                    "standard_match": version["file"]}
+        if behavior["field"] in behaviors:
+            return {**base, "status": "WAITING_FOR_HUMAN",
+                    "reason": "DUPLICATE_BEHAVIOR_DECLARATION",
+                    "standard_match": version["file"], "field": behavior["field"]}
+        behaviors[behavior["field"]] = behavior
+    unknown = [f for f in declared if f not in version and f not in behaviors]
+    if unknown:
+        return {**base, "status": "WAITING_FOR_HUMAN",
+                "reason": "UNKNOWN_REQUIREMENT_FIELD",
+                "fields": unknown, "standard_match": version["file"]}
     diffs = [f for f in declared
              if f in version and not _field_equal(f, declared[f], version[f])]
-    if not diffs:
+    module_diffs = [f for f in declared if f in behaviors
+                    and normalize_expr(declared[f])
+                    != normalize_expr(behaviors[f]["value"])]
+    if diffs and module_diffs:
+        # no consumer applies program-grain and module-grain deltas together
+        return {**base, "status": "WAITING_FOR_HUMAN",
+                "reason": "MIXED_GRAIN_DELTA_UNSUPPORTED",
+                "standard_match": version["file"],
+                "fields": sorted(diffs + module_diffs)}
+    if not diffs and not module_diffs:
         return {**base, "status": "RESOLVED", "action": "REUSE",
                 "standard_match": version["file"], "version": str(version["version"]),
                 "delta_count": 0, "generate_new_program": False}
@@ -121,6 +148,8 @@ def resolve(requirement, env, state_dir=None):
             return {**base, "status": "WAITING_FOR_HUMAN", "reason": "DELTA_ANCHOR_MISSING",
                     "standard_match": version["file"], "field": field}
         deltas.append(build_delta(requirement, version, field))
+    for field in module_diffs:
+        deltas.append(build_module_delta(requirement, behaviors[field]))
     return {**base, "status": "RESOLVED", "action": "APPLY_DELTA",
             "standard_match": version["file"], "version": str(version["version"]),
             "deltas": deltas, "delta_count": len(deltas),

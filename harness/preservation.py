@@ -16,7 +16,7 @@ DEFAULT_KEY_COLUMNS = ["USUBJID", "AETERM", "AESTDT"]
 
 
 def compare_programs(env, standard_rel, base_code, mod_code, study_id, state_dir,
-                     key_cols=None):
+                     key_cols=None, mod_cwd=None):
     key_cols = key_cols or DEFAULT_KEY_COLUMNS
     out_dir = Path(state_dir) / "preservation" / study_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -26,7 +26,7 @@ def compare_programs(env, standard_rel, base_code, mod_code, study_id, state_dir
     base_run = run_r_file(env.program_path(standard_rel), cwd=env.root,
                           env={"SAPIENT_STD_OUTPUT": str(base_rds)})
     mod_path = materialize(env, standard_rel, mod_code, study_id, state_dir)
-    mod_run = run_r_file(mod_path, cwd=env.root,
+    mod_run = run_r_file(mod_path, cwd=mod_cwd or env.root,
                          env={"SAPIENT_STD_OUTPUT": str(mod_rds)})
     if not (base_run["success"] and mod_run["success"]):
         return {"executed": False, "base_run": base_run, "mod_run": mod_run}

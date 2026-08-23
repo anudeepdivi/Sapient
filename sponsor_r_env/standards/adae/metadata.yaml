@@ -18,3 +18,10 @@ versions:
       population_filter:
         pattern: 'filter(ae1, SAFFL == "Y")'
         replacement: 'filter(ae1, {population})'
+    module_behaviors:
+      - capability: derive_teae
+        field: teae_definition
+        value: 'TRTEMFL = if_else(AESTDT >= trt_start, "Y", NA_character_)'
+        target_file: modules/teae.R
+        pattern: 'TRTEMFL = if_else(AESTDT >= trt_start, "Y", NA_character_)'
+        replacement: '{teae_definition}'

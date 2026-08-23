@@ -8,7 +8,7 @@ from config import R_EXECUTABLE
 
 def run_r_file(path, cwd=None, timeout=120, env=None, args=None):
     result = subprocess.run(
-        [R_EXECUTABLE, str(path), *[str(a) for a in (args or [])]],
+        [R_EXECUTABLE, "--vanilla", str(path), *[str(a) for a in (args or [])]],
         capture_output=True, text=True, timeout=timeout,
         cwd=str(cwd) if cwd else None,
         env={**os.environ, **env} if env else None,

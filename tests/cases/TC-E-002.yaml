@@ -1,0 +1,29 @@
+test_id: TC-E-002
+scenario: >
+  Multiple requirements in one extraction run: sections 5.1 and 9.3 together
+  yield an ADSL population requirement that exactly matches approved v2
+  (REUSE) alongside the ADAE TEAE change (APPLY_DELTA). Distinct IDs, correct
+  grouping, both resolvable downstream.
+fixture: SAP_FX001.md
+sections: ["5.1", "9.3"]
+expected:
+  requirement_count: 2
+  conflict_count: 0
+  gap_count: 0
+  requirements:
+    - requirement_id: REQ-001
+      dataset: ADSL
+      population: 'SAFFL == "Y"'
+      capabilities: []
+      resolution:
+        action: REUSE
+        standard_match: ADSL_v2.R
+        delta_count: 0
+    - requirement_id: REQ-002
+      dataset: ADAE
+      capabilities: [derive_teae]
+      teae_definition: 'TRTEMFL = if_else(AESTDT >= trt_start & AESTDT <= trt_start + 7, "Y", NA_character_)'
+      resolution:
+        action: APPLY_DELTA
+        standard_match: ADAE_v2.R
+        delta_types: [module_behavior]

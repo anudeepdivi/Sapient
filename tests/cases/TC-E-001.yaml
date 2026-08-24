@@ -1,0 +1,33 @@
+test_id: TC-E-001
+scenario: >
+  Explicit requirement with golden linkage: section 9.3 states the ADAE TEAE
+  change operationally. The engine must extract exactly one fully-evidenced
+  explicit requirement whose harness resolution is identical to the
+  hand-authored TC-R-011 requirement (the composition proof that the engine
+  feeds the existing harness unchanged).
+fixture: SAP_FX001.md
+sections: ["9.3"]
+expected:
+  requirement_count: 1
+  conflict_count: 0
+  gap_count: 0
+  requirement:
+    dataset: ADAE
+    type: adam_dataset
+    capabilities: [derive_teae]
+    teae_definition: 'TRTEMFL = if_else(AESTDT >= trt_start & AESTDT <= trt_start + 7, "Y", NA_character_)'
+    source_sections: ["9.3"]
+    extraction_status: explicit
+    extraction_method: deterministic_rule
+    evidence_field: teae_definition
+    # every quote must be verbatim from the named section (gate-checked);
+    # line numbers are informational and deliberately not pinned here
+  golden_linkage:
+    hand_authored_case: TC-R-011
+    resolution_action: APPLY_DELTA
+    resolution_standard: ADAE_v2.R
+    delta_type: module_behavior
+    delta_target_file: modules/teae.R
+    # known representational differences, excluded from the equality check:
+    # engine requirement_id (REQ-001 vs R-011) and delta evidence
+    # (engine quotes the fixture section "9.3"; hand truth wrote "SAP §9.3")

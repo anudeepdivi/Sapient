@@ -1,0 +1,11 @@
+test_id: TC-E-006
+scenario: >
+  Negative space: sections that contain no operational statements (background
+  prose, TLF inventory talk) must yield zero requirements, zero conflicts,
+  and zero gaps. The engine harvests; it never invents.
+fixture: SAP_FX001.md
+sections: ["1", "11"]
+expected:
+  requirement_count: 0
+  conflict_count: 0
+  gap_count: 0

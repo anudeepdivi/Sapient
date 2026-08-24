@@ -1,0 +1,17 @@
+test_id: TC-E-004
+scenario: >
+  Conflicting requirements: sections 9.3 and 9.4 give different TEAE windows
+  for the same dataset and field. The engine must escalate both values as a
+  conflict and emit NO resolvable requirement — never pick a winner.
+fixture: SAP_FX001.md
+sections: ["9.3", "9.4"]
+expected:
+  requirement_count: 0
+  conflict_count: 1
+  conflict_dataset: ADAE
+  conflict_field: teae_definition
+  conflict_value_count: 2
+  conflict_value_contains:
+    - 'trt_start + 7'
+    - 'trt_start + 14'
+  conflict_sections: ["9.3", "9.4"]

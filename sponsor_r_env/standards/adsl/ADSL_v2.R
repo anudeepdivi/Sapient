@@ -20,3 +20,7 @@ result <- derive_treatment(adsl_raw)
 result <- derive_study_day(result)
 pop <- filter(result, SAFFL == "Y")
 cat("ADSL subjects:", nrow(pop), "\n")
+
+out_path <- Sys.getenv("SAPIENT_STD_OUTPUT", "data/output/ADSL_v2.rds")
+dir.create(dirname(out_path), showWarnings = FALSE, recursive = TRUE)
+saveRDS(pop, out_path)

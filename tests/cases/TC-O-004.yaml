@@ -1,0 +1,56 @@
+# Ground truth authored independently of extractor output.
+# Conflicting sections: 6.1 states ANCOVA for the primary comparison, the
+# amendment note 6.3 states MMRM for the same primary analysis. The engine
+# must escalate BOTH, resolve NEITHER, leave no explicit statistical_method
+# standing, and block the material method obligation from downstream coverage.
+test_id: TC-O-004
+fixture: SAP_FX002.md
+sections: ["6.1", "6.3"]
+description: >
+  Two conflicting statistical methods for the primary analysis become one
+  escalated conflict with both quoted values; both obligations drop to
+  status=unresolved with reason=conflict.
+reference:
+  - kind: timepoint
+    subject: Week 12
+  - kind: statistical_method
+    subject: primary analysis statistical method
+    abstract: true
+    resolution: human_required
+    values:
+      - ANCOVA adjusted for baseline value and centre
+      - mixed model for repeated measurements
+  - kind: population
+    subject: full analysis population
+  - kind: subgroup
+    subject: age group
+  - kind: subgroup
+    subject: sex
+  - kind: indeterminate
+    subject: Additional supportive analyses may be performed as appropriate
+    resolution: human_required
+expected:
+  obligations:
+    - {kind: timepoint, status: explicit, subject_key: "week 12"}
+    - {kind: statistical_method, status: unresolved, subject_key: "ancova adjusted for baseline value and centre"}
+    - {kind: population, status: explicit, subject_key: "full analysis population"}
+    - {kind: subgroup, status: explicit, subject_key: "age group"}
+    - {kind: subgroup, status: explicit, subject_key: "sex"}
+    - {kind: indeterminate, status: unresolved, subject_key: "additional supportive analyses may be performed as appropriate"}
+    - {kind: statistical_method, status: unresolved, subject_key: "mixed model for repeated measurements"}
+  conflicts:
+    - kind: statistical_method
+      anchor: primary
+      n_values: 2
+  missing: []
+  outstanding:
+    - "statistical_method/primary analysis statistical method"
+    - "indeterminate/additional supportive analyses may be performed as appropriate"
+  metrics:
+    obligation_recall: 0.8333
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 0.3333
+    coverage_recall: 0.6667
+    false_confidence_rate: 0.0

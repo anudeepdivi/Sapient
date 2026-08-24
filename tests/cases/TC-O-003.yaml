@@ -1,0 +1,36 @@
+# Ground truth authored independently of extractor output.
+# Inference transparency: derived obligations exist, carry their basis, and
+# never masquerade as extracted facts.
+test_id: TC-O-003
+fixture: SAP_FX002.md
+sections: ["2"]
+description: >
+  The secondary-endpoint-summary inference fires for each enumerated secondary
+  endpoint; every inferred obligation is status=inferred with a recorded
+  basis id, and the unsupported-inference rate is zero because both are
+  genuinely material.
+reference:
+  - kind: output_obligation
+    subject: diastolic blood pressure change summary
+  - kind: output_obligation
+    subject: 24-hour ambulatory monitoring profile summary
+expected:
+  obligations:
+    - {kind: output_obligation, status: inferred, subject_key: "diastolic blood pressure change summary"}
+    - {kind: output_obligation, status: inferred, subject_key: "24 hour ambulatory monitoring profile summary"}
+  conflicts: []
+  missing: []
+  outstanding: []
+  metrics:
+    obligation_recall: 1.0
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 0.0
+    coverage_recall: 1.0
+    false_confidence_rate: 1.0
+  notes: >
+    false_confidence_rate is 1.0 BY DESIGN here: the scoped reference contains
+    only these two obligations and both are covered solely by inferred items.
+    That is the metric doing its job — inferred coverage is visible, never
+    silently conflated with explicit grounding.

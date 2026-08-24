@@ -1,0 +1,91 @@
+# Ground truth authored independently of extractor output.
+# Coverage failure: the candidate plan deliberately OMITS section 6.2, so the
+# sensitivity-analysis obligation the SAP creates is missing from the plan.
+# The coverage checker must name it in `missing` and depress coverage recall.
+# Full-document reference set (18 material obligations); the conflicted
+# primary statistical method stays outstanding for a human, never auto-covered.
+test_id: TC-O-006
+fixture: SAP_FX002.md
+sections: ["2", "4", "6.1", "6.3", "8", "12"]
+description: >
+  Plan built without section 6.2 must fail coverage on the sensitivity
+  analysis obligation; everything else material is either explicitly covered,
+  inferred-covered (flagged via false-confidence), or outstanding-for-human.
+reference:
+  - kind: endpoint
+    subject: change from baseline in systolic blood pressure at Week 12
+  - kind: endpoint
+    subject: diastolic blood pressure change
+  - kind: endpoint
+    subject: 24-hour ambulatory monitoring profile
+  - kind: timepoint
+    subject: Week 12
+  - kind: treatment_group
+    subject: Active vs Placebo
+  - kind: statistical_method
+    subject: primary analysis statistical method
+    abstract: true
+    resolution: human_required
+  - kind: population
+    subject: full analysis population
+  - kind: subgroup
+    subject: age group
+  - kind: subgroup
+    subject: sex
+  - kind: output_obligation
+    subject: diastolic blood pressure change summary
+  - kind: output_obligation
+    subject: 24-hour ambulatory monitoring profile summary
+  - kind: indeterminate
+    subject: Additional supportive analyses may be performed as appropriate
+    resolution: human_required
+  - kind: sensitivity_analysis
+    subject: primary endpoint excluding centre adjustment
+  - kind: population
+    subject: safety population
+  - kind: output_obligation
+    subject: adverse events by treatment group
+  - kind: parameter
+    subject: TEAE definition
+    subject_key: teae_definition
+  - kind: output_obligation
+    subject: continuous endpoints summarised descriptively by visit and treatment group
+  - kind: output_obligation
+    subject: primary efficacy result table
+expected:
+  obligations:
+    - {kind: endpoint, status: explicit, subject_key: "change from baseline in systolic blood pressure at week 12"}
+    - {kind: endpoint, status: explicit, subject_key: "diastolic blood pressure change"}
+    - {kind: endpoint, status: explicit, subject_key: "24 hour ambulatory monitoring profile"}
+    - {kind: timepoint, status: explicit, subject_key: "week 12"}
+    - {kind: treatment_group, status: explicit, subject_key: "active vs placebo"}
+    - {kind: statistical_method, status: unresolved, subject_key: "ancova adjusted for baseline value and centre"}
+    - {kind: population, status: explicit, subject_key: "full analysis population"}
+    - {kind: subgroup, status: explicit, subject_key: "age group"}
+    - {kind: subgroup, status: explicit, subject_key: "sex"}
+    - {kind: indeterminate, status: unresolved, subject_key: "additional supportive analyses may be performed as appropriate"}
+    - {kind: statistical_method, status: unresolved, subject_key: "mixed model for repeated measurements"}
+    - {kind: population, status: explicit, subject_key: "safety population"}
+    - {kind: output_obligation, status: explicit, subject_key: "adverse events by treatment group"}
+    - {kind: parameter, status: explicit, subject_key: "teae_definition"}
+    - {kind: output_obligation, status: explicit, subject_key: "continuous endpoints summarised descriptively by visit and treatment group"}
+    - {kind: output_obligation, status: explicit, subject_key: "primary efficacy result table"}
+    - {kind: output_obligation, status: inferred, subject_key: "diastolic blood pressure change summary"}
+    - {kind: output_obligation, status: inferred, subject_key: "24 hour ambulatory monitoring profile summary"}
+  conflicts:
+    - kind: statistical_method
+      anchor: primary
+      n_values: 2
+  missing:
+    - "sensitivity_analysis/primary endpoint excluding centre adjustment"
+  outstanding:
+    - "statistical_method/primary analysis statistical method"
+    - "indeterminate/additional supportive analyses may be performed as appropriate"
+  metrics:
+    obligation_recall: 0.8889
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 0.1111
+    coverage_recall: 0.8333
+    false_confidence_rate: 0.1333

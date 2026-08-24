@@ -1,0 +1,30 @@
+# Ground truth authored independently of extractor output.
+# Unsupported/ambiguous statement: "Additional supportive analyses may be
+# performed as appropriate" is obligation-bearing in shape but determinate in
+# nothing. It must surface status=unresolved, satisfy nothing, and land in the
+# human queue — never silently dropped, never silently claimed.
+test_id: TC-O-005
+fixture: SAP_FX002.md
+sections: ["6.1"]
+description: >
+  The indeterminate sentence becomes an unresolved obligation that covers
+  nothing and appears as an outstanding human-required item.
+reference:
+  - kind: indeterminate
+    subject: Additional supportive analyses may be performed as appropriate
+    resolution: human_required
+expected:
+  obligations:
+    - {kind: indeterminate, status: unresolved, subject_key: "additional supportive analyses may be performed as appropriate"}
+  conflicts: []
+  missing: []
+  outstanding:
+    - "indeterminate/additional supportive analyses may be performed as appropriate"
+  metrics:
+    obligation_recall: 1.0
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 1.0
+    coverage_recall: 0.0
+    false_confidence_rate: 0.0

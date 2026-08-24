@@ -1,0 +1,44 @@
+# Ground truth authored independently of extractor output.
+# Multiple obligations carried by ONE dense paragraph (section 6.1): method,
+# population, two subgroups, a shared timepoint — plus one deliberately
+# indeterminate sentence that must surface as unresolved, never as a claim.
+test_id: TC-O-002
+fixture: SAP_FX002.md
+sections: ["6.1"]
+description: >
+  One paragraph yields five distinct explicit obligations plus one unresolved;
+  all five explicit ones are recovered with per-sentence evidence.
+reference:
+  - kind: timepoint
+    subject: Week 12
+  - kind: statistical_method
+    subject: ANCOVA adjusted for baseline value and centre
+  - kind: population
+    subject: full analysis population
+  - kind: subgroup
+    subject: age group
+  - kind: subgroup
+    subject: sex
+  - kind: indeterminate
+    subject: Additional supportive analyses may be performed as appropriate
+    resolution: human_required
+expected:
+  obligations:
+    - {kind: timepoint, status: explicit, subject_key: "week 12"}
+    - {kind: statistical_method, status: explicit, subject_key: "ancova adjusted for baseline value and centre"}
+    - {kind: population, status: explicit, subject_key: "full analysis population"}
+    - {kind: subgroup, status: explicit, subject_key: "age group"}
+    - {kind: subgroup, status: explicit, subject_key: "sex"}
+    - {kind: indeterminate, status: unresolved, subject_key: "additional supportive analyses may be performed as appropriate"}
+  conflicts: []
+  missing: []
+  outstanding:
+    - "indeterminate/additional supportive analyses may be performed as appropriate"
+  metrics:
+    obligation_recall: 1.0
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 0.1667
+    coverage_recall: 0.8333
+    false_confidence_rate: 0.0

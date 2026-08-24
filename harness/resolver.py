@@ -10,7 +10,7 @@ from harness.deltas import (
 from harness.decisions import request_decision
 
 RESERVED_FIELDS = {"file", "version", "status", "validated", "anchors",
-                   "purpose", "notes", "module_behaviors"}
+                   "purpose", "notes", "module_behaviors", "extraction"}
 NON_COMPARABLE = RESERVED_FIELDS | {
     "requirement_id", "study_id", "type", "dataset", "capabilities", "source_sections",
 }

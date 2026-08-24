@@ -1,0 +1,21 @@
+test_id: TC-E-005
+scenario: >
+  Novel capability: section 10 demands sponsor function
+  derive_best_overall_response_flag for dataset ADRS — neither exists in the
+  sponsor environment (the registry's near-miss decoy is
+  derive_best_response_flag). The engine carries the raw name through
+  unharmed; the resolver must return NOVEL_CAPABILITY, not reuse the decoy.
+fixture: SAP_FX001.md
+sections: ["10"]
+expected:
+  requirement_count: 1
+  conflict_count: 0
+  dataset: ADRS
+  capabilities: [derive_best_overall_response_flag]
+  unverified_datasets: [ADRS]
+  unverified_capabilities: [derive_best_overall_response_flag]
+  decoy_not_substituted: derive_best_response_flag
+  resolution:
+    status: NOVEL_CAPABILITY
+    action: CREATE_PROPOSAL
+    missing_capabilities: [derive_best_overall_response_flag]

@@ -1,0 +1,70 @@
+test_id: TC-R-011
+scenario: >
+  Dependency-aware reuse: ADAE depends on ADSL plus sponsorR functions.
+  The study requires only a TEAE-window change, so the harness must revalidate
+  exactly the affected standard (ADAE), prove the declared dependency (ADSL)
+  preserved — byte-for-byte and output-identical — and leave every unaffected
+  standard alone. Changing only the necessary dependency path is the goal;
+  both unnecessary propagation and skipped dependency verification fail.
+environment: sponsor_r_env
+standard: standards/adae/ADAE_v2.R
+study_requirement:
+  study_id: STUDY-X016
+  requirements:
+    - requirement_id: R-011
+      type: adam_dataset
+      dataset: ADAE
+      capabilities: [derive_teae]
+      teae_definition: 'TRTEMFL = if_else(AESTDT >= trt_start & AESTDT <= trt_start + 7, "Y", NA_character_)'
+      variables: []
+      source_sections: ["SAP §9.3"]
+# Ground truth hand-derived from the fixture data, independently of Sapient:
+# ADAE cell diffs as in TC-R-010 (Nausea +27d and Fatigue +12d fall outside
+# the +7d window). ADSL declares modules [treatment.R, dates.R] and ADAE
+# declares depends_on_standards [ADSL]; no other standard sources teae.R or
+# depends on ADAE, so ADSL is the sole preserve set member and ADEFF/ADTTE/
+# ADVS are unaffected. ADSL's saved frame keeps all 5 SAFFL=="Y" subjects.
+expected:
+  action: APPLY_DELTA
+  standard_match: ADAE_v2.R
+  delta_types: [module_behavior]
+  target_file: modules/teae.R
+  modify_modules: [modules/teae.R]
+  impacted:
+    affected: [ADAE]
+    preserve: [ADSL]
+    unaffected: [ADEFF, ADTTE, ADVS]
+  adae_cell_diffs:
+    - "S001|Nausea|2024-02-01|TRTEMFL|Y|NA"
+    - "S002|Fatigue|2024-01-20|TRTEMFL|Y|NA"
+  adsl_cell_diffs: []
+  adsl_subjects: 5
+  good:
+    executes: true
+    validation_precision: 1.0
+    validation_recall: 1.0
+    preservation_recall: 1.0
+    preservation_accuracy: 1.0
+    module_reuse_accuracy: 1.0
+    unnecessary_module_modification_rate: 0.0
+    required_module_modification_recall: 1.0
+    modification_scope_accuracy: true
+  bad_a:
+    # scope creep: treatment.R/dates.R rewritten behavior-preservingly. They
+    # are unsourced by ADAE_v2 so nothing downstream changes — but both are
+    # declared ADSL modules, so the ACTUAL change set drags ADSL from the
+    # preserve set into the affected set: required work the agent never did
+    # (validation_recall 0.5), on top of the touch-audit violation.
+    executes: true
+    validation_recall_lt: 1.0
+    unnecessary_module_modification_rate_gt: 0.0
+    module_reuse_accuracy_lt: 1.0
+  bad_b:
+    # correct minimal edit, full ADAE revalidation — but the agent skips
+    # proving the declared ADSL dependency preserved. Every behavioral oracle
+    # stays green; only preservation_recall (0.0) condemns it.
+    executes: true
+    ada_cell_diffs_match: true
+    touch_audit_passes: true
+    modification_scope_accuracy: true
+    preservation_recall: 0.0

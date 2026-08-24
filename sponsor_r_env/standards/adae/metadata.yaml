@@ -3,6 +3,7 @@ class: OCCDS
 purpose: Adverse event analysis dataset
 packages: [dplyr]
 modules: [teae.R]
+depends_on_standards: [ADSL]
 versions:
   - version: "1.0"
     file: ADAE_v1.R

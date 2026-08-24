@@ -1,0 +1,24 @@
+# Ground truth authored independently of extractor output.
+# Negative space: pure background/noise text (external workbook bookkeeping,
+# listing numbers maintained elsewhere) creates ZERO obligations. This is the
+# anti-confabulation control — the retired LoT metric failed exactly here.
+test_id: TC-O-007
+fixture: SAP_FX002.md
+sections: ["13"]
+description: >
+  Appendix bookkeeping prose yields no obligations, no conflicts, no
+  inferences, and vacuous-convention metric defaults.
+reference: []
+expected:
+  obligations: []
+  conflicts: []
+  missing: []
+  outstanding: []
+  metrics:
+    obligation_recall: 1.0
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 0.0
+    coverage_recall: 1.0
+    false_confidence_rate: 0.0

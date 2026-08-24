@@ -1,0 +1,46 @@
+# Independently authored ground truth. Authored from the SAP text by reading
+# it as a statistician would, NOT from extractor output; the extractor must
+# recover these or fail the test. Scope: section 2 explicit obligations.
+test_id: TC-O-001
+fixture: SAP_FX002.md
+sections: ["2"]
+description: >
+  Explicit obligations stated in the endpoints section are recovered with
+  evidence; the two enumerated secondary endpoints also legitimately trigger
+  the declared secondary-endpoint-summary inference, which must stay marked
+  inferred and is part of the reference set because the SAP does oblige a
+  summary for each listed endpoint.
+reference:
+  - kind: endpoint
+    subject: change from baseline in systolic blood pressure at Week 12
+  - kind: endpoint
+    subject: diastolic blood pressure change
+  - kind: endpoint
+    subject: 24-hour ambulatory monitoring profile
+  - kind: timepoint
+    subject: Week 12
+  - kind: output_obligation
+    subject: diastolic blood pressure change summary
+    note: material via inference; must remain status=inferred
+  - kind: output_obligation
+    subject: 24-hour ambulatory monitoring profile summary
+    note: material via inference; must remain status=inferred
+expected:
+  obligations:
+    - {kind: endpoint, status: explicit, subject_key: "change from baseline in systolic blood pressure at week 12"}
+    - {kind: endpoint, status: explicit, subject_key: "diastolic blood pressure change"}
+    - {kind: endpoint, status: explicit, subject_key: "24 hour ambulatory monitoring profile"}
+    - {kind: timepoint, status: explicit, subject_key: "week 12"}
+    - {kind: output_obligation, status: inferred, subject_key: "diastolic blood pressure change summary"}
+    - {kind: output_obligation, status: inferred, subject_key: "24 hour ambulatory monitoring profile summary"}
+  conflicts: []
+  missing: []
+  outstanding: []
+  metrics:
+    obligation_recall: 1.0
+    obligation_precision: 1.0
+    grounded_rate: 1.0
+    unsupported_inference_rate: 0.0
+    unresolved_high_risk_rate: 0.0
+    coverage_recall: 1.0
+    false_confidence_rate: 0.3333

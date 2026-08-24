@@ -260,13 +260,20 @@ def _flag_vocab(report, env):
             [] if req["dataset"] in standards else [req["dataset"]])
 
 
-def _validate(requirements, sections):
+def validate_quote_containment(items, sections):
+    """Mechanical anti-confabulation gate shared by every extraction layer:
+    each {section_id, quote} item must be whitespace-contained in its claimed
+    section's text or ExtractionError is raised."""
     norm_text = {s["id"]: normalize_expr(s["text"]) for s in sections}
-    for req in requirements:
-        for item in req["extraction"]["evidence"]:
-            quote = normalize_expr(item["quote"])
-            if quote not in norm_text.get(item["section_id"], ""):
-                raise ExtractionError(
-                    f"evidence quote for {req['dataset']}.{item['field']} "
-                    f"not contained in section {item['section_id']}: "
-                    f"{item['quote']!r}")
+    for item in items:
+        quote = normalize_expr(item["quote"])
+        if quote not in norm_text.get(item["section_id"], ""):
+            raise ExtractionError(
+                f"evidence quote not contained in section "
+                f"{item['section_id']}: {item['quote']!r}")
+
+
+def _validate(requirements, sections):
+    validate_quote_containment(
+        [item for r in requirements
+         for item in r["extraction"]["evidence"]], sections)

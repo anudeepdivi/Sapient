@@ -106,7 +106,7 @@ R packages used: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak` (+ `dply
 | `knowledge/` | The vocabularies and extracted metadata that keep the model grounded |
 | `specs/`, `templates/` | Specification handling and code scaffolding |
 | `r_layer/` | Everything R: execution, deterministic checks, output comparison |
-| `tests/` | The automated suite (55 tests, no network access) |
+| `tests/` | The automated suite (61 tests, no network access) |
 | `data/` | Input/reference data (not part of the repository) |
 
 ---

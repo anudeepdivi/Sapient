@@ -1,0 +1,22 @@
+test_id: TC-E-003
+scenario: >
+  Missing information: section 5.2 discusses the per-protocol population in
+  prose but never operationalizes it. The engine must record a gap pointing
+  back at the section — never invent an expression.
+fixture: SAP_FX001.md
+sections: ["5.2"]
+expected:
+  requirement_count: 1
+  conflict_count: 0
+  dataset: ADSL
+  has_population_field: false
+  gap_count: 1
+  gap_field: population
+  gap_section_id: "5.2"
+  forbidden_anywhere_in_requirement: ['SAFFL', 'ITTFL', '"Y"']
+  # documented downstream behavior of an unconstrained-but-flagged
+  # requirement: the resolver reuses the approved standard (the human sees
+  # the gap upstream, in extraction.gaps)
+  resolution:
+    action: REUSE
+    standard_match: ADSL_v2.R

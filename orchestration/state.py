@@ -14,8 +14,12 @@ class SapientState(TypedDict):
     lot_entries: Optional[list[dict]]       # one entry per TLF
     mockshells: Optional[list[dict]]        # one mockshell blueprint per TLF
     adam_programs: Optional[dict[str, str]] # dataset_name -> R code
+    adam_execution: Optional[dict]          # dataset_name -> run_adam_program result
+    accepted_adam: Optional[dict[str, str]] # dataset_name -> accepted_path, current run only
     tlf_programs: Optional[dict[str, str]]  # table_number -> R code
     tlf_skipped: Optional[dict[str, str]]   # table_number -> reason (e.g. source ADaM not built)
+    tlf_pending: Optional[dict[str, str]]   # skipped, but a retryable ADaM failure may clear it
+    tlf_blocked: Optional[dict[str, str]]   # skipped, terminal: ADaM has no input mapping
     validation_results: Optional[dict]      # program_name -> pass/fail/issues
     needs_regeneration: Optional[list[str]] # programs flagged for retry
     real_pass_rate: Optional[float]         # execution + metacore pass rate, ADaM programs only

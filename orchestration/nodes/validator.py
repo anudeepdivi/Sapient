@@ -89,7 +89,7 @@ def run(state: SapientState) -> SapientState:
         if not (validation_results.get(name, {}).get("status") == "fail"
                 and validation_results.get(name, {}).get("stage") == "deterministic_gate")
     }
-    r_results = run_all_adam_programs(gated_adam)
+    r_results = state.get("adam_execution") or run_all_adam_programs(gated_adam)
     real_pass_count = 0
     for name in gated_adam:
         exec_result = r_results.get(name, {})
@@ -126,6 +126,8 @@ def run(state: SapientState) -> SapientState:
     print(f"validator: real pass rate (execution + metacore) = {real_pass_count}/{total_adam} ({real_pass_rate:.0%})")
     print(f"validator: conformance-clean (type/length/CT) = {conformance_clean}/{total_adam}")
 
+    tlf_skipped = state.get("tlf_skipped") or {}
     return {**state, "validation_results": validation_results, "needs_regeneration": needs_regeneration,
-            "real_pass_rate": real_pass_rate, "completed": len(needs_regeneration) == 0,
+            "real_pass_rate": real_pass_rate,
+            "completed": len(needs_regeneration) == 0 and not tlf_skipped,
             "regen_count": state.get("regen_count", 0) + 1, "current_node": "validator"}

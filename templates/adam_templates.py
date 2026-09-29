@@ -65,6 +65,10 @@ DETERMINISTIC_DERIVATIONS = {
     "ADAE": Path(__file__).parent / "derivations" / "ADAE.R",
 }
 
+# Datasets the generator can actually produce: an input mapping or a hand-written
+# derivation. Mirrors the `supported` set in orchestration/nodes/adam_generator.py.
+BUILDABLE = set(ADAM_INPUTS) | set(DETERMINISTIC_DERIVATIONS)
+
 _input_columns_cache = {}
 
 

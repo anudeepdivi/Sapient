@@ -6,10 +6,11 @@
 suppressMessages({library(metacore); library(haven); library(jsonlite)})
 args <- commandArgs(trailingOnly = TRUE)
 dataset <- args[1]
+adam_dir <- if (length(args) >= 2) args[2] else "data/adam"
 
 mc <- load_metacore(Sys.getenv("SAPIENT_SPEC_RDS", unset = "specs/metacore_spec.rds"))
 m <- suppressWarnings(select_dataset(mc, dataset))
-ds <- read_xpt(sprintf("data/adam/%s.xpt", dataset))
+ds <- read_xpt(file.path(adam_dir, paste0(dataset, ".xpt")))
 vs <- m$var_spec
 val <- m$value_spec
 cl <- m$codelist

@@ -97,11 +97,11 @@ def run(state: SapientState) -> SapientState:
         entry["execution"] = exec_result
         if not exec_result.get("success"):
             entry["status"] = "fail"
-            entry["stage"] = "r_execution"
+            entry["stage"] = exec_result.get("stage", "r_execution")
             if name not in needs_regeneration:
                 needs_regeneration.append(name)
             continue
-        metacore_result = validate_metacore(name)
+        metacore_result = exec_result["metacore"]
         entry["metacore"] = metacore_result
         if not metacore_result.get("success"):
             entry["status"] = "fail"

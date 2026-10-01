@@ -25,12 +25,17 @@ _installed_packages_cache = None
 
 def _installed_packages() -> set[str]:
     global _installed_packages_cache
-    if _installed_packages_cache is None:
-        result = subprocess.run(
-            [R_EXECUTABLE, "-e", 'cat(rownames(installed.packages()), sep="\\n")'],
-            capture_output=True, text=True, timeout=30
-        )
-        _installed_packages_cache = set(result.stdout.split())
+    if _installed_packages_cache is not None:
+        return _installed_packages_cache
+    result = subprocess.run(
+        [R_EXECUTABLE, "-e", 'cat(rownames(installed.packages()), sep="\\n")'],
+        capture_output=True, text=True, timeout=30
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        # Never cache a failed query: an empty set makes check_package_allowlist report
+        # every library() call as uninstalled for the rest of the process.
+        return set()
+    _installed_packages_cache = set(result.stdout.split())
     return _installed_packages_cache
 
 

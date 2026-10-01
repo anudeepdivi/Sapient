@@ -1,5 +1,6 @@
 dotenv
 langgraph
+openai
 chromadb
 sentence-transformers
 python-dotenv

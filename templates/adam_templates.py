@@ -37,7 +37,14 @@ ADAM_INPUTS = {
 
 def render_header(dataset: str) -> str:
     inputs = ADAM_INPUTS[dataset]
-    load_lines = "\n".join(f'{var} <- haven::read_xpt("{path}")' for var, path in inputs)
+    load_lines = []
+    for var, path in inputs:
+        if path.startswith("data/adam/"):
+            source = f'file.path(Sys.getenv("SAPIENT_ADAM_INPUT_DIR", unset = Sys.getenv("SAPIENT_ADAM_DIR", unset = "data/adam")), "{Path(path).name}")'
+        else:
+            source = f'"{path}"'
+        load_lines.append(f'{var} <- haven::read_xpt({source})')
+    load_lines = "\n".join(load_lines)
     return (
         "library(admiral)\n"
         "library(metacore)\n"
@@ -57,6 +64,10 @@ DETERMINISTIC_DERIVATIONS = {
     "ADSL": Path(__file__).parent / "derivations" / "ADSL.R",
     "ADAE": Path(__file__).parent / "derivations" / "ADAE.R",
 }
+
+# Datasets the generator can actually produce: an input mapping or a hand-written
+# derivation. Mirrors the `supported` set in orchestration/nodes/adam_generator.py.
+BUILDABLE = set(ADAM_INPUTS) | set(DETERMINISTIC_DERIVATIONS)
 
 _input_columns_cache = {}
 
@@ -116,5 +127,5 @@ def render_footer(dataset: str) -> str:
         f'result <- tryCatch(xportr::xportr_length(result, mc_ds, domain = "{dataset}", length_source = "data"), error = function(e) result)\n'
         f'result <- tryCatch(xportr::xportr_format(result, mc_ds, domain = "{dataset}"), error = function(e) result)\n'
         "# Export\n"
-        f'xportr::xportr_write(result, path = "data/adam/{dataset}.xpt", domain = "{dataset}")'
+        f'xportr::xportr_write(result, path = file.path(Sys.getenv("SAPIENT_ADAM_DIR", unset = "data/adam"), "{dataset}.xpt"), domain = "{dataset}")'
     )

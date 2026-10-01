@@ -37,8 +37,10 @@ for _name in _STUBBED:
         sys.modules[_name] = _stub
 
 from config import R_EXECUTABLE
+from r_layer.runner import run_adam_program
 from orchestration.graph import should_regenerate
 from orchestration.nodes import adam_executor, tlf_generator, validator
+from orchestration.nodes.adam_generator import failure_feedback
 
 # The node modules are imported now, so the stand-ins have done their job. Drop them
 # so another test module importing these sees the real (absent) package and reports
@@ -52,6 +54,15 @@ def make_xpt(path: Path, value: str, columns: str = "USUBJID") -> None:
     subprocess.run(
         [R_EXECUTABLE, "-e",
          f'haven::write_xpt(data.frame({columns}="{value}"), "{path}")'],
+        check=True, capture_output=True, text=True, timeout=120)
+
+
+def write_xpt_columns(path: Path, columns: str) -> None:
+    """Write a real XPT carrying exactly the named columns."""
+    values = ", ".join(f'{name}="{name.lower()}"' for name in columns.split(","))
+    subprocess.run(
+        [R_EXECUTABLE, "-e",
+         f'haven::write_xpt(data.frame({values}), "{path}")'],
         check=True, capture_output=True, text=True, timeout=120)
 
 
@@ -283,6 +294,203 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
         self.assertEqual(second["tlf_skipped"], {})
         self.assertEqual(second["tlf_pending"], {})
         self.assertEqual(second["tlf_blocked"], {})
+
+    # 12. republishing to the same canonical path must not serve stale columns
+    def test_republished_adam_columns_replace_the_cached_listing(self):
+        """runner.py republishes every accepted dataset to a stable canonical path, so
+        the path is unchanged between rounds while the bytes behind it are not."""
+        target = self.root / "ADSL.xpt"
+        write_xpt_columns(target, "USUBJID, AGE")
+        first = tlf_generator.adam_columns_block({"ADSL": str(target)})
+
+        write_xpt_columns(target, "USUBJID, AGE, TRT01P")
+        second = tlf_generator.adam_columns_block({"ADSL": str(target)})
+
+        self.assertIn("AGE", first)
+        self.assertNotIn("TRT01P", first)
+        self.assertIn("TRT01P", second)
+
+    # 13. a failed column listing is never presented as "this run has no ADaM columns"
+    def test_failed_column_listing_is_reported_and_not_cached(self):
+        target = self.root / "ADSL.xpt"
+        write_xpt_columns(target, "USUBJID")
+        broken = types.SimpleNamespace(
+            stdout="", stderr="Error: package 'haven' is not installed", returncode=1)
+
+        with patch("subprocess.run", return_value=broken):
+            block = tlf_generator.adam_columns_block({"ADSL": str(target)})
+
+        self.assertIn("UNAVAILABLE", block)
+        self.assertIn("haven", block)
+        # Not cached: a healthy R afterwards must still yield the real listing.
+        self.assertIn("USUBJID", tlf_generator.adam_columns_block({"ADSL": str(target)}))
+
+    # 14. a LoT entry with no data_source is unbound, not buildable-with-no-inputs
+    def test_entry_without_data_source_is_blocked_rather_than_generated(self):
+        for source in ([], None):
+            with self.subTest(data_source=source):
+                entry = {"table_number": "14.1.1"}
+                if source is not None:
+                    entry["data_source"] = source
+                result = tlf_generator.run(self.state(
+                    lot_entries=[entry], accepted_adam={"ADSL": str(self.root / "ADSL.xpt")}))
+
+                self.assertNotIn("14.1.1", result["tlf_programs"])
+                self.assertIn("14.1.1", result["tlf_blocked"])
+                self.assertIn("14.1.1", result["tlf_skipped"])
+                self.assertNotIn("14.1.1", result["tlf_pending"])
+                self.assertEqual(self.calls, [])
+
+    # 15. a pending reason must not outlive the dataset it waits on
+    def test_stale_pending_reason_is_cleared_once_only_a_terminal_block_remains(self):
+        result = tlf_generator.run(self.state(
+            lot_entries=[self.entry(data_source=["ADSL", "ADTTE"])],
+            accepted_adam={"ADSL": str(self.root / "ADSL.xpt")},
+            tlf_pending={"14.1.1": "ADaM not accepted in current run: ADSL"},
+            tlf_skipped={"14.1.1": "ADaM not accepted in current run: ADSL"}))
+
+        self.assertNotIn("14.1.1", result["tlf_pending"])
+        self.assertIn("14.1.1", result["tlf_blocked"])
+        self.assertIn("no input mapping", result["tlf_skipped"]["14.1.1"])
+
+    # 16. R execution output must reach the retry prompt
+    def test_r_execution_diagnostics_reach_the_regeneration_prompt(self):
+        """A plain R failure carries no `error` key — the explanation is in stdout — so
+        reading only `error` delivered the retry an empty list of failed checks."""
+        execution = run_adam_program(
+            "ADSL", 'stop("ADSL: object `TRT01P` not found")', adam_dir=self.root)
+        self.assertFalse(execution["success"])
+
+        feedback = failure_feedback(self.state(validation_results={"ADSL": {
+            "status": "fail", "stage": "r_execution", "issues": [],
+            "execution": execution}}), "ADSL")
+
+        self.assertIn("TRT01P", feedback)
+        self.assertIn("R exit code: 1", feedback)
+        self.assertIn("r_execution", feedback)
+
+    # 17. a recorded upstream failure means the run cannot be reported complete
+    def test_recorded_pipeline_error_prevents_a_completed_run(self):
+        message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
+        qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+        failed_lot = ["lot_generator: failed to parse LLM response"]
+
+        with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+            blocked = validator.run(self.state(
+                adam_programs={}, lot_entries=[], tlf_skipped={}, errors=failed_lot))
+            clean = validator.run(self.state(
+                adam_programs={}, lot_entries=[], tlf_skipped={}))
+
+        self.assertEqual(blocked["needs_regeneration"], [])
+        self.assertFalse(blocked["completed"])
+        self.assertTrue(clean["completed"])
+
+    # 18. a non-object JSON verdict is recorded, not raised
+    def test_non_object_validator_json_is_recorded_instead_of_crashing(self):
+        for content in ("[1, 2, 3]", "null"):
+            with self.subTest(content=content):
+                message = types.SimpleNamespace(content=content)
+                qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+                with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+                    result = validator.run(self.state(
+                        adam_programs={}, lot_entries=[self.entry()],
+                        tlf_programs={"14.1.1": "x <- 1"}))
+
+                self.assertEqual(result["validation_results"]["14.1.1"]["status"], "fail")
+                self.assertIn("14.1.1", result["needs_regeneration"])
+                self.assertFalse(result["completed"])
+
+    # 19. a failed column listing must not produce an ungrounded table
+    def test_failed_column_listing_holds_the_table_pending_instead_of_generating(self):
+        make_xpt(self.root / "ADSL.xpt", "a")
+        broken = types.SimpleNamespace(
+            stdout="", stderr="Error: could not find function 'haven'", returncode=1)
+
+        with patch("subprocess.run", return_value=broken):
+            result = tlf_generator.run(self.state(
+                lot_entries=[self.entry()],
+                accepted_adam={"ADSL": str(self.root / "ADSL.xpt")}))
+
+        self.assertNotIn("14.1.1", result["tlf_programs"])
+        self.assertIn("14.1.1", result["tlf_pending"])
+        self.assertNotIn("14.1.1", result["tlf_blocked"])
+        self.assertIn("column listing unavailable", result["tlf_skipped"]["14.1.1"])
+        self.assertIn("haven", result["tlf_skipped"]["14.1.1"])
+        self.assertEqual(self.calls, [])
+
+        message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
+        qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+        with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+            validated = validator.run(self.state(
+                adam_programs={}, lot_entries=[self.entry()],
+                tlf_skipped=result["tlf_skipped"], tlf_pending=result["tlf_pending"]))
+        self.assertFalse(validated["completed"])
+
+    # 20. the hold is retryable: a working listing releases the table
+    def test_table_generates_once_the_column_listing_recovers(self):
+        target = self.root / "ADSL.xpt"
+        write_xpt_columns(target, "USUBJID,AGE")
+        broken = types.SimpleNamespace(stdout="", stderr="R failed", returncode=1)
+
+        with patch("subprocess.run", return_value=broken):
+            held = tlf_generator.run(self.state(
+                lot_entries=[self.entry()], accepted_adam={"ADSL": str(target)}))
+        self.assertIn("14.1.1", held["tlf_pending"])
+        self.assertEqual(self.calls, [])
+
+        recovered = tlf_generator.run(self.state(
+            lot_entries=[self.entry()], accepted_adam={"ADSL": str(target)},
+            tlf_skipped=held["tlf_skipped"], tlf_pending=held["tlf_pending"]))
+
+        self.assertIn("14.1.1", recovered["tlf_programs"])
+        self.assertEqual(recovered["tlf_skipped"], {})
+        self.assertEqual(recovered["tlf_pending"], {})
+        self.assertEqual(len(self.calls), 1)
+
+    # 21. a table bound to two ADaM is invalidated when either one's schema changes
+    def test_one_changed_input_invalidates_a_multi_input_table(self):
+        """Each declared dataset contributes to the digest of what a table was built from,
+        so a change to any one of them is a change to that table's ground."""
+        adsl = self.root / "ADSL.xpt"
+        adae = self.root / "ADAE.xpt"
+        write_xpt_columns(adae, "USUBJID,TRTA")
+        write_xpt_columns(adsl, "USUBJID,AGE")
+        entries = [self.entry("14.1.1", ["ADSL", "ADAE"]), self.entry("14.1.2", ["ADAE"])]
+        accepted = {"ADSL": str(adsl), "ADAE": str(adae)}
+
+        first = tlf_generator.run(self.state(lot_entries=entries, accepted_adam=accepted))
+        self.assertEqual(len(self.calls), 2)
+        self.assertIn("14.1.1", first["tlf_input_fingerprint"])
+        self.assertIn("14.1.2", first["tlf_input_fingerprint"])
+
+        write_xpt_columns(adsl, "USUBJID,AGE,TRT01P")  # only ADSL changed
+        second = tlf_generator.run(self.state(
+            lot_entries=entries, accepted_adam=accepted,
+            tlf_programs=first["tlf_programs"],
+            tlf_input_fingerprint=first["tlf_input_fingerprint"]))
+
+        rebuilt = [call.split("TABLE NUMBER: ", 1)[1].splitlines()[0]
+                   for call in self.calls[2:]]
+        self.assertEqual(rebuilt, ["14.1.1"])
+        self.assertIn("ADSL: USUBJID, AGE, TRT01P", self.calls[2])
+        self.assertEqual(second["tlf_programs"].keys(), first["tlf_programs"].keys())
+
+    # 22. reordering columns is a schema change, not a re-encoding
+    def test_column_reordering_invalidates_the_table(self):
+        target = self.root / "ADSL.xpt"
+        write_xpt_columns(target, "USUBJID,AGE")
+        first = tlf_generator.run(self.state(
+            lot_entries=[self.entry()], accepted_adam={"ADSL": str(target)}))
+        self.assertIn("ADSL: USUBJID, AGE", self.calls[0])
+
+        write_xpt_columns(target, "AGE,USUBJID")
+        tlf_generator.run(self.state(
+            lot_entries=[self.entry()], accepted_adam={"ADSL": str(target)},
+            tlf_programs=first["tlf_programs"],
+            tlf_input_fingerprint=first["tlf_input_fingerprint"]))
+
+        self.assertEqual(len(self.calls), 2)
+        self.assertIn("ADSL: AGE, USUBJID", self.calls[1])
 
 
 if __name__ == "__main__":

@@ -44,6 +44,9 @@ R_EXECUTABLE = os.getenv("R_EXECUTABLE", "Rscript")
 
 TEMPERATURE = 0
 MAX_TOKENS = 8192
+# Validator rounds before the regeneration loop gives up. Shared so the validator can
+# record that the cap was hit instead of the run ending silently.
+MAX_REGENERATIONS = 3
 
 EMBEDDING_MODEL = "pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb"
 

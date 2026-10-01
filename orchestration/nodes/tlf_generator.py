@@ -42,12 +42,33 @@ SKELETON: {skeleton}
 _adam_columns_cache = None
 _adam_columns_cache_key = None
 
+# Marker prefix for a column listing that could not be produced.
+LISTING_UNAVAILABLE = "UNAVAILABLE - the real column listing failed"
+
+
+def _file_digest(path):
+    try:
+        with open(path, "rb") as handle:
+            return hashlib.sha256(handle.read()).hexdigest()
+    except OSError:
+        return f"unreadable:{path}"
+
+
+def _adam_files_key(paths):
+    """Cache key over the CONTENT of the accepted files, not their paths.
+
+    runner.py republishes every accepted dataset to a stable canonical path, so the
+    path is identical across regeneration rounds while the bytes behind it change.
+    Keying on the path alone therefore serves the previous round's columns.
+    """
+    return tuple(_file_digest(path) for path in paths)
+
 
 def adam_columns_block(accepted_adam: dict) -> str:
     """Real columns of the ADaM datasets accepted by the current run — the TLF ground truth."""
     global _adam_columns_cache, _adam_columns_cache_key
     paths = [accepted_adam[name] for name in sorted(accepted_adam)]
-    key = tuple(paths)
+    key = _adam_files_key(paths)
     if _adam_columns_cache is None or _adam_columns_cache_key != key:
         import os
         import subprocess
@@ -58,9 +79,41 @@ def adam_columns_block(accepted_adam: dict) -> str:
         env = {**os.environ, "SAPIENT_ADAM_FILES": "\n".join(paths)}
         result = subprocess.run([R_EXECUTABLE, "-e", r_code], capture_output=True, text=True,
                                 timeout=120, cwd=BASE_DIR, env=env)
+        if result.returncode != 0:
+            # Never cache a failed listing: an empty block would tell the model that no
+            # ADaM columns exist, and it would invent them.
+            return (f"{LISTING_UNAVAILABLE} (R exit {result.returncode}): "
+                    f"{result.stderr.strip()[:500]}")
         _adam_columns_cache = result.stdout.strip()
         _adam_columns_cache_key = key
     return _adam_columns_cache
+
+
+def _column_fingerprints(column_block: str) -> dict:
+    """Per-dataset schema digest, parsed from the listing the TLF prompt is built from.
+
+    A TLF is grounded in column NAMES. A republication that merely re-encodes the XPT
+    (haven writes a fresh header every time) or changes only values leaves the generated
+    program valid; one that adds, drops or renames a column does not.
+    """
+    fingerprints = {}
+    for line in column_block.splitlines():
+        name, separator, columns = line.partition(": ")
+        if separator:
+            fingerprints[name.strip()] = hashlib.sha256(columns.strip().encode()).hexdigest()
+    return fingerprints
+
+
+def _inputs_fingerprint(entry: dict, column_fingerprints: dict) -> str:
+    """Digest of the accepted ADaM schema a table was generated against.
+
+    The regeneration guard keys on the table number alone, so an accepted dataset
+    republished with a different column set during a later round would otherwise leave
+    the table bound to a superseded schema.
+    """
+    parts = [f"{name}={column_fingerprints.get(name, 'not-accepted')}"
+             for name in sorted(entry.get("data_source") or [])]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()
 
 
 def available_adam(state: SapientState) -> set:
@@ -78,14 +131,33 @@ def run(state: SapientState) -> SapientState:
     mockshell_map = {m["table_number"]: m for m in state["mockshells"]}
     built = available_adam(state)
     accepted_adam = state.get("accepted_adam") or {}
+    fingerprints = dict(state.get("tlf_input_fingerprint") or {})
+    columns_block = adam_columns_block(accepted_adam)
+    listing_error = columns_block if columns_block.startswith(LISTING_UNAVAILABLE) else ""
+    column_fingerprints = _column_fingerprints(columns_block)
     for entry in state["lot_entries"]:
         table_number = entry["table_number"]
-        # A table that already has a program and is not flagged for regeneration is
-        # left alone. One that was skipped has no program, so it must be re-evaluated:
-        # the ADaM it was waiting on may have been accepted since the last round.
-        if table_number in tlf_programs and table_number not in regen:
+        fingerprint = _inputs_fingerprint(entry, column_fingerprints)
+        # A table that already has a program is left alone unless it is flagged for
+        # regeneration or the schema of the accepted ADaM behind it changed. One that was
+        # skipped has no program, so it must be re-evaluated: the ADaM it was waiting on
+        # may have been accepted since the last round.
+        stale_inputs = (table_number in tlf_programs
+                        and fingerprints.get(table_number) not in (None, fingerprint))
+        if table_number in tlf_programs and table_number not in regen and not stale_inputs:
             continue
-        missing = [d for d in entry.get("data_source", []) if d.upper() not in built]
+        declared = entry.get("data_source") or []
+        if not declared:
+            # An empty data_source leaves nothing to verify: `missing` would be empty and
+            # the table would be generated against zero accepted ADaM, with no record that
+            # it was ever unbound. Off-registry sources are stripped by
+            # constrain_data_source, so this is reachable from a real LoT.
+            tlf_blocked[table_number] = "LoT entry declares no data_source: not bound to any ADaM"
+            tlf_skipped[table_number] = tlf_blocked[table_number]
+            tlf_pending.pop(table_number, None)
+            tlf_programs.pop(table_number, None)
+            continue
+        missing = [d for d in declared if d.upper() not in built]
         if missing:
             # Buildable datasets can still clear a later round (gate, execution or
             # metacore failure); a dataset with no input mapping and no derivation can
@@ -93,21 +165,41 @@ def run(state: SapientState) -> SapientState:
             retryable = [d for d in missing if d.upper() in BUILDABLE]
             terminal = [d for d in missing if d.upper() not in BUILDABLE]
             reasons = []
+            # A table moves pending -> blocked between rounds, so the reason that no
+            # longer applies must be cleared or the state keeps claiming a dataset is
+            # unaccepted after it was accepted.
             if retryable:
                 tlf_pending[table_number] = f"ADaM not accepted in current run: {', '.join(retryable)}"
                 reasons.append(tlf_pending[table_number])
+            else:
+                tlf_pending.pop(table_number, None)
             if terminal:
                 tlf_blocked[table_number] = f"no input mapping, cannot build: {', '.join(terminal)}"
                 reasons.append(tlf_blocked[table_number])
+            else:
+                tlf_blocked.pop(table_number, None)
             tlf_skipped[table_number] = "; ".join(reasons)
             tlf_programs.pop(table_number, None)
+            fingerprints.pop(table_number, None)
+            continue
+        if listing_error:
+            # The prompt grounds every table in the real column names, so without a real
+            # listing the model would invent them and the table would be accepted with no
+            # link to the accepted ADaM. Hold the table as pending — retryable, unlike a
+            # terminal block — and keep the diagnostic rather than generating blind.
+            reason = f"ADaM column listing unavailable: {listing_error}"
+            tlf_pending[table_number] = reason
+            tlf_skipped[table_number] = reason
+            tlf_blocked.pop(table_number, None)
+            tlf_programs.pop(table_number, None)
+            fingerprints.pop(table_number, None)
             continue
         print(f"tlf_generator: generating {table_number}")
         mockshell = mockshell_map.get(table_number, {})
         prompt = TLF_PROMPT.format(
             table_number=table_number,
             signatures=signatures_block(),
-            adam_columns=adam_columns_block(accepted_adam),
+            adam_columns=columns_block,
             lot_entry=json.dumps(entry, indent=2),
             mockshell=json.dumps(mockshell, indent=2),
             skeleton=TLF_SKELETON
@@ -130,6 +222,8 @@ def run(state: SapientState) -> SapientState:
         tlf_skipped.pop(table_number, None)
         tlf_pending.pop(table_number, None)
         tlf_blocked.pop(table_number, None)
+        fingerprints[table_number] = fingerprint
     return {**state, "tlf_programs": tlf_programs, "tlf_skipped": tlf_skipped,
             "tlf_pending": tlf_pending, "tlf_blocked": tlf_blocked,
+            "tlf_input_fingerprint": fingerprints,
             "current_node": "tlf_generator"}

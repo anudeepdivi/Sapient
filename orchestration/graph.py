@@ -1,4 +1,5 @@
 from langgraph.graph import StateGraph, END
+from config import MAX_REGENERATIONS
 from orchestration.state import SapientState
 from orchestration.nodes import (
     sap_reader,
@@ -12,8 +13,13 @@ from orchestration.nodes import (
 
 
 def should_regenerate(state: SapientState) -> str:
-    if state.get("needs_regeneration") and not state.get("completed") and state.get("regen_count", 0) < 3:
+    if state.get("needs_regeneration") and not state.get("completed") and state.get("regen_count", 0) < MAX_REGENERATIONS:
         return "regenerate"
+    if state.get("needs_regeneration") and not state.get("completed"):
+        # The cap ends the loop with work outstanding. Name it, so the run does not stop
+        # looking like a finished run that happened to produce nothing.
+        print(f"graph: regeneration cap ({MAX_REGENERATIONS}) reached, ending with "
+              f"unfinished work: {sorted(set(state.get('needs_regeneration') or []))}")
     return "done"
 
 def build_graph() -> StateGraph:

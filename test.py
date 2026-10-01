@@ -26,6 +26,9 @@ for stale in Path("data/tlf_programs").glob("*.R"):
 for name, code in result["tlf_programs"].items():
     Path(f"data/tlf_programs/{name}.R").write_text(code)
 print("Pipeline completed:", result["completed"])
+print("Pipeline errors:", result.get("errors"))
+if result.get("retry_exhausted"):
+    print("Regeneration cap reached, unfinished:", sorted(set(result.get("needs_regeneration") or [])))
 print("TLF skipped:", result.get("tlf_skipped"))
 print("LoT entries generated:", len(result["lot_entries"]))
 print("ADaM programs:", list(result["adam_programs"].keys()))

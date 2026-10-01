@@ -2,7 +2,7 @@ import json
 from openai import OpenAI
 from orchestration.llm_retry import create_with_retry
 from orchestration.state import SapientState
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
+from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS, MAX_REGENERATIONS
 from r_layer.runner import run_all_adam_programs
 from r_layer.validator import validate_metacore, compare_reference, check_conformance
 from r_layer.deterministic_checks import run_gate
@@ -74,7 +74,13 @@ def run(state: SapientState) -> SapientState:
         try:
             result = json.loads(raw)
         except json.JSONDecodeError:
-            result = {"status": "fail", "issues": ["Validator parse error"], "severity": "error"}
+            result = None
+        if not isinstance(result, dict):
+            # Valid JSON that is not an object (a list, a bare null) would make the
+            # assignment below raise, aborting the node and losing every diagnostic
+            # collected in this round.
+            result = {"status": "fail", "issues": ["Validator returned a non-object JSON response"],
+                      "severity": "error"}
         result["stage"] = "llm_validator"
         validation_results[name] = result
         if result.get("severity") == "error":
@@ -127,7 +133,23 @@ def run(state: SapientState) -> SapientState:
     print(f"validator: conformance-clean (type/length/CT) = {conformance_clean}/{total_adam}")
 
     tlf_skipped = state.get("tlf_skipped") or {}
+    # Upstream nodes record hard failures in `errors` (lot_generator writes there when
+    # the LoT cannot be produced). A run whose LoT failed has no entries, hence no
+    # regeneration and no skipped tables, so needs_regeneration alone would report the
+    # run complete with zero ADaM and zero TLFs.
+    pipeline_errors = state.get("errors") or []
+    regen_count = state.get("regen_count", 0) + 1
+    # Nothing else consumes the retry cap, so record here that the loop is giving up
+    # with work still outstanding instead of ending silently.
+    retry_exhausted = bool(needs_regeneration) and regen_count >= MAX_REGENERATIONS
+    completed = len(needs_regeneration) == 0 and not tlf_skipped and not pipeline_errors
+    if pipeline_errors:
+        print(f"validator: pipeline errors recorded, run cannot be reported complete: {pipeline_errors}")
+    if retry_exhausted:
+        print(f"validator: regeneration cap ({MAX_REGENERATIONS}) reached with work outstanding: "
+              f"{sorted(needs_regeneration)}")
     return {**state, "validation_results": validation_results, "needs_regeneration": needs_regeneration,
             "real_pass_rate": real_pass_rate,
-            "completed": len(needs_regeneration) == 0 and not tlf_skipped,
-            "regen_count": state.get("regen_count", 0) + 1, "current_node": "validator"}
+            "completed": completed,
+            "retry_exhausted": retry_exhausted,
+            "regen_count": regen_count, "current_node": "validator"}

@@ -1,0 +1,12 @@
+.venv/
+data/
+chroma_store/
+cache_store/
+__pycache__/
+*.pyc
+.git/
+sapient_ab_raw.json
+sapient_ab_results.csv
+*.xpt
+*.rds
+node_modules/

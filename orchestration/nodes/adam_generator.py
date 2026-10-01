@@ -118,12 +118,37 @@ ADAMIG CONTEXT: {ig_context}
 Return ONLY the R derivation code (the pipe chain assigning to `result`). No library() calls, no read_xpt() calls, no spec loading, no explanation, no markdown fences.
 """
 
+_EXEC_DIAGNOSTIC_LIMIT = 2000
+
+
+def _execution_diagnostics(execution: dict) -> list[str]:
+    """The text that explains an R failure.
+
+    runner.py sets `error` only for TimeoutExpired/OSError; a plain R failure (non-zero
+    exit) has no `error` key at all, so reading it alone yields empty feedback and the
+    retry prompt carries no reason for the rejection.
+    """
+    notes = [execution.get("error") or ""]
+    if execution.get("stage"):
+        notes.append(f"failed at stage: {execution['stage']}")
+    if execution.get("returncode") is not None:
+        notes.append(f"R exit code: {execution['returncode']}")
+    for stream in ("stdout", "stderr"):
+        text = (execution.get(stream) or "").strip()
+        if not text:
+            continue
+        if len(text) > _EXEC_DIAGNOSTIC_LIMIT:
+            text = text[:_EXEC_DIAGNOSTIC_LIMIT] + " ...[truncated]"
+        notes.append(f"{stream}: {text}")
+    return [note for note in notes if note]
+
+
 def failure_feedback(state: SapientState, name: str) -> str:
     entry = (state.get("validation_results") or {}).get(name, {})
     issues = [str(i) for i in entry.get("issues", [])]
     execution = entry.get("execution", {})
     if execution and not execution.get("success"):
-        issues.append(execution.get("error", ""))
+        issues.extend(_execution_diagnostics(execution))
     metacore = entry.get("metacore", {})
     if metacore and not metacore.get("success"):
         issues.append(metacore.get("error", ""))

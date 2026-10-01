@@ -1,8 +1,11 @@
 import contextlib
 import os
+import subprocess
 import sys
+import tempfile
 import types
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 os.environ.setdefault("NVIDIA_API_KEY", "test")
@@ -37,6 +40,21 @@ for _name in _STUBBED:
 from orchestration.graph import build_graph
 from orchestration.nodes import tlf_generator
 from templates.adam_templates import render_footer
+from config import R_EXECUTABLE
+
+
+def write_xpt(path, columns):
+    """Write a real XPT carrying exactly the named columns."""
+    values = ", ".join(f'{name}="{name}"' for name in columns.split(","))
+    subprocess.run([R_EXECUTABLE, "-e",
+                    f'haven::write_xpt(data.frame({values}), "{path}")'],
+                   check=True, capture_output=True, text=True, timeout=120)
+
+
+def columns_on_disk(path):
+    return subprocess.run([R_EXECUTABLE, "-e",
+                           f'cat(paste(names(haven::read_xpt("{path}")), collapse=","))'],
+                          capture_output=True, text=True, timeout=120).stdout.strip()
 
 
 def adsl_program(value="subject-1"):
@@ -66,9 +84,11 @@ def base_state(**overrides):
     return state
 
 
-def graph_run(adam_outcomes, state=None, execution_dir="."):
+def graph_run(adam_outcomes, state=None, execution_dir=".", publish=None):
     """Run the real graph from adam_generator, with the R runner and both LLM clients
-    replaced. adam_outcomes maps an execution attempt index to {dataset: success}."""
+    replaced. adam_outcomes maps an execution attempt index to {dataset: success}.
+    publish(round_index, dataset, path) is called for every accepted dataset, so a test
+    can put real, round-dependent content behind the stable publication path."""
     tlf_generator._adam_columns_cache = None
     tlf_generator._adam_columns_cache_key = None
     state = state or base_state()
@@ -77,26 +97,33 @@ def graph_run(adam_outcomes, state=None, execution_dir="."):
     code = types.SimpleNamespace(content="tbl <- basic_table()\n")
     generated = types.SimpleNamespace(choices=[types.SimpleNamespace(message=code)])
 
-    calls = {"tlf": 0}
+    calls = {"tlf": 0, "tables": []}
     executor = "orchestration.nodes.adam_executor.run_all_adam_programs"
     rounds = {"n": 0}
 
     def fake_execute(programs, adam_dir=None):
         outcome = adam_outcomes[min(rounds["n"], len(adam_outcomes) - 1)]
+        index = rounds["n"]
         rounds["n"] += 1
         results = {}
         for name in programs:
             ok = outcome.get(name, True)
+            path = f"{execution_dir}/{name}.xpt" if ok else None
+            if ok and publish:
+                publish(index, name, path)
             results[name] = {
                 "success": ok,
                 "stage": "accepted" if ok else "metacore_compliance",
-                "accepted_path": f"{execution_dir}/{name}.xpt" if ok else None,
+                "accepted_path": path,
                 "metacore": {"success": ok},
             }
         return results
 
     def fake_tlf_llm(*args, **kwargs):
         calls["tlf"] += 1
+        prompt = kwargs["messages"][0]["content"]
+        calls["tables"].append(next((line.split(": ", 1)[1] for line in prompt.splitlines()
+                                     if line.startswith("TABLE NUMBER: ")), "?"))
         return generated
 
     graph = None
@@ -176,6 +203,167 @@ class GraphRetryTest(unittest.TestCase):
 
     def test_completion_is_false_while_work_is_pending(self):
         final, _ = graph_run([{"ADSL": False}])
+        self.assertFalse(final["completed"])
+
+    def test_exhausted_retries_are_recorded_on_the_state(self):
+        """The cap ends the loop with work outstanding. Without a record the run looks
+        finished, and test.py prints `completed` as the success signal."""
+        final, _ = graph_run([{"ADSL": False}])
+
+        self.assertEqual(final["regen_count"], 3)
+        self.assertTrue(final["retry_exhausted"])
+        self.assertIn("ADSL", final["needs_regeneration"])
+        self.assertFalse(final["completed"])
+
+    def test_retry_exhausted_is_false_when_the_run_converges(self):
+        final, _ = graph_run([{"ADSL": False}, {"ADSL": True}])
+
+        self.assertFalse(final["retry_exhausted"])
+        self.assertTrue(final["completed"])
+
+    def test_recorded_lot_failure_is_not_reported_as_a_complete_run(self):
+        errors = ["lot_generator: empty response from LLM"]
+        final, _ = graph_run([{"ADSL": True}], state=base_state(errors=errors))
+
+        self.assertEqual(final["errors"], errors)
+        self.assertFalse(final["completed"])
+
+
+class GraphRepublicationTest(unittest.TestCase):
+    """runner.py republishes every accepted dataset to a stable canonical path, so the
+    publication path is not a change signal — only the content behind it is."""
+
+    def test_tlf_is_regenerated_when_its_accepted_adam_is_republished(self):
+        with tempfile.TemporaryDirectory() as directory:
+            # ADSL gains a column on republication; ADAE is only accepted in round 2.
+            published = {0: "USUBJID,AGE", 1: "USUBJID,AGE,TRT01P"}
+
+            def publish(round_index, name, path):
+                columns = "USUBJID" if name == "ADAE" else published[round_index]
+                write_xpt(path, columns)
+
+            state = base_state(lot_entries=[
+                {"table_number": "14.1.1", "data_source": ["ADSL"]},
+                {"table_number": "14.1.2", "data_source": ["ADAE"]},
+            ])
+            final, calls = graph_run(
+                [{"ADSL": True, "ADAE": False}, {"ADSL": True, "ADAE": True}],
+                state=state, execution_dir=directory, publish=publish)
+
+            self.assertEqual(final["regen_count"], 2)
+            self.assertTrue(final["completed"], final["tlf_skipped"])
+            self.assertEqual(final["tlf_skipped"], {})
+            # The accepted artifact really did change under the same path.
+            self.assertEqual(columns_on_disk(Path(directory) / "ADSL.xpt"),
+                             "USUBJID,AGE,TRT01P")
+            # 14.1.1 was rebuilt once its input changed; 14.1.2's input did not change
+            # after it was generated, so it was not rebuilt.
+            self.assertEqual(calls["tables"].count("14.1.1"), 2)
+            self.assertEqual(calls["tables"].count("14.1.2"), 1)
+
+    def test_unchanged_adam_does_not_rebuild_its_table(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def publish(round_index, name, path):
+                write_xpt(path, "USUBJID,AGE")
+
+            state = base_state(lot_entries=[
+                {"table_number": "14.1.1", "data_source": ["ADSL"]},
+                {"table_number": "14.1.2", "data_source": ["ADAE"]},
+            ])
+            final, calls = graph_run(
+                [{"ADSL": True, "ADAE": False}, {"ADSL": True, "ADAE": True}],
+                state=state, execution_dir=directory, publish=publish)
+
+            self.assertTrue(final["completed"], final["tlf_skipped"])
+            self.assertEqual(calls["tables"].count("14.1.1"), 1)
+            self.assertEqual(calls["tables"], ["14.1.1", "14.1.2"])
+
+
+class GraphStaleRebuildTest(unittest.TestCase):
+    """Republication makes a table stale. When the rebuild cannot happen, the superseded
+    program must not survive as if it were still current."""
+
+    def listing_fails_after_first_call(self):
+        """The column listing is the only R call that carries SAPIENT_ADAM_FILES, so this
+        fails the listing alone and leaves the XPT writers real."""
+        real_run = subprocess.run
+        seen = {"n": 0}
+
+        def runner(cmd, *args, **kwargs):
+            if isinstance(kwargs.get("env"), dict) and "SAPIENT_ADAM_FILES" in kwargs["env"]:
+                seen["n"] += 1
+                if seen["n"] > 1:
+                    return subprocess.CompletedProcess(cmd, 1, "", "Error: cannot open XPT")
+            return real_run(cmd, *args, **kwargs)
+
+        return runner, seen
+
+    def test_superseded_tlf_is_dropped_when_the_rebuild_cannot_happen(self):
+        runner, seen = self.listing_fails_after_first_call()
+        with tempfile.TemporaryDirectory() as directory:
+            published = {0: "USUBJID,AGE", 1: "USUBJID,AGE,TRT01P"}
+
+            def publish(round_index, name, path):
+                write_xpt(path, published[round_index] if name == "ADSL" else "USUBJID")
+
+            # ADAE failing while 14.1.2 waits on it is only the trigger for a second round;
+            # nothing flags 14.1.1 for regeneration, so only the schema change moves it.
+            state = base_state(lot_entries=[
+                {"table_number": "14.1.1", "data_source": ["ADSL"]},
+                {"table_number": "14.1.2", "data_source": ["ADAE"]},
+            ])
+            with patch("subprocess.run", side_effect=runner):
+                final, calls = graph_run(
+                    [{"ADSL": True, "ADAE": False}, {"ADSL": True, "ADAE": True}],
+                    state=state, execution_dir=directory, publish=publish)
+
+            # The accepted artifact really did change under the same path.
+            self.assertEqual(columns_on_disk(Path(directory) / "ADSL.xpt"),
+                             "USUBJID,AGE,TRT01P")
+        self.assertEqual(final["regen_count"], 2)
+        self.assertEqual(seen["n"], 2)
+        self.assertEqual(calls["tables"].count("14.1.1"), 1)
+        # The program built against the superseded columns is not still on the books.
+        self.assertNotIn("14.1.1", final["tlf_programs"])
+        self.assertIn("14.1.1", final["tlf_pending"])
+        self.assertIn("14.1.1", final["tlf_skipped"])
+        self.assertIn("column listing unavailable", final["tlf_skipped"]["14.1.1"])
+        self.assertNotIn("14.1.1", final.get("tlf_input_fingerprint") or {})
+        self.assertFalse(final["completed"])
+        self.assertFalse(final["retry_exhausted"])
+
+    def test_unverifiable_table_is_held_rather_than_retained(self):
+        """Without a listing the accepted schema cannot be re-read, so no table can be
+        certified as current — including one whose columns did not in fact change. Holding
+        is the safe direction: the table is pending and retryable, not silently accepted."""
+        runner, seen = self.listing_fails_after_first_call()
+        with tempfile.TemporaryDirectory() as directory:
+            def publish(round_index, name, path):
+                write_xpt(path, "USUBJID,AGE" if name == "ADSL" else "USUBJID")
+
+            state = base_state(lot_entries=[
+                {"table_number": "14.1.1", "data_source": ["ADSL"]},
+                {"table_number": "14.1.2", "data_source": ["ADAE"]},
+            ])
+            with patch("subprocess.run", side_effect=runner):
+                final, calls = graph_run(
+                    [{"ADSL": True, "ADAE": False}, {"ADSL": True, "ADAE": True}],
+                    state=state, execution_dir=directory, publish=publish)
+
+            # ADSL is republished with exactly the columns it had in round 1.
+            self.assertEqual(columns_on_disk(Path(directory) / "ADSL.xpt"), "USUBJID,AGE")
+        self.assertEqual(seen["n"], 2)
+        self.assertEqual(calls["tables"].count("14.1.1"), 1)
+        for table in ("14.1.1", "14.1.2"):
+            with self.subTest(table=table):
+                self.assertNotIn(table, final["tlf_programs"])
+                self.assertIn(table, final["tlf_pending"])
+                self.assertNotIn(table, final["tlf_blocked"])
+                self.assertIn("cannot open XPT", final["tlf_skipped"][table])
+        # Held tables are not queued for regeneration, so the run ends incomplete with the
+        # reason recorded rather than looping or claiming success.
+        self.assertEqual(final["needs_regeneration"], [])
+        self.assertFalse(final["retry_exhausted"])
         self.assertFalse(final["completed"])
 
 

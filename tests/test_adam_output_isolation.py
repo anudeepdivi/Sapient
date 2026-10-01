@@ -162,6 +162,23 @@ class TestAdamOutputIsolation(unittest.TestCase):
                 self.assertEqual((self.root / 'ADAE.xpt').read_bytes(), b'accepted old child')
                 self.assert_diagnostics_and_cleanup(results['ADSL'])
 
+    def test_failed_package_query_is_not_cached_as_an_empty_library(self):
+        """An empty cached set makes check_package_allowlist reject every library() call
+        as uninstalled for the rest of the process, so a failed query must not persist."""
+        from r_layer import deterministic_checks
+
+        original = deterministic_checks._installed_packages_cache
+        self.addCleanup(setattr, deterministic_checks, '_installed_packages_cache', original)
+        deterministic_checks._installed_packages_cache = None
+
+        broken = subprocess.CompletedProcess([], 1, '', 'Rscript: could not open')
+        healthy = subprocess.CompletedProcess([], 0, 'haven\ndplyr\nrtables\n', '')
+        with patch('r_layer.deterministic_checks.subprocess.run', return_value=broken):
+            self.assertEqual(deterministic_checks._installed_packages(), set())
+        with patch('r_layer.deterministic_checks.subprocess.run', return_value=healthy):
+            self.assertIn('haven', deterministic_checks._installed_packages())
+            self.assertEqual(deterministic_checks.check_package_allowlist('library(haven)'), [])
+
 
 if __name__ == '__main__':
     unittest.main()

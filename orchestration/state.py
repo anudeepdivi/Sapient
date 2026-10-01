@@ -20,10 +20,12 @@ class SapientState(TypedDict):
     tlf_skipped: Optional[dict[str, str]]   # table_number -> reason (e.g. source ADaM not built)
     tlf_pending: Optional[dict[str, str]]   # skipped, but a retryable ADaM failure may clear it
     tlf_blocked: Optional[dict[str, str]]   # skipped, terminal: ADaM has no input mapping
+    tlf_input_fingerprint: Optional[dict[str, str]]  # table_number -> digest of the accepted ADaM it was built from
     validation_results: Optional[dict]      # program_name -> pass/fail/issues
     needs_regeneration: Optional[list[str]] # programs flagged for retry
     real_pass_rate: Optional[float]         # execution + metacore pass rate, ADaM programs only
     regen_count: Optional[int]              # completed validator rounds
+    retry_exhausted: Optional[bool]         # regeneration cap hit with work still outstanding
     
     # Pipeline Control
     current_node: str

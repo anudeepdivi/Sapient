@@ -23,6 +23,7 @@ from knowledge.adam_registry import classify
 from knowledge.admiral_functions import signatures_block
 from orchestration.llm_retry import create_with_retry
 from r_layer.deterministic_checks import fix_quoted_symbol_args, run_gate, strip_markdown_fences
+from r_layer.runner import run_adam_program
 from specs.metacore_loader import get_spec_rules
 from templates.adam_templates import ADAM_INPUTS, input_columns_block, render_footer, render_header
 
@@ -284,7 +285,7 @@ def main(dataset: str):
     snippets = {v: snippets[v] for v in passing}
 
     order = topo_order(snippets, spec_order)
-    footer = render_footer(dataset).replace("data/adam/", "data/adam_experiment/").replace(
+    footer = render_footer(dataset).replace(
         "metatools::check_variables(result, mc_ds)",
         "tryCatch(metatools::check_variables(result, mc_ds), error = function(e) message(conditionMessage(e)))")
     program = "\n\n".join([render_header(dataset), spine(dataset),
@@ -292,9 +293,11 @@ def main(dataset: str):
     out = BASE_DIR / "data" / "adam" / f"{dataset}_pervar.R"
     out.write_text(program)
     (BASE_DIR / "data" / "adam_experiment").mkdir(exist_ok=True)
-    r = subprocess.run([R_EXECUTABLE, str(BASE_DIR / "r_layer" / "scripts" / "run_adam.R"),
-                        str(out), dataset], capture_output=True, text=True, timeout=600, cwd=BASE_DIR)
-    built = "SUCCESS" in r.stdout
+    parents = {Path(path).stem: BASE_DIR / path for _, path in ADAM_INPUTS[dataset]
+               if path.startswith("data/adam/")}
+    r = run_adam_program(dataset, program, adam_dir=BASE_DIR / "data" / "adam_experiment",
+                         parent_inputs=parents, timeout=600)
+    built = r["success"]
 
     print(f"\n=== {dataset} per-variable coverage ===")
     for var in spec_order:
@@ -305,7 +308,7 @@ def main(dataset: str):
     print(f"summary: {counts}")
     print(f"assembled program executes: {built}")
     if not built:
-        print(r.stdout[-500:], r.stderr[-1500:])
+        print(r["stdout"][-500:], r["stderr"][-1500:], r.get("metacore"), r.get("error"))
     if built:
         cmp = subprocess.run([R_EXECUTABLE, str(BASE_DIR / "r_layer" / "scripts" / "compare_reference.R"),
                               dataset, "data/adam_experiment"], capture_output=True, text=True,

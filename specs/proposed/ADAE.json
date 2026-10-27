@@ -32,130 +32,130 @@
   "label": "Planned Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ARM"
+  "derivation": "ADSL.TRT01P"
  },
  {
   "variable": "TRTPN",
   "label": "Planned Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.ARMNRS"
+  "derivation": "ADSL.TRT01PN"
  },
  {
   "variable": "TRTA",
   "label": "Actual Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ACTARM"
+  "derivation": "ADSL.TRT01A"
  },
  {
   "variable": "TRTAN",
   "label": "Actual Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.ACTARMUD"
+  "derivation": "ADSL.TRT01AN"
  },
  {
   "variable": "TRTSDT",
   "label": "Date of First Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFXSTDTC"
+  "derivation": "ADSL.TRTSDT"
  },
  {
   "variable": "TRTEDT",
   "label": "Date of Last Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFXENDTC"
+  "derivation": "ADSL.TRTEDT"
  },
  {
   "variable": "AGE",
   "label": "Age",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.AGE"
+  "derivation": "ADSL.AGE"
  },
  {
   "variable": "AGEGR1",
   "label": "Pooled Age Group 1",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Derived per SAP age group definitions"
+  "origin": "predecessor",
+  "derivation": "ADSL.AGEGR1"
  },
  {
   "variable": "AGEGR1N",
   "label": "Pooled Age Group 1 (N)",
   "type": "integer",
-  "origin": "derived",
-  "derivation": "Numeric version of AGEGR1"
+  "origin": "predecessor",
+  "derivation": "ADSL.AGEGR1N"
  },
  {
   "variable": "SEX",
   "label": "Sex",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SEX"
+  "derivation": "ADSL.SEX"
  },
  {
   "variable": "RACE",
   "label": "Race",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.RACE"
+  "derivation": "ADSL.RACE"
  },
  {
   "variable": "RACEN",
   "label": "Race (N)",
   "type": "integer",
-  "origin": "derived",
-  "derivation": "Numeric version of RACE"
+  "origin": "predecessor",
+  "derivation": "ADSL.RACEN"
  },
  {
   "variable": "ETHNIC",
   "label": "Ethnicity",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ETHNIC"
+  "derivation": "ADSL.ETHNIC"
  },
  {
   "variable": "SAFFL",
   "label": "Safety Population Flag",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Y if randomized and known to have taken at least one dose of randomized drug per SAP Section 6; otherwise N"
+  "origin": "predecessor",
+  "derivation": "ADSL.SAFFL"
  },
  {
   "variable": "ITTFL",
-  "label": "Intent-to-Treat Population Flag",
+  "label": "Intent-To-Treat Population Flag",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Y if randomized per SAP Section 6; otherwise N"
+  "origin": "predecessor",
+  "derivation": "ADSL.ITTFL"
  },
  {
   "variable": "EFFFL",
   "label": "Efficacy Population Flag",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Y if randomized, took drug, and have at least 1 post-baseline measure for both ADAS-Cog and CIBIC+ per SAP Section 6; otherwise N"
+  "origin": "predecessor",
+  "derivation": "ADSL.EFFFL"
  },
  {
   "variable": "ASTDT",
   "label": "Analysis Start Date",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "AE.AESTDTC"
+  "origin": "derived",
+  "derivation": "Convert AE.AESTDTC to numeric date; partial-date imputation: if year and month match TRTSDT year/month then impute to TRTSDT (date of first dose), else if partial date clearly indicates start prior to treatment then no imputation (leave missing), else impute to first day of month/year per sponsor convention - REVIEW"
  },
  {
   "variable": "ASTDTF",
   "label": "Analysis Start Date Imputation Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Imputation flag per SAP Section 11.2: if AESTDTC completely missing then impute as date of first dose (TRTSDT); if partial date with same year/month as TRTSDT then impute day conservatively; otherwise no imputation"
+  "derivation": "Imputation level for ASTDT: 'D' if day imputed, 'M' if month imputed, 'Y' if year imputed, '' if complete date"
  },
  {
   "variable": "ASTDY",
-  "label": "Analysis Start Day",
+  "label": "Analysis Start Relative Day",
   "type": "integer",
   "origin": "derived",
   "derivation": "ASTDT - TRTSDT + 1 if ASTDT >= TRTSDT else ASTDT - TRTSDT"
@@ -164,12 +164,12 @@
   "variable": "AENDT",
   "label": "Analysis End Date",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "AE.AEENDTC"
+  "origin": "derived",
+  "derivation": "Convert AE.AEENDTC to numeric date; partial-date imputation: sponsor convention - REVIEW"
  },
  {
   "variable": "AENDY",
-  "label": "Analysis End Day",
+  "label": "Analysis End Relative Day",
   "type": "integer",
   "origin": "derived",
   "derivation": "AENDT - TRTSDT + 1 if AENDT >= TRTSDT else AENDT - TRTSDT"
@@ -186,46 +186,18 @@
   "label": "Analysis Duration Unit",
   "type": "text",
   "origin": "assigned",
-  "derivation": "DAYS"
+  "derivation": "'DAYS'"
  },
  {
   "variable": "AESEQ",
-  "label": "Sequence Number",
+  "label": "AE Sequence Number",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AESEQ"
  },
  {
-  "variable": "TRTEMFL",
-  "label": "Treatment-Emergent Flag",
-  "type": "text",
-  "origin": "derived",
-  "derivation": "Y if event start date >= TRTSDT per SAP Section 11.2, or event starts prior to TRTSDT and worsens after that date, or event starts and resolves prior to TRTSDT but recurs after TRTSDT; otherwise N"
- },
- {
-  "variable": "AOCCFL",
-  "label": "On-Treatment AE Flag",
-  "type": "text",
-  "origin": "derived",
-  "derivation": "Y if AE occurs on-treatment per SAP definition; otherwise N"
- },
- {
-  "variable": "AOCCPFL",
-  "label": "Pre-Treatment AE Flag",
-  "type": "text",
-  "origin": "derived",
-  "derivation": "Y if AE occurs pre-treatment; otherwise N"
- },
- {
-  "variable": "AOCCSFL",
-  "label": "Post-Treatment AE Flag",
-  "type": "text",
-  "origin": "derived",
-  "derivation": "Y if AE occurs post-treatment; otherwise N"
- },
- {
   "variable": "AESPID",
-  "label": "Sponsor-Defined Identifier",
+  "label": "AE Sponsor-Defined Identifier",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AESPID"
@@ -298,7 +270,7 @@
   "label": "Body System or Organ Class",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE.AEBODSYS (coded per MedDRA as specified in the SAP)"
+  "derivation": "AE.AEBODSYS"
  },
  {
   "variable": "AEBDSYCD",
@@ -406,52 +378,38 @@
   "derivation": "AE.AESOD"
  },
  {
-  "variable": "AESTDTC",
-  "label": "Start Date/Time of Adverse Event",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE.AESTDTC"
- },
- {
-  "variable": "AEENDTC",
-  "label": "End Date/Time of Adverse Event",
-  "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE.AEENDTC"
- },
- {
-  "variable": "AESTDY",
-  "label": "Study Day of Start of Adverse Event",
-  "type": "integer",
-  "origin": "predecessor",
-  "derivation": "AE.AESTDY"
- },
- {
-  "variable": "AEENDY",
-  "label": "Study Day of End of Adverse Event",
-  "type": "integer",
-  "origin": "predecessor",
-  "derivation": "AE.AEENDY"
- },
- {
-  "variable": "DERMFL",
-  "label": "Dermatological Event Flag",
+  "variable": "TRTEMFL",
+  "label": "Treatment Emergent Analysis Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Y if AEDECOD is in the list of preferred terms considered dermatologic in nature per SAP Section 11.2 (e.g., rash, pruritus, dermatitis); otherwise N"
+  "derivation": "Flag 'Y' if event meets treatment-emergent definition per SAP: (ASTDT >= TRTSDT) OR (ASTDT < TRTSDT and AENDT >= TRTSDT and worsening after TRTSDT per investigator) OR (ASTDT < TRTSDT and AENDT < TRTSDT and recurrence after TRTSDT); else blank. For partial dates: if year/month same as TRTSDT year/month then 'Y'; if completely missing ASTDT then impute ASTDT = TRTSDT and flag 'Y'; if partial date clearly prior to treatment then blank."
  },
  {
-  "variable": "DCDECOD",
-  "label": "Standardized Disposition Term",
+  "variable": "AOCCFL",
+  "label": "First Occurrence Flag (Any AE)",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "DS.DSDECOD"
+  "origin": "derived",
+  "derivation": "Subset: TRTEMFL = 'Y'; by-group: USUBJID; sort: ASTDT, AESEQ; flag first record per by-group 'Y', else blank"
  },
  {
-  "variable": "DCSREAS",
-  "label": "Reason for Discontinuation",
+  "variable": "AOCCPFL",
+  "label": "First Occurrence Flag (Preferred Term)",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "DS.DSDECOD"
+  "origin": "derived",
+  "derivation": "Subset: TRTEMFL = 'Y'; by-group: USUBJID, AEDECOD; sort: ASTDT, AESEQ; flag first record per by-group 'Y', else blank"
+ },
+ {
+  "variable": "AOCCSFL",
+  "label": "First Occurrence Flag (System Organ Class)",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Subset: TRTEMFL = 'Y'; by-group: USUBJID, AESOC; sort: ASTDT, AESEQ; flag first record per by-group 'Y', else blank"
+ },
+ {
+  "variable": "ADERMFL",
+  "label": "Dermatological Event of Special Interest Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Flag 'Y' if AEDECOD is in the predefined list of dermatological preferred terms (rash, pruritus, dermatitis, etc.) per medical review and SAP; else blank"
  }
 ]

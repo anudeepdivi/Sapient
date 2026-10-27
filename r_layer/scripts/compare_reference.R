@@ -10,7 +10,10 @@ dataset <- args[1]
 gen_dir <- if (length(args) > 1) args[2] else "data/adam"
 
 gen <- read_xpt(sprintf("%s/%s.xpt", gen_dir, dataset))
-ref <- read_xpt(sprintf("data/reference/%s.xpt", dataset))
+# SAPIENT_REFERENCE_DIR=data/reference/pilot scores against the CDISC pilot's own ADaM
+# (built from the same SAP/spec); default is the pharmaverseadam reference.
+ref_dir <- Sys.getenv("SAPIENT_REFERENCE_DIR", "data/reference")
+ref <- read_xpt(sprintf("%s/%s.xpt", ref_dir, dataset))
 
 # Datasets whose data/reference/*.xpt is a PROXY, not the real pilot dataset
 # (see build_proxy_reference.R). Every figure printed for these is labelled.
@@ -41,8 +44,14 @@ if (nrow(merged) == 0) {
 }
 
 rates <- sapply(common_vars, function(v) {
-  a <- as.character(merged[[paste0(v, ".gen")]]); b <- as.character(merged[[paste0(v, ".ref")]])
-  mean((a == b) | (is.na(a) & is.na(b)))
+  a <- merged[[paste0(v, ".gen")]]; b <- merged[[paste0(v, ".ref")]]
+  # a date is compared by value: an unformatted numeric date (days since 1970) equals
+  # the same Date; a missing DATE9 format is a conformance finding, not a wrong value
+  if (inherits(a, "Date") != inherits(b, "Date")) { a <- as.numeric(a); b <- as.numeric(b) }
+  a <- as.character(a); b <- as.character(b)
+  # missing on one side only is a mismatch; plain `a == b` yields NA there, which
+  # silently dropped the whole variable from the mean (na.rm) and inflated agreement
+  mean(ifelse(is.na(a) | is.na(b), is.na(a) & is.na(b), a == b))
 })
 overall <- mean(rates, na.rm = TRUE)
 cat(sprintf("VALUE-MATCH%s %s: %.1f%% mean cell agreement over %d common vars, %d/%d rows overlap\n",
@@ -51,3 +60,6 @@ cat(sprintf("VALUE-MATCH%s %s: %.1f%% mean cell agreement over %d common vars, %
 worst <- sort(rates)[seq_len(min(8, length(rates)))]
 cat("lowest-agreement variables:\n")
 for (nm in names(worst)) cat(sprintf("  %-10s %.0f%%\n", nm, 100 * worst[[nm]]))
+# Full per-variable rates for derivation scoring (scripts/score_derivations.py)
+rates_out <- Sys.getenv("SAPIENT_RATES_JSON")
+if (nzchar(rates_out)) jsonlite::write_json(as.list(rates), rates_out, auto_unbox = TRUE, digits = 4)

@@ -20,8 +20,8 @@ REFERENCE_DIR = DATA_DIR / "reference"
 
 # Models
 REASONING_MODEL = "google/diffusiongemma-26b-a4b-it"
-CODEGEN_MODEL = "mistralai/mistral-nemotron"  # probed - clean admiral R; gemma-4 down, diffusiongemma quality wall
-CODEGEN_FALLBACK_MODEL = "google/diffusiongemma-26b-a4b-it"
+CODEGEN_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"  # mistral-nemotron EOL 2026-09-28; probed 2026-10-28: 3.9s, correct admiral shape
+CODEGEN_FALLBACK_MODEL = "z-ai/glm-5.3-flash"  # probed 2026-10-28: correct but ~70s/call
 # API Keys
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 if not NVIDIA_API_KEY:
@@ -43,7 +43,9 @@ CACHE_DIR = BASE_DIR / "cache_store"
 R_EXECUTABLE = os.getenv("R_EXECUTABLE", "Rscript")
 
 TEMPERATURE = 0
-MAX_TOKENS = 8192
+MAX_TOKENS = 16384  # nemotron-3-ultra reasons inside content when thinking is on; 8192 truncated spec-gen
+# Structured-output calls run with reasoning off: 8x faster, ~half the tokens (probed 2026-10-28).
+NO_THINKING = {"chat_template_kwargs": {"enable_thinking": False}}
 # Validator rounds before the regeneration loop gives up. Shared so the validator can
 # record that the cap was hit instead of the run ending silently.
 MAX_REGENERATIONS = 3

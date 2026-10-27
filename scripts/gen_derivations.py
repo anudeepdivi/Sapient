@@ -9,6 +9,7 @@ Outputs: data/adam/{ds}_pervar.R, data/adam_experiment/{ds}.xpt, coverage report
 """
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -18,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from openai import OpenAI
 from cache.prompt_cache import get_cached, set_cached
 from config import (BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, MAX_TOKENS,
-                    NVIDIA_API_KEY, NVIDIA_BASE_URL, R_EXECUTABLE, TEMPERATURE)
+                    NO_THINKING, NVIDIA_API_KEY, NVIDIA_BASE_URL, R_EXECUTABLE, TEMPERATURE)
 from knowledge.adam_registry import classify
 from knowledge.admiral_functions import signatures_block
 from orchestration.llm_retry import create_with_retry
@@ -65,7 +66,8 @@ result <- sdtm |>
 
 # A spec var already produced by the spine and sourced by a bare `DOMAIN.VAR`
 # reference is inherited (no codegen); anything with real derivation logic is not.
-INHERIT_RE = re.compile(r"^[A-Z][A-Z0-9]*\.[A-Z0-9_]+$")
+# (a trailing note such as "(coded per MedDRA)" still counts as a bare reference)
+INHERIT_RE = re.compile(r"^[A-Z][A-Z0-9]*\.[A-Z0-9_]+(\s*\(.*\))?$")
 
 
 def spine(dataset: str) -> str:
@@ -134,14 +136,15 @@ def gen_step(dataset, var, meta, derivation, pending, feedback):
         conventions=ADMIRAL_CONVENTIONS + CLASS_CONVENTIONS.get(classify(dataset) or "", ""))
     if feedback:
         prompt += f"\n\nYOUR PREVIOUS ATTEMPT FAILED — fix this exact problem:\n{feedback}\nPrevious attempt:\n{feedback_code.get(var, '')}"
-    key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()
+    key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()
     cached = get_cached(key)
     if cached:
         return cached
     resp = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
                              model=CODEGEN_MODEL,
                              messages=[{"role": "user", "content": prompt}],
-                             temperature=TEMPERATURE, max_tokens=MAX_TOKENS)
+                             temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
+                             extra_body=NO_THINKING)  # reasoning-on writes its thinking into content
     code = fix_quoted_symbol_args(strip_markdown_fences(resp.choices[0].message.content.strip()))
     set_cached(key, code)
     return code
@@ -209,6 +212,17 @@ def run_steps(dataset, snippets, spec_order, scratch):
 
 feedback_code: dict[str, str] = {}
 
+# One line per guardrail outcome, so a run report can count what each guardrail caught
+# (scripts/run_report.py). Tagged like llm_usage.jsonl via SAPIENT_RUN_TAG.
+GUARDRAIL_LOG = BASE_DIR / "cache_store" / "guardrail_events.jsonl"
+
+
+def log_event(dataset, rnd, var, guardrail, outcome, detail=""):
+    with GUARDRAIL_LOG.open("a") as f:
+        f.write(json.dumps({"tag": os.getenv("SAPIENT_RUN_TAG", ""), "dataset": dataset,
+                            "round": rnd, "variable": var, "guardrail": guardrail,
+                            "outcome": outcome, "detail": str(detail)[:200]}) + "\n")
+
 
 def spine_columns(dataset: str, scratch) -> set[str]:
     probe = "\n".join([render_header(dataset), spine(dataset), "cat(names(result))"])
@@ -255,6 +269,7 @@ def main(dataset: str):
             code = gen_step(dataset, var, *todo[var], pending=[p for p in pending if p != var],
                             feedback=gate_err.get(var) or exec_err.get(var))
             err = snippet_gate(code)
+            log_event(dataset, rnd, var, "deterministic_gate", "rejected" if err else "passed", err or "")
             if err:
                 feedback_code[var] = code
                 gate_err[var] = f"gate: {err}"
@@ -265,6 +280,8 @@ def main(dataset: str):
         step_status, _ = run_steps(dataset, snippets, spec_order, scratch)
         for var in list(snippets):
             st = step_status.get(var, "ERROR: step not executed")
+            log_event(dataset, rnd, var, "execution", "passed" if st == "OK" else "failed",
+                      "" if st == "OK" else st)
             if st == "OK":
                 exec_err[var] = None
             else:

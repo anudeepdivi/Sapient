@@ -42,6 +42,26 @@ SAP_TOPICS = {
             "efficacy", "baseline"],
     "TTE": ["design", "population", "early termination", "adverse event"],
 }
+
+# ADaMIG / OCCDS derivation conventions: the standard "how" the SAP never states.
+# Only what the IGs standardize; sponsor choices are named, never filled in.
+IG_CONVENTIONS = {
+    "COMMON": """- Write every derivation so a programmer could code it without guessing: name the source DATASET.VARIABLE, any conversion, the subset, the by-group and the sort order.
+- *DT analysis dates are NUMERIC dates converted from the SDTM --DTC character date; *DTF records the imputation level. State the imputation rule for partial dates from the SAP; if the SAP gives none, write "partial-date imputation: sponsor convention - REVIEW".
+- *DY study day = *DT - TRTSDT + 1 when *DT >= TRTSDT, else *DT - TRTSDT (there is no day 0).
+- Flags other than ADSL population flags are "Y" or blank, never "N".""",
+    "SUBJECT": """- TRT01P = DM.ARM, TRT01A = DM.ACTARM; TRT01PN/TRT01AN are the numeric codes of those treatments.
+- TRTSDT/TRTEDT = first/last exposure date: EX.EXSTDTC/EX.EXENDTC converted to numeric dates.
+- Population flags (SAFFL, ITTFL, EFFFL, COMP*FL) are "Y"/"N" using the SAP's definition verbatim.
+- A grouping variable states its cut-points from the SAP; its *N partner is the numeric code 1..k in the same order.""",
+    "OCCDS": """- Subject-level variables (demographics, AGEGR1/AGEGR1N, RACEN, population flags, TRTSDT, TRTEDT) are COPIED from ADSL: derivation "ADSL.<VAR>". Never re-derive them in this dataset.
+- Treatment: TRTA = ADSL.TRT01A, TRTAN = ADSL.TRT01AN (TRTP/TRTPN likewise from TRT01P/TRT01PN).
+- Dictionary-coded terms (AEDECOD, AEBODSYS, AESOC, AELLT, AEHLT, ...) are copied from the SDTM domain unchanged.
+- AOCCxxFL first-occurrence flags: state the subset (e.g. TRTEMFL = "Y"), the by-group (subject; plus AEBODSYS for SOC-level, plus AEDECOD for PT-level), the sort order (e.g. ASTDT, AESEQ), and that the FIRST record per by-group is flagged "Y".""",
+    "BDS": """- Subject-level variables are COPIED from ADSL: derivation "ADSL.<VAR>"; TRTA/TRTP from ADSL.TRT01A/TRT01P.
+- ABLFL flags the baseline record per subject and parameter (state the SAP's baseline definition); BASE = AVAL of that record; CHG = AVAL - BASE; PCHG = 100 * CHG / BASE.
+- AVISIT/AVISITN follow the SAP's analysis windows; state the window rule.""",
+}
 SPEC_PROMPT = """You are a CDISC ADaM specification author.
 Propose the variable-level specification for dataset {dataset}.
 
@@ -58,6 +78,9 @@ This dataset is ADaM class {adam_class}.
 CONTROLLED TERMINOLOGY (CDISC CT — these variables may take ONLY these values; derive to them):
 {controlled_terminology}
 Variables coded by an external dictionary (AEDECOD/AEBODSYS via MedDRA, medications via WHODrug) are NOT enumerated here — mark their derivation as "coded per <dictionary> as specified in the SAP".
+
+ADaM IMPLEMENTATION GUIDE CONVENTIONS (how standard variables are derived; apply them):
+{ig_conventions}
 
 STUDY SAP EXCERPTS (authoritative for this study's populations, category cut-points, baseline, windows and treatment-emergence):
 {sap_excerpts}
@@ -126,6 +149,7 @@ def propose(dataset: str) -> Path:
                                 standard_variables=standard_block(adam_class),
                                 controlled_terminology=ct_lines or "(none loaded)",
                                 sap_excerpts=sap_excerpts(adam_class),
+                                ig_conventions=IG_CONVENTIONS["COMMON"] + "\n" + IG_CONVENTIONS.get(adam_class, ""),
                                 lot_entries=json.dumps(relevant, indent=1),
                                 sdtm_columns=sdtm_columns())
     cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()

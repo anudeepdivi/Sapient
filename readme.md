@@ -67,12 +67,20 @@ Every one of these behaviors is enforced by automated test cases including delib
 
 ## Results (public CDISC pilot study)
 
-Everything is measured against publicly available references the CDISC pilot study, the `pharmaverseadam`/`pharmaversesdtm` community datasets, and a publicly registered SAP none of which is fed to the generator as input.
+Inputs are the pilot study's own SAP (Appendix 9 of the public CDISC pilot study report) and its SDTM data. The pilot's official specification and the `pharmaverseadam`/`pharmaversesdtm` community datasets are used only as scoring references, never as generator input.
 
-- **Dataset specifications** drafted from the SAP agree with the pilot's official specification on roughly **3 out of 4 variables on average** (about 0.77 F1, across all four ADaM structure types) up from 0.31 before grounding on the public ADaM implementation guide.
-- **Generated analysis datasets** (ADSL, ADAE) match the community reference dataset **cell-for-cell at 94–98%**, with the remaining gaps traced to contradictions *inside the reference itself* (it deviates from the pilot specification) rather than to coding errors.
-- **Upstream SDTM mapping** agrees at **98–100%** across five domains, closing the chain end-to-end: raw data → SDTM → ADaM.
-- One honest negative result: an earlier benchmark for planning the table list turned out to be unscorable the ground truth contained information the SAP never had. It was retired rather than gamed, and that layer is being redesigned around verifiable criteria.
+- **Dataset specifications from the SAP** (ADSL, ADAE). The honest comparison is against a no-model baseline: the standard ADaMIG variable list alone. Variable-name F1 vs the pilot specification:
+
+  | | Standard list alone | Model, no SAP | Model + SAP |
+  |---|---|---|---|
+  | ADSL | 0.744 | 0.719 | **0.792** |
+  | ADAE | 0.598 | 0.885 | 0.833 |
+
+  Variable names are the wrong yardstick for what the SAP adds. Without the SAP, derivations are placeholders or invented ("per SAP age cut-points"; a made-up "+30 day" treatment-emergent window). With it, they carry the study's actual rules: age bands `<65, 65-80, >80`, the safety/ITT/efficacy population definitions, and the SAP's treatment-emergence rule. Next step: score derivations by executing them, not by name overlap.
+- **Generated analysis-dataset code** (per-variable generation, ADSL and ADAE) previously matched the community reference cell-for-cell at **96.6%** (ADSL, 30 variables) and **96.8%** (ADAE, 50 variables). The remaining gaps trace to places where the reference itself departs from the pilot specification. These figures were measured on a model NVIDIA has since retired and are being re-measured.
+- **Scaffolding, not generation:** the default pipeline currently builds ADSL/ADAE from hand-written derivation templates (94.4% / 97.8% match), and SDTM is mapped by hand-written `sdtm.oak` programs (98–100% across five domains). These close the raw → SDTM → ADaM chain but are not model output.
+- **Cost** is metered per call (tokens, time, retries). Generating a dataset specification takes one call: about 6k prompt tokens and 30–70 seconds on a free-tier model.
+- One honest negative result: an earlier table-list benchmark was scored against a study whose SAP was not the one fed to the model. It was retired rather than gamed. Now that the matched SAP is in place, it can be rebuilt on verifiable ground.
 
 ---
 
@@ -106,7 +114,7 @@ R packages used: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak` (+ `dply
 | `knowledge/` | The vocabularies and extracted metadata that keep the model grounded |
 | `specs/`, `templates/` | Specification handling and code scaffolding |
 | `r_layer/` | Everything R: execution, deterministic checks, output comparison |
-| `tests/` | The automated suite (73 tests, no network access) |
+| `tests/` | The automated suite (117 tests, no network access) |
 | `data/` | Input/reference data (not part of the repository) |
 
 ---

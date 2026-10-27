@@ -15,28 +15,28 @@
  },
  {
   "variable": "SUBJID",
-  "label": "Subject Identifier",
+  "label": "Subject Identifier for the Study",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.SUBJID"
  },
  {
   "variable": "SITEID",
-  "label": "Site Identifier",
+  "label": "Study Site Identifier",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.SITEID"
  },
  {
   "variable": "TRTP",
-  "label": "Treatment Group",
+  "label": "Planned Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ARMCD"
+  "derivation": "DM.ARM"
  },
  {
   "variable": "TRTPN",
-  "label": "Treatment Group Number",
+  "label": "Planned Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "DM.ARMNRS"
@@ -46,28 +46,28 @@
   "label": "Actual Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ACTARMCD"
+  "derivation": "DM.ACTARM"
  },
  {
   "variable": "TRTAN",
-  "label": "Actual Treatment Number",
+  "label": "Actual Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "DM.ACTARMUD"
  },
  {
   "variable": "TRTSDT",
-  "label": "Treatment Start Date",
+  "label": "Date of First Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "EX.EXSTDTC"
+  "derivation": "DM.RFXSTDTC"
  },
  {
   "variable": "TRTEDT",
-  "label": "Treatment End Date",
+  "label": "Date of Last Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "EX.EXENDTC"
+  "derivation": "DM.RFXENDTC"
  },
  {
   "variable": "AGE",
@@ -78,17 +78,17 @@
  },
  {
   "variable": "AGEGR1",
-  "label": "Age Group 1",
+  "label": "Pooled Age Group 1",
   "type": "text",
   "origin": "derived",
-  "derivation": "Derived from DM.AGE"
+  "derivation": "Derived per SAP age group definitions"
  },
  {
   "variable": "AGEGR1N",
-  "label": "Age Group 1 Number",
+  "label": "Pooled Age Group 1 (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Derived from DM.AGE"
+  "derivation": "Numeric version of AGEGR1"
  },
  {
   "variable": "SEX",
@@ -106,240 +106,352 @@
  },
  {
   "variable": "RACEN",
-  "label": "Race Number",
+  "label": "Race (N)",
   "type": "integer",
-  "origin": "predecessor",
-  "derivation": "DM.RACEN"
+  "origin": "derived",
+  "derivation": "Numeric version of RACE"
  },
  {
   "variable": "ETHNIC",
-  "label": "Ethnic Origin",
+  "label": "Ethnicity",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ETHNIC"
  },
  {
   "variable": "SAFFL",
-  "label": "Safety Analysis Set Flag",
+  "label": "Safety Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "derived",
+  "derivation": "Y if randomized and known to have taken at least one dose of randomized drug per SAP Section 6; otherwise N"
  },
  {
   "variable": "ITTFL",
-  "label": "Intent-to-Treat Analysis Set Flag",
+  "label": "Intent-to-Treat Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "N"
+  "origin": "derived",
+  "derivation": "Y if randomized per SAP Section 6; otherwise N"
  },
  {
   "variable": "EFFFL",
-  "label": "Efficacy Analysis Set Flag",
+  "label": "Efficacy Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "N"
+  "origin": "derived",
+  "derivation": "Y if randomized, took drug, and have at least 1 post-baseline measure for both ADAS-Cog and CIBIC+ per SAP Section 6; otherwise N"
  },
  {
   "variable": "ASTDT",
   "label": "Analysis Start Date",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFSTDTC"
+  "derivation": "AE.AESTDTC"
  },
  {
   "variable": "ASTDTF",
-  "label": "Analysis Start Date Flag",
+  "label": "Analysis Start Date Imputation Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "derived",
+  "derivation": "Imputation flag per SAP Section 11.2: if AESTDTC completely missing then impute as date of first dose (TRTSDT); if partial date with same year/month as TRTSDT then impute day conservatively; otherwise no imputation"
  },
  {
   "variable": "ASTDY",
   "label": "Analysis Start Day",
   "type": "integer",
-  "origin": "predecessor",
-  "derivation": "DM.RFDY"
+  "origin": "derived",
+  "derivation": "ASTDT - TRTSDT + 1 if ASTDT >= TRTSDT else ASTDT - TRTSDT"
  },
  {
   "variable": "AENDT",
   "label": "Analysis End Date",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFENDTC"
+  "derivation": "AE.AEENDTC"
  },
  {
   "variable": "AENDY",
   "label": "Analysis End Day",
   "type": "integer",
-  "origin": "predecessor",
-  "derivation": "DM.RFENDY"
+  "origin": "derived",
+  "derivation": "AENDT - TRTSDT + 1 if AENDT >= TRTSDT else AENDT - TRTSDT"
  },
  {
   "variable": "ADURN",
   "label": "Analysis Duration",
-  "type": "integer",
+  "type": "float",
   "origin": "derived",
-  "derivation": "AENDY - ASTDY"
+  "derivation": "AENDT - ASTDT + 1"
  },
  {
   "variable": "ADURU",
   "label": "Analysis Duration Unit",
   "type": "text",
   "origin": "assigned",
-  "derivation": "DAY"
+  "derivation": "DAYS"
  },
  {
   "variable": "AESEQ",
-  "label": "Adverse Event Sequence Number",
+  "label": "Sequence Number",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AESEQ"
  },
  {
   "variable": "TRTEMFL",
-  "label": "Treatment Emergent Flag",
+  "label": "Treatment-Emergent Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Y if AE.AESTDTC >= EX.EXSTDTC, else N"
+  "derivation": "Y if event start date >= TRTSDT per SAP Section 11.2, or event starts prior to TRTSDT and worsens after that date, or event starts and resolves prior to TRTSDT but recurs after TRTSDT; otherwise N"
  },
  {
   "variable": "AOCCFL",
-  "label": "Adverse Event Occurrence Flag",
+  "label": "On-Treatment AE Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "derived",
+  "derivation": "Y if AE occurs on-treatment per SAP definition; otherwise N"
  },
  {
   "variable": "AOCCPFL",
-  "label": "Adverse Event Occurrence Primary Flag",
+  "label": "Pre-Treatment AE Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "derived",
+  "derivation": "Y if AE occurs pre-treatment; otherwise N"
  },
  {
   "variable": "AOCCSFL",
-  "label": "Adverse Event Occurrence Secondary Flag",
+  "label": "Post-Treatment AE Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "N"
+  "origin": "derived",
+  "derivation": "Y if AE occurs post-treatment; otherwise N"
+ },
+ {
+  "variable": "AESPID",
+  "label": "Sponsor-Defined Identifier",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESPID"
  },
  {
   "variable": "AETERM",
-  "label": "Adverse Event Term",
+  "label": "Reported Term for the Adverse Event",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AETERM"
  },
  {
-  "variable": "AEDECOD",
-  "label": "Adverse Event Dictionary Code",
+  "variable": "AELLT",
+  "label": "Lowest Level Term",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE.AEDECOD"
+  "derivation": "AE.AELLT"
+ },
+ {
+  "variable": "AELLTCD",
+  "label": "Lowest Level Term Code",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "AE.AELLTCD"
+ },
+ {
+  "variable": "AEDECOD",
+  "label": "Dictionary-Derived Term",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AEDECOD (coded per MedDRA as specified in the SAP)"
  },
  {
   "variable": "AEPTCD",
-  "label": "Adverse Event Preferred Term Code",
-  "type": "text",
+  "label": "Preferred Term Code",
+  "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AEPTCD"
  },
  {
-  "variable": "AEBODSYS",
-  "label": "Adverse Event Body System",
+  "variable": "AEHLT",
+  "label": "High Level Term",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE.AEBODSYS"
+  "derivation": "AE.AEHLT"
+ },
+ {
+  "variable": "AEHLTCD",
+  "label": "High Level Term Code",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "AE.AEHLTCD"
+ },
+ {
+  "variable": "AEHLGT",
+  "label": "High Level Group Term",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AEHLGT"
+ },
+ {
+  "variable": "AEHLGTCD",
+  "label": "High Level Group Term Code",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "AE.AEHLGTCD"
+ },
+ {
+  "variable": "AEBODSYS",
+  "label": "Body System or Organ Class",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AEBODSYS (coded per MedDRA as specified in the SAP)"
  },
  {
   "variable": "AEBDSYCD",
-  "label": "Adverse Event Body System Code",
-  "type": "text",
+  "label": "Body System or Organ Class Code",
+  "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AEBDSYCD"
  },
  {
   "variable": "AESOC",
-  "label": "Adverse Event System Organ Class",
+  "label": "Primary System Organ Class",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE.AESOC"
+  "derivation": "AE.AESOC (coded per MedDRA as specified in the SAP)"
  },
  {
   "variable": "AESOCCD",
-  "label": "Adverse Event System Organ Class Code",
-  "type": "text",
+  "label": "Primary System Organ Class Code",
+  "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AESOCCD"
  },
  {
   "variable": "AESEV",
-  "label": "Adverse Event Severity",
+  "label": "Severity/Intensity",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AESEV"
  },
  {
   "variable": "AESER",
-  "label": "Adverse Event Seriousness",
+  "label": "Serious Event",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AESER"
  },
  {
+  "variable": "AEACN",
+  "label": "Action Taken with Study Treatment",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AEACN"
+ },
+ {
   "variable": "AEREL",
-  "label": "Adverse Event Relationship to Study Drug",
+  "label": "Causality",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AEREL"
  },
  {
   "variable": "AEOUT",
-  "label": "Adverse Event Outcome",
+  "label": "Outcome of Adverse Event",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AEOUT"
  },
  {
+  "variable": "AESCAN",
+  "label": "Involves Cancer",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESCAN"
+ },
+ {
+  "variable": "AESCONG",
+  "label": "Congenital Anomaly or Birth Defect",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESCONG"
+ },
+ {
+  "variable": "AESDISAB",
+  "label": "Persist or Signif Disability/Incapacity",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESDISAB"
+ },
+ {
+  "variable": "AESDTH",
+  "label": "Results in Death",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESDTH"
+ },
+ {
+  "variable": "AESHOSP",
+  "label": "Requires or Prolongs Hospitalization",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESHOSP"
+ },
+ {
+  "variable": "AESLIFE",
+  "label": "Is Life Threatening",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESLIFE"
+ },
+ {
+  "variable": "AESOD",
+  "label": "Occurred with Overdose",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "AE.AESOD"
+ },
+ {
   "variable": "AESTDTC",
-  "label": "Adverse Event Start Date/Time",
-  "type": "date",
+  "label": "Start Date/Time of Adverse Event",
+  "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AESTDTC"
  },
  {
   "variable": "AEENDTC",
-  "label": "Adverse Event End Date/Time",
-  "type": "date",
+  "label": "End Date/Time of Adverse Event",
+  "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AEENDTC"
  },
  {
   "variable": "AESTDY",
-  "label": "Adverse Event Start Day",
+  "label": "Study Day of Start of Adverse Event",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AESTDY"
  },
  {
   "variable": "AEENDY",
-  "label": "Adverse Event End Day",
+  "label": "Study Day of End of Adverse Event",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AEENDY"
  },
  {
-  "variable": "AEDUR",
-  "label": "Adverse Event Duration",
-  "type": "integer",
+  "variable": "DERMFL",
+  "label": "Dermatological Event Flag",
+  "type": "text",
   "origin": "derived",
-  "derivation": "AEENDY - AESTDY"
+  "derivation": "Y if AEDECOD is in the list of preferred terms considered dermatologic in nature per SAP Section 11.2 (e.g., rash, pruritus, dermatitis); otherwise N"
  },
  {
-  "variable": "AEDURU",
-  "label": "Adverse Event Duration Unit",
+  "variable": "DCDECOD",
+  "label": "Standardized Disposition Term",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "DAY"
+  "origin": "predecessor",
+  "derivation": "DS.DSDECOD"
+ },
+ {
+  "variable": "DCSREAS",
+  "label": "Reason for Discontinuation",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "DS.DSDECOD"
  }
 ]

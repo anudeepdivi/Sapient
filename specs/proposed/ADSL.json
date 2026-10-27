@@ -15,80 +15,80 @@
  },
  {
   "variable": "SUBJID",
-  "label": "Subject Identifier",
+  "label": "Subject Identifier for the Study",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.SUBJID"
  },
  {
   "variable": "SITEID",
-  "label": "Site Identifier",
+  "label": "Study Site Identifier",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.SITEID"
  },
  {
   "variable": "TRT01P",
-  "label": "Treatment Arm",
+  "label": "Planned Treatment for Period 01",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ARM"
  },
  {
   "variable": "TRT01PN",
-  "label": "Treatment Arm Numeric",
+  "label": "Planned Treatment for Period 01 (N)",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "DM.ARMNRS"
  },
  {
   "variable": "TRT01A",
-  "label": "Actual Treatment Arm",
+  "label": "Actual Treatment for Period 01",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ACTARM"
  },
  {
   "variable": "TRT01AN",
-  "label": "Actual Treatment Arm Numeric",
+  "label": "Actual Treatment for Period 01 (N)",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "DM.ACTARMUD"
  },
  {
   "variable": "ARM",
-  "label": "Assigned Arm",
+  "label": "Description of Planned Arm",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ARM"
  },
  {
   "variable": "ACTARM",
-  "label": "Actual Arm",
+  "label": "Description of Actual Arm",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ACTARM"
  },
  {
   "variable": "TRTSDT",
-  "label": "Treatment Start Date",
+  "label": "Date of First Exposure to Treatment",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "EX.EXSTDTC"
+  "origin": "derived",
+  "derivation": "Minimum of EX.EXSTDTC where EX.EXTRT matches randomized treatment"
  },
  {
   "variable": "TRTEDT",
-  "label": "Treatment End Date",
+  "label": "Date of Last Exposure to Treatment",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "EX.EXENDTC"
+  "origin": "derived",
+  "derivation": "Maximum of EX.EXENDTC where EX.EXTRT matches randomized treatment"
  },
  {
   "variable": "TRTDURD",
-  "label": "Treatment Duration",
+  "label": "Total Treatment Duration (Days)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "TRTEDT - TRTSDT"
+  "derivation": "TRTEDT - TRTSDT + 1"
  },
  {
   "variable": "AGE",
@@ -102,32 +102,32 @@
   "label": "Age Group 1",
   "type": "text",
   "origin": "derived",
-  "derivation": "Derived from AGE"
+  "derivation": "Per SAP: Age category (<65, 65-80, >80)"
  },
  {
   "variable": "AGEGR1N",
-  "label": "Age Group 1 Numeric",
+  "label": "Age Group 1 (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Derived from AGE"
+  "derivation": "1=<65, 2=65-80, 3=>80"
  },
  {
   "variable": "AGEGR2",
   "label": "Age Group 2",
   "type": "text",
   "origin": "derived",
-  "derivation": "Derived from AGE"
+  "derivation": "Per SAP: Age category (<65, 65-80, >80)"
  },
  {
   "variable": "AGEGR2N",
-  "label": "Age Group 2 Numeric",
+  "label": "Age Group 2 (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Derived from AGE"
+  "derivation": "1=<65, 2=65-80, 3=>80"
  },
  {
   "variable": "AGEU",
-  "label": "Age Unit",
+  "label": "Age Units",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.AGEU"
@@ -148,56 +148,56 @@
  },
  {
   "variable": "RACEN",
-  "label": "Race Numeric",
+  "label": "Race (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Derived from RACE"
+  "derivation": "Numeric recode of RACE per CDISC CT"
  },
  {
   "variable": "ETHNIC",
-  "label": "Ethnic Origin",
+  "label": "Ethnicity",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.ETHNIC"
  },
  {
   "variable": "SAFFL",
-  "label": "Safety Analysis Set Flag",
+  "label": "Safety Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y/N/NA/U"
+  "origin": "derived",
+  "derivation": "Per SAP: All patients randomized and known to have taken at least one dose of randomized drug (Y/N)"
  },
  {
   "variable": "ITTFL",
-  "label": "Intent-to-Treat Analysis Set Flag",
+  "label": "Intent-to-Treat Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y/N/NA/U"
+  "origin": "derived",
+  "derivation": "Per SAP: All patients randomized (Y/N)"
  },
  {
   "variable": "EFFFL",
-  "label": "Efficacy Analysis Set Flag",
+  "label": "Efficacy Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y/N/NA/U"
+  "origin": "derived",
+  "derivation": "Per SAP: All patients who were randomized and took drug, and have at least 1 post-baseline measure for both ADAS-Cog and CIBIC+ (Y/N)"
  },
  {
   "variable": "COMPLFL",
-  "label": "Completer Flag",
+  "label": "Completers Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y/N/NA/U"
+  "origin": "derived",
+  "derivation": "Per SAP: All patients in the efficacy population who completed their Week 24 visit (Visit 12) (Y/N)"
  },
  {
   "variable": "DISCONFL",
-  "label": "Discontinuation Flag",
+  "label": "Discontinued from Study Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y/N/NA/U"
+  "origin": "derived",
+  "derivation": "Y if DS.DSDECOD indicates discontinuation, else N"
  },
  {
   "variable": "DTHFL",
-  "label": "Death Flag",
+  "label": "Subject Death Flag",
   "type": "text",
   "origin": "predecessor",
   "derivation": "DM.DTHFL"
@@ -207,41 +207,111 @@
   "label": "End of Study Status",
   "type": "text",
   "origin": "derived",
-  "derivation": "Derived from DCDECOD"
+  "derivation": "Derived from DS.DSDECOD: COMPLETED, DISCONTINUED, or ONGOING"
  },
  {
   "variable": "DCDECOD",
-  "label": "Discontinuation Reason",
+  "label": "Standardized Disposition Term",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Derived from AE.AEOUT, MH.MHSTAT, etc."
+  "origin": "predecessor",
+  "derivation": "DS.DSDECOD"
  },
  {
   "variable": "DCSREAS",
-  "label": "Discontinuation Reason",
+  "label": "Reason for Discontinuation",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Derived from AE.AEOUT, MH.MHSTAT, etc."
+  "origin": "predecessor",
+  "derivation": "DS.DSDECOD"
  },
  {
   "variable": "RFSTDTC",
-  "label": "Randomization Date",
+  "label": "Subject Reference Start Date/Time",
   "type": "date",
   "origin": "predecessor",
   "derivation": "DM.RFSTDTC"
  },
  {
   "variable": "RFENDTC",
-  "label": "Randomization End Date",
+  "label": "Subject Reference End Date/Time",
   "type": "date",
   "origin": "predecessor",
   "derivation": "DM.RFENDTC"
  },
  {
   "variable": "BRTHDTC",
-  "label": "Birth Date",
+  "label": "Date/Time of Birth",
   "type": "date",
   "origin": "predecessor",
   "derivation": "DM.BRTHDTC"
+ },
+ {
+  "variable": "DISONSDT",
+  "label": "Date of Onset of First Definite Symptoms",
+  "type": "date",
+  "origin": "derived",
+  "derivation": "Per SAP: Date of onset of the first definite symptoms of Alzheimer's Disease (from MH or custom collection)"
+ },
+ {
+  "variable": "DISDURM",
+  "label": "Duration of Disease (Months)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Per SAP: Months between date of Week -2 (Visit 1) and date of onset of first definite symptoms"
+ },
+ {
+  "variable": "EDUYRS",
+  "label": "Years of Education",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Per SAP: Years of education (from DM or custom collection)"
+ },
+ {
+  "variable": "MMSEBL",
+  "label": "Baseline Mini-Mental State Examination Score",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "Per SAP: Baseline MMSE at Visit 3 (from ADQS or custom collection)"
+ },
+ {
+  "variable": "WEIGHTBL",
+  "label": "Baseline Weight (kg)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Per SAP: Weight at Baseline (Visit 3) from VS.VSORRES where VSTESTCD=WEIGHT"
+ },
+ {
+  "variable": "HEIGHTBL",
+  "label": "Baseline Height (cm)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Per SAP: Height at Baseline (Visit 1) from VS.VSORRES where VSTESTCD=HEIGHT"
+ },
+ {
+  "variable": "BMIBL",
+  "label": "Baseline Body Mass Index (kg/m2)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Per SAP: BMI at Baseline (Visit 3 for weight and BMI, Visit 1 for height)"
+ },
+ {
+  "variable": "BMICAT",
+  "label": "Baseline BMI Category",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Per SAP: BMI<25, BMI 25-<30, BMI>=30"
+ },
+ {
+  "variable": "AVGDD",
+  "label": "Average Daily Dose",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Per SAP: Average daily dose at end of study (Week 26 or early termination)"
+ },
+ {
+  "variable": "CUMDOSE",
+  "label": "Cumulative Dose",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Per SAP: Cumulative dose at end of study (Week 26 or early termination)"
  }
 ]

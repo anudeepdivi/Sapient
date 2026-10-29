@@ -41,6 +41,21 @@ Think of the AI as a fast junior programmer. Around it sit simple, cheap checks 
 
 Every run records what each check caught, plus the time and AI usage (`python scripts/run_report.py`). Nothing that fails a check reaches the final dataset.
 
+## The goal
+
+![Sapient target workflow: study inputs, SAP understanding, an independent SDTM branch, ADaM spec and generation, requirement coverage, final outputs](docs/target-workflow.png)
+
+The end goal is the whole path from a study's SAP to its analysis outputs. Every output is traced back to the SAP requirement it satisfies. Everything except SDTM comes first; SDTM is an independent branch for later.
+
+| Stage | The goal | Where we are |
+|---|---|---|
+| 1. Study inputs | SAP, CDISC standards and controlled terminology; CRFs and raw data later, for SDTM | **Working** on the public CDISC pilot: its SAP, CDISC terminology from NCI-EVS, and ADaM IG rules. |
+| 2. SAP understanding | Read the SAP; extract its requirements (explicit, inferred or unresolved, each with the quote it came from); plan the list of tables | **Partly there.** Finding the right SAP sections works. Requirement extraction works on test SAPs, not yet on a real one. Table-list planning is paused: our first way of scoring it was wrong, and the SAP's own table list is now the answer key. |
+| 3. SDTM (independent branch) | Write, run and validate SDTM programs | **Not started as AI output.** Hand-written `sdtm.oak` programs exist (98–100% match), but the AI doesn't write them yet. |
+| 4. ADaM spec and generation | Mock shells, ADaM spec, human review, metacore, ADaM code, run and accept, then tables, listings and figures (TLFs) | **ADaM works; TLFs don't yet.** Spec drafting, mock shells, code generation one variable at a time, and run-and-accept all work and are measured. TLF programs don't run yet. |
+| 5. Coverage and traceability | Trace SAP → table list → spec → ADaM → TLFs; report what's covered, missing or conflicting | **Groundwork only.** Coverage scoring exists and is tested on synthetic SAPs, but isn't connected to the pipeline yet. |
+| 6. Final outputs | Specs, ADaM datasets and programs, TLFs, validation reports, a coverage report, a run manifest | **Specs, ADaM datasets and programs, and per-run check and cost reports today.** TLFs, the coverage report and the run manifest are still to come. |
+
 ## Results at a glance
 
 These are measured on the public CDISC pilot study and compared with the pilot's own datasets. Full numbers are in [docs/RESULTS.md](docs/RESULTS.md).
@@ -57,9 +72,34 @@ MCP (Model Context Protocol) is a standard way to plug tools into an AI. "Code m
 
 - **MCP with a few hand-picked tools** works well.
 - **MCP with everything plugged in** cost about **30× more** for worse results. The AI re-reads every tool's description on every step.
-- **Code mode** is the cheapest, but **only with a carefully designed API.** With our redesigned API it matched MCP's accuracy at lower cost, and never sent patient rows to the AI.
+- **Code mode** is the cheapest, but **only with a carefully designed API.** With our redesigned API it scored 12 of 20 in every run, against 13.7 for MCP with a few tools (3 runs each). It used about a third of the tokens, never got stuck retrying, and never sent patient rows to the AI. With our first API it scored lower and did send patient rows.
 
 Details: [docs/RESULTS.md](docs/RESULTS.md), section 6. The benchmark code is on the `bench/mcp-vs-code-mode` branch.
+
+## What we've learned
+
+1. **The errors live in the spec, not the code.** From the official spec, the AI's code matches 98.6% of ADAE values. When a spec was wrong (made-up age bands, a missing date conversion), the code faithfully reproduced the mistake. So we judge a spec by running the code it produces.
+2. **The SAP's value is in the derivations, not the variable names.** Judged on names alone, an AI spec is no better than the standard ADaM IG list. The SAP is what supplies the right age bands, population definitions and treatment-emergent rule.
+3. **Rules work better than examples.** Shown a worked example, the model copies it, mistakes included. Given rules it can be checked against (real function signatures, real input columns, the spec's types and codelists), it does better. A wrong rule is worse than no rule.
+4. **Running the code is the judge.** A program that runs and passes the checks overrules an AI reviewer that calls it wrong. Three cheap checks after each step took ADSL from 13 to 18 exactly reproduced variables, without making the prompt longer.
+5. **Temperature 0 alone doesn't make answers repeatable.** In our benchmark, the same model at temperature 0 gave slightly different answers between runs. Sapient makes runs repeatable by saving every AI answer and replaying it when the same prompt comes back.
+6. **How the AI reaches your tools matters as much as which AI it is.** Plugging in every function as a tool cost about 30 times more for worse results. Code mode works, but only on top of a carefully designed API.
+7. **Measuring honestly changed our numbers.** Several early figures were wrong and have been withdrawn; [docs/RESULTS.md](docs/RESULTS.md) lists them with the reasons.
+
+## What's next
+
+In order of priority:
+
+1. **January 2027: a beginner-friendly Sapient API and command line.** One install, one study config file, one command per job, and a quickstart on the CDISC pilot. Design: [docs/API_DESIGN.md](docs/API_DESIGN.md).
+2. **Any study, not just the pilot.** Today the study set-up (which SDTM domains feed which dataset) is written into the code. It moves into the study config, and each dataset's starting structure will be built from its spec.
+3. **One pipeline.** The variable-by-variable code generation that produced the results above is not yet the default path in the end-to-end pipeline.
+4. **TLFs that run.** Ground table code on the real arguments of `rtables` and `tern` functions, the same kind of fix that made the ADaM code work.
+5. **Requirements on real SAPs, then the coverage report** (stages 2 and 5). Extract requirements from real SAP text and trace each one to the outputs that satisfy it.
+6. **Excel specs.** Read specifications in the spreadsheet form most sponsors keep them in.
+7. **Full replay.** A rerun from saved answers should make zero new AI calls. A few still slip through today, when an error message fed back to the AI differs between runs.
+8. **Later:** a table-list recommender trained on past studies (Phase 2), and AI-written SDTM programs (stage 3).
+
+If you have a study to test on, get in touch.
 
 ---
 
@@ -107,25 +147,13 @@ R packages: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak`, plus `dplyr`
 | **Model / AI model** | The AI that writes the R code (here an open model on NVIDIA's free tier) |
 | **Token** | The unit AI usage is counted and billed in, roughly ¾ of a word. Fewer tokens means cheaper and faster. |
 | **Prompt** | The text sent to the AI: instructions plus the facts it needs |
-| **Temperature 0** | The setting that makes the AI give the same answer to the same question |
+| **Temperature 0** | The setting that makes the AI's answers as consistent as possible. On its own it doesn't guarantee the same answer every time. |
 | **MCP** | Model Context Protocol: a standard way to connect tools to an AI |
 | **Code mode** | Giving the AI an API and letting it write a program, instead of calling tools one at a time |
 | **Guardrail** | An automatic check that rejects bad output before it's used |
 | **Spec** | The ADaM dataset specification: each variable, its type and how it's derived |
 | **IG** | CDISC's ADaM Implementation Guide |
 | **Value match** | The share of cells in our dataset that equal the reference dataset's |
-
-## Status
-
-- Working:
-  - spec drafting from the SAP;
-  - code generation one variable at a time;
-  - all the guardrails;
-  - value comparison with the pilot's own datasets;
-  - reuse of company standard programs.
-- Weaker: lab (BDS) and time-to-event (TTE) datasets.
-- Not yet: tables, listings and figures, and AI-generated SDTM programs.
-- Next: the beginner-friendly API and command line (January 2027), then testing on a real study. **If you have one, get in touch.**
 
 ## References
 

@@ -10,10 +10,12 @@ We benchmarked three ways of giving an AI model access to Sapient's tools on fou
 
 | Approach | Correct (of 20) | Tokens used | Patient rows sent to the AI |
 |---|---|---|---|
-| MCP, 6 hand-picked tools | 13 | 146k | none |
+| MCP, 6 hand-picked tools | 13.7 | 321k | none |
 | MCP, every admiral function as a tool (142) | 10 | 5.4M | none |
-| Code mode, first API version | 8 | 156k | yes, twice |
-| **Code mode, redesigned API** | **12** | **113k** | **none, by design** |
+| Code mode, first API version | 10 | 156k | yes, twice |
+| **Code mode, redesigned API** | **12** | **105k** | **none, by design** |
+
+The MCP and redesigned-code-mode rows are the average of 3 runs; the other two are single runs.
 
 Code mode is the cheapest approach, but only when the API it calls is designed for an AI to use. The redesign changed four things, and they are this API's rules:
 

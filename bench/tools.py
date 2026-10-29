@@ -19,7 +19,7 @@ sys.path.insert(0, str(BASE_DIR / "scripts"))
 
 import gen_derivations as g
 from config import R_EXECUTABLE
-from knowledge.admiral_functions import get_signatures
+from knowledge.admiral_functions import get_signatures, signatures_block
 from r_layer.runner import run_adam_program
 from specs.metacore_loader import get_spec_rules
 from knowledge.adam_registry import classify
@@ -93,16 +93,38 @@ class Session:
             return f"OK: {variable} created and kept. Accepted so far: {', '.join(self.accepted)}"
         return st
 
-    def preview_rows(self, columns: str, n: int = 5) -> str:
-        """Print the first n rows of the dataset as built so far (patient-level data)."""
+    def brief(self, variables: str) -> str:
+        """Everything needed to derive the given comma-separated variables, in one text block:
+        their spec rules, the verified conventions, the input columns and the allowed admiral signatures."""
+        names = [v.strip().upper() for v in variables.split(",") if v.strip()]
+        return "\n\n".join([
+            "SPEC RULES:\n" + "\n".join(self.get_spec_rule(v) for v in names),
+            "CONVENTIONS (verified against the installed package):\n" + self.get_conventions(),
+            "INPUTS:\n" + self.list_input_columns(),
+            "ALLOWED ADMIRAL FUNCTIONS:\n" + signatures_block(),
+            "SUBMITTING: run_step(variable, code) returns text starting with 'OK' when the step is kept; "
+            "anything else is the exact error or failed check, with what to fix."])
+
+    def describe_columns(self, columns: str) -> str:
+        """Profile of comma-separated columns in the dataset built so far: type, rows, missing,
+        distinct count, and the most common values of low-cardinality text columns only.
+        Never returns patient-level rows."""
         cols = [c.strip().upper() for c in columns.split(",") if c.strip()]
         r_cols = "c(" + ", ".join(json.dumps(c) for c in cols) + ")"
-        program = "\n\n".join([render_header(DATASET), g.spine(DATASET), *self._ordered(),
-                               f"print(as.data.frame(head(result[intersect({r_cols}, names(result))], {int(n)})))"])
-        f = SCRATCH / "preview.R"
+        profile = (f"for (v in intersect({r_cols}, names(result))) {{ x <- result[[v]]; nd <- length(unique(x)); "
+                   "cat(sprintf('%s: %s, %d rows, %d missing, %d distinct', v, class(x)[1], length(x), sum(is.na(x)), nd)); "
+                   "if (is.character(x) && nd <= 30 && !grepl('ID$|DTC$', v)) "
+                   "cat(' | values:', paste(head(names(sort(table(x), decreasing = TRUE)), 10), collapse = ', ')); cat('\\n') }")
+        program = "\n\n".join([render_header(DATASET), g.spine(DATASET), *self._ordered(), profile])
+        f = SCRATCH / "describe.R"
         f.write_text(program)
         out = subprocess.run([R_EXECUTABLE, str(f)], capture_output=True, text=True, timeout=300, cwd=BASE_DIR)
         return out.stdout.strip()[-4000:] or out.stderr.strip()[-1500:]
+
+    def status(self) -> str:
+        """Which target variables are accepted and which remain."""
+        done = [t for t in TARGETS if t in self.accepted]
+        return f"accepted: {', '.join(done) or 'none'} | remaining: {', '.join(t for t in TARGETS if t not in done) or 'none'}"
 
     # ---- harness only (not a tool) ----
     def _ordered(self) -> list[str]:
@@ -130,5 +152,7 @@ class Session:
                 "rates": {v: rates.get(v) for v in TARGETS}}
 
 
-TOOL_NAMES = ["get_spec_rule", "get_admiral_signature", "list_input_columns",
-              "get_conventions", "run_step", "preview_rows"]
+# API v2 (2026-10-29): brief / describe_columns / status replace preview_rows, which
+# returned patient rows. v1 results are in bench/results/, v2 in bench/results/v2/.
+TOOL_NAMES = ["brief", "get_spec_rule", "get_admiral_signature", "list_input_columns",
+              "get_conventions", "describe_columns", "run_step", "status"]

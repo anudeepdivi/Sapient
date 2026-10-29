@@ -2,7 +2,7 @@
 
 Records, per run: turns, tool calls, prompt tokens per turn (the context the model
 re-reads every turn), tool-definition size, tool-result bytes, patient-level bytes
-(rows returned by preview_rows), wall time, and the target score.
+(v1: rows returned by preview_rows; v2 returns none), wall time, and the target score.
 
 Usage: python bench/run_arm_a.py   -> bench/results/arm_a.json
 """
@@ -25,13 +25,13 @@ from orchestration.llm_retry import create_with_retry
 from tools import DATASET, TARGETS
 
 MAX_TURNS = 40
-PATIENT_DATA_TOOLS = {"preview_rows"}
+PATIENT_DATA_TOOLS = set()  # v2: no tool returns patient rows
 HARNESS_ONLY = {"score_run"}
-RESULTS = BASE_DIR / "bench" / "results"
+RESULTS = BASE_DIR / "bench" / "results" / "v2"
 
 TASK = f"""You are building the ADaM dataset {DATASET} in R with the admiral package, using the tools provided.
 Derive these variables, in a sensible order: {', '.join(TARGETS)}.
-For each variable: read its spec rule, check the conventions and any admiral signature you need, then call run_step
+Start with brief() for all targets. For each variable, call run_step
 with one statement `result <- result |> ...` that creates it. If run_step returns an error, fix the code and call
 run_step again. A variable is done when run_step returns OK. When every target is done, reply with the single word DONE."""
 

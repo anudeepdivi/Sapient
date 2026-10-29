@@ -8,6 +8,7 @@ Usage:
 """
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -22,7 +23,9 @@ from cache.prompt_cache import get_cached, set_cached
 from knowledge.adam_registry import classify
 from knowledge.adamig_standard import standard_block
 from knowledge.ct_lookup import variable_ct
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS, NO_THINKING, SAP_DIR
+from lint_spec import REF_RE, source_columns
+from templates.adam_templates import ADAM_INPUTS
+from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS, NO_THINKING, SAP_DIR, SDTM_SOURCE
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
 APPROVED_DIR = BASE_DIR / "specs/approved"
@@ -42,16 +45,29 @@ SAP_TOPICS = {
             "efficacy", "baseline"],
     "TTE": ["design", "population", "early termination", "adverse event"],
 }
+# Definitions a dataset class needs often sit in another section (the pilot defines
+# "first dose" inside its adverse-event section), so a section is also included when
+# its TEXT defines one of these concepts.
+# Specific, definitional phrases only: a generic word ("baseline", "event") pulls in
+# most of the SAP (measured: 4x the prompt for ADSL).
+SAP_CONCEPTS = {
+    "SUBJECT": ["first dose", "last dose", "treatment start", "discontinu"],
+    "OCCDS": ["first dose", "treatment start", "treatment emergent"],
+    "BDS": ["window", "last observation carried"],
+    "TTE": ["first dose", "censor", "time to"],
+}
 
 # ADaMIG / OCCDS derivation conventions: the standard "how" the SAP never states.
 # Only what the IGs standardize; sponsor choices are named, never filled in.
 IG_CONVENTIONS = {
     "COMMON": """- Write every derivation so a programmer could code it without guessing: name the source DATASET.VARIABLE, any conversion, the subset, the by-group and the sort order.
-- *DT analysis dates are NUMERIC dates converted from the SDTM --DTC character date; *DTF records the imputation level. State the imputation rule for partial dates from the SAP; if the SAP gives none, write "partial-date imputation: sponsor convention - REVIEW".
+- *DT analysis dates are dates (DATE9.) converted from the SDTM --DTC character date; *DTF records the imputation level. State the imputation rule for partial dates from the SAP; if the SAP gives none, write "partial-date imputation: sponsor convention - REVIEW".
 - *DY study day = *DT - TRTSDT + 1 when *DT >= TRTSDT, else *DT - TRTSDT (there is no day 0).
 - Flags other than ADSL population flags are "Y" or blank, never "N".""",
     "SUBJECT": """- TRT01P = DM.ARM, TRT01A = DM.ACTARM; TRT01PN/TRT01AN are the numeric codes of those treatments.
-- TRTSDT/TRTEDT = first/last exposure date: EX.EXSTDTC/EX.EXENDTC converted to numeric dates.
+- TRTSDT/TRTEDT = date of first/last dose of study treatment exactly as the SAP defines it (the SAP may tie first dose to a visit); only when the SAP is silent, the first/last exposure record (EX.EXSTDTC/EX.EXENDTC).
+- End-of-study status and reason (EOSSTT, DCDECOD, DCSREAS) come from the DS record whose DSCAT = "DISPOSITION EVENT" (SDTMIG), not simply the last DS record.
+- A numeric code variable (*N, e.g. RACEN, TRT01PN) uses the codes of that variable's codelist; if no codelist is given write "per study codelist - REVIEW". Never invent an ordering (alphabetical or otherwise).
 - Population flags (SAFFL, ITTFL, EFFFL, COMP*FL) are "Y"/"N" using the SAP's definition verbatim.
 - A grouping variable states its cut-points from the SAP; its *N partner is the numeric code 1..k in the same order.""",
     "OCCDS": """- Subject-level variables (demographics, AGEGR1/AGEGR1N, RACEN, population flags, TRTSDT, TRTEDT) are COPIED from ADSL: derivation "ADSL.<VAR>". Never re-derive them in this dataset.
@@ -61,6 +77,11 @@ IG_CONVENTIONS = {
     "BDS": """- Subject-level variables are COPIED from ADSL: derivation "ADSL.<VAR>"; TRTA/TRTP from ADSL.TRT01A/TRT01P.
 - ABLFL flags the baseline record per subject and parameter (state the SAP's baseline definition); BASE = AVAL of that record; CHG = AVAL - BASE; PCHG = 100 * CHG / BASE.
 - AVISIT/AVISITN follow the SAP's analysis windows; state the window rule.""",
+    "TTE": """- Subject-level variables (demographics, AGEGR1/AGEGR1N, RACEN, SAFFL, TRTSDT, TRTEDT) are COPIED from ADSL: derivation "ADSL.<VAR>"; TRTP/TRTA = ADSL.TRT01P/TRT01A. Never re-derive them here.
+- One record per subject per time-to-event parameter; PARAMCD/PARAM name the SAP's endpoint.
+- STARTDT is the time origin the SAP uses (e.g. first dose or randomization); ADT is the event date for subjects with the event, otherwise the censoring date the SAP specifies.
+- CNSR = 0 for an event, 1 (or a positive integer per censoring reason) for a censored subject; AVAL = ADT - STARTDT + 1 in days.
+- EVNTDESC / CNSDTDSC describe the event or censoring; SRCDOM / SRCVAR / SRCSEQ trace the source record.""",
 }
 SPEC_PROMPT = """You are a CDISC ADaM specification author.
 Propose the variable-level specification for dataset {dataset}.
@@ -134,9 +155,52 @@ def sap_sections(path: Path = SAP_FILE) -> list[tuple[str, str, str]]:
 
 def sap_excerpts(adam_class: str) -> str:
     topics = SAP_TOPICS.get(adam_class, ["population"])
+    concepts = SAP_CONCEPTS.get(adam_class, [])
     picked = [f"[{n} {t}] {body}" for n, t, body in sap_sections()
-              if any(k in t.lower() for k in topics) and body]
+              if body and (any(k in t.lower() for k in topics) or any(c in body.lower() for c in concepts))]
     return "\n".join(picked) or "(no SAP sections matched)"
+
+
+SPEC_ROUNDS = 3
+GUARDRAIL_LOG = BASE_DIR / "cache_store" / "guardrail_events.jsonl"
+
+
+def ask(prompt: str) -> str:
+    cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()
+    content = get_cached(cache_key)
+    if content is None:
+        client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=300.0, max_retries=0)
+        response = create_with_retry(client, model=CODEGEN_MODEL, fallback_model=CODEGEN_FALLBACK_MODEL,  # DiffusionGemma truncates/hallucinates var names — never use it for spec-gen
+                                     messages=[{"role": "user", "content": prompt}],
+                                     temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
+                                     extra_body=NO_THINKING)
+        if response.choices[0].finish_reason == "length":
+            raise RuntimeError(f"spec truncated at max_tokens={MAX_TOKENS}; not cached")
+        content = response.choices[0].message.content
+        set_cached(cache_key, content)
+    return content
+
+
+def bad_references(dataset: str, spec: list[dict], domains: dict) -> list[str]:
+    """Every DOMAIN.COLUMN a derivation cites must exist in the study's real data
+    (SDTM or a parent ADaM). Deterministic: no model, works on any study."""
+    issues = []
+    for v in spec:
+        for dom, col in REF_RE.findall(v.get("derivation") or ""):
+            if dom == dataset:
+                continue
+            if dom not in domains:
+                issues.append(f"{v['variable']}: {dom} is not an input of {dataset} (inputs: {', '.join(sorted(domains))})")
+            elif col not in domains[dom]:
+                issues.append(f"{v['variable']}: {dom}.{col} does not exist; {dom} columns: {', '.join(sorted(domains[dom]))}")
+    return sorted(set(issues))
+
+
+def log_spec_event(dataset: str, rnd: int, issues: list[str]):
+    with GUARDRAIL_LOG.open("a") as f:
+        f.write(json.dumps({"tag": os.getenv("SAPIENT_RUN_TAG", ""), "dataset": dataset, "round": rnd,
+                            "variable": "*spec*", "guardrail": "spec_reference_check",
+                            "outcome": "rejected" if issues else "passed", "detail": "; ".join(issues)[:200]}) + "\n")
 
 
 def propose(dataset: str) -> Path:
@@ -152,20 +216,29 @@ def propose(dataset: str) -> Path:
                                 ig_conventions=IG_CONVENTIONS["COMMON"] + "\n" + IG_CONVENTIONS.get(adam_class, ""),
                                 lot_entries=json.dumps(relevant, indent=1),
                                 sdtm_columns=sdtm_columns())
-    cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()
-    content = get_cached(cache_key)
-    if content is None:
-        client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=300.0, max_retries=0)
-        response = create_with_retry(client, model=CODEGEN_MODEL, fallback_model=CODEGEN_FALLBACK_MODEL,  # DiffusionGemma truncates/hallucinates var names — never use it for spec-gen
-                                     messages=[{"role": "user", "content": prompt}],
-                                     temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
-                                     extra_body=NO_THINKING)
-        if response.choices[0].finish_reason == "length":
-            raise RuntimeError(f"{dataset} spec truncated at max_tokens={MAX_TOKENS}; not cached")
-        content = response.choices[0].message.content
-        set_cached(cache_key, content)
-    raw = content.strip().replace("```json", "").replace("```", "")
-    spec = json.loads(raw)
+    domains = source_columns(SDTM_SOURCE, "data/adam")
+    # a citation must point at a dataset this one actually reads, not just anything in the study
+    inputs = {Path(path).stem.upper() for _, path in ADAM_INPUTS.get(dataset, [])}
+    domains = {d: cols for d, cols in domains.items() if d in inputs} if inputs else domains
+    feedback = ""
+    for rnd in range(1, SPEC_ROUNDS + 1):
+        spec = json.loads(ask(prompt + feedback).strip().replace("```json", "").replace("```", ""))
+        issues = bad_references(dataset, spec, domains)
+        log_spec_event(dataset, rnd, issues)
+        if not issues:
+            break
+        feedback = ("\n\nYOUR PREVIOUS SPEC CITED COLUMNS THAT DO NOT EXIST. Fix every one, using only real columns, "
+                    "and return the full JSON array again:\n- " + "\n- ".join(issues))
+    else:
+        # rounds exhausted: keep the spec, but mark what is still wrong for the human reviewer
+        unresolved = {}
+        for issue in issues:
+            var, _, why = issue.partition(": ")
+            unresolved.setdefault(var, []).append(why)
+        for v in spec:
+            if v["variable"] in unresolved:
+                v["derivation"] = f"{v.get('derivation') or ''} [REVIEW: {'; '.join(unresolved[v['variable']])}]"
+        print(f"{dataset}: {len(unresolved)} variable(s) still cite unavailable sources after {SPEC_ROUNDS} rounds; marked REVIEW")
     PROPOSED_DIR.mkdir(exist_ok=True)
     out = PROPOSED_DIR / f"{dataset}.json"
     out.write_text(json.dumps(spec, indent=1))

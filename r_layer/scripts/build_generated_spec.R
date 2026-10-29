@@ -10,6 +10,7 @@ ds_spec <- data.frame(); ds_vars <- data.frame(); var_spec <- data.frame()
 value_spec <- data.frame(); derivations <- data.frame()
 
 type_map <- c(text = "text", integer = "integer", float = "float", date = "integer")
+# a generated "date" keeps its DATE9. format, so codegen's post-step date check applies to it
 
 for (f in files) {
   dataset <- sub("\\.json$", "", basename(f))
@@ -25,7 +26,8 @@ for (f in files) {
     key_seq = NA_integer_, order = seq_len(n), core = NA_character_, supp_flag = FALSE))
   var_spec <- rbind(var_spec, data.frame(
     variable = paste(dataset, spec$variable, sep = "."), length = NA_integer_,
-    label = spec$label, type = types, common = NA, format = NA_character_))
+    label = spec$label, type = types, common = NA,
+    format = unname(ifelse(spec$type == "date", "DATE9.", NA_character_))))
   value_spec <- rbind(value_spec, data.frame(
     dataset = dataset, variable = spec$variable, where = NA_character_, type = types,
     sig_dig = NA_integer_, code_id = NA_character_, origin = spec$origin,

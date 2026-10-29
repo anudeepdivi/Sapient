@@ -55,7 +55,7 @@ rates <- sapply(common_vars, function(v) {
 })
 overall <- mean(rates, na.rm = TRUE)
 cat(sprintf("VALUE-MATCH%s %s: %.1f%% mean cell agreement over %d common vars, %d/%d rows overlap\n",
-            if (dataset %in% PROXY_REFERENCE) " [PROXY REFERENCE - not the pilot dataset]" else "",
+            if (dataset %in% PROXY_REFERENCE && ref_dir == "data/reference") " [PROXY REFERENCE - not the pilot dataset]" else "",
             dataset, 100 * overall, length(common_vars), nrow(merged), nrow(ref)))
 worst <- sort(rates)[seq_len(min(8, length(rates)))]
 cat("lowest-agreement variables:\n")

@@ -27,7 +27,7 @@ from tools import DATASET, TARGETS
 MAX_TURNS = 40
 PATIENT_DATA_TOOLS = set()  # v2: no tool returns patient rows
 HARNESS_ONLY = {"score_run"}
-RESULTS = BASE_DIR / "bench" / "results" / "v2"
+RESULTS = BASE_DIR / "bench" / "results" / os.getenv("SAPIENT_BENCH_RESULTS", "v2")
 
 TASK = f"""You are building the ADaM dataset {DATASET} in R with the admiral package, using the tools provided.
 Derive these variables, in a sensible order: {', '.join(TARGETS)}.

@@ -4,196 +4,196 @@
   "label": "Study Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.STUDYID"
+  "derivation": "LB.STUDYID"
  },
  {
   "variable": "USUBJID",
   "label": "Unique Subject Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.USUBJID"
+  "derivation": "LB.USUBJID"
  },
  {
   "variable": "SUBJID",
-  "label": "Subject Identifier",
+  "label": "Subject Identifier for the Study",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SUBJID"
+  "derivation": "ADSL.SUBJID"
  },
  {
   "variable": "SITEID",
-  "label": "Site Identifier",
+  "label": "Study Site Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SITEID"
+  "derivation": "ADSL.SITEID"
  },
  {
   "variable": "TRTP",
-  "label": "Treatment Group (Planned)",
+  "label": "Planned Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ARMCD"
+  "derivation": "ADSL.TRT01P"
  },
  {
   "variable": "TRTPN",
-  "label": "Treatment Group (Planned) Numeric",
+  "label": "Planned Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.ARMNRS"
+  "derivation": "ADSL.TRT01PN"
  },
  {
   "variable": "TRTA",
-  "label": "Treatment Group (Actual)",
+  "label": "Actual Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ACTARMCD"
+  "derivation": "ADSL.TRT01A"
  },
  {
   "variable": "TRTAN",
-  "label": "Treatment Group (Actual) Numeric",
+  "label": "Actual Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.ACTARMUD"
+  "derivation": "ADSL.TRT01AN"
  },
  {
   "variable": "TRTSDT",
-  "label": "Treatment Start Date",
+  "label": "Date of First Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFXSTDTC"
+  "derivation": "ADSL.TRTSDT"
  },
  {
   "variable": "TRTEDT",
-  "label": "Treatment End Date",
+  "label": "Date of Last Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFXENDTC"
+  "derivation": "ADSL.TRTEDT"
  },
  {
   "variable": "AGE",
   "label": "Age",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.AGE"
+  "derivation": "ADSL.AGE"
  },
  {
   "variable": "AGEGR1",
-  "label": "Age Group 1",
+  "label": "Pooled Age Group 1",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Derived from DM.AGE"
+  "origin": "predecessor",
+  "derivation": "ADSL.AGEGR1"
  },
  {
   "variable": "AGEGR1N",
-  "label": "Age Group 1 Numeric",
+  "label": "Pooled Age Group 1 (N)",
   "type": "integer",
-  "origin": "derived",
-  "derivation": "Derived from DM.AGE"
+  "origin": "predecessor",
+  "derivation": "ADSL.AGEGR1N"
  },
  {
   "variable": "SEX",
   "label": "Sex",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SEX"
+  "derivation": "ADSL.SEX"
  },
  {
   "variable": "RACE",
   "label": "Race",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.RACE"
+  "derivation": "ADSL.RACE"
  },
  {
   "variable": "RACEN",
-  "label": "Race Numeric",
+  "label": "Race (N)",
   "type": "integer",
-  "origin": "derived",
-  "derivation": "Derived from DM.RACE"
+  "origin": "predecessor",
+  "derivation": "ADSL.RACEN"
  },
  {
   "variable": "ETHNIC",
-  "label": "Ethnic Origin",
+  "label": "Ethnicity",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ETHNIC"
+  "derivation": "ADSL.ETHNIC"
  },
  {
   "variable": "SAFFL",
-  "label": "Safety Analysis Flag",
+  "label": "Safety Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Assigned value"
+  "origin": "predecessor",
+  "derivation": "ADSL.SAFFL"
  },
  {
   "variable": "ITTFL",
-  "label": "Intent-to-Treat Analysis Flag",
+  "label": "Intent-To-Treat Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Assigned value"
+  "origin": "predecessor",
+  "derivation": "ADSL.ITTFL"
  },
  {
   "variable": "EFFFL",
-  "label": "Efficacy Analysis Flag",
+  "label": "Efficacy Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Assigned value"
+  "origin": "predecessor",
+  "derivation": "ADSL.EFFFL"
  },
  {
   "variable": "PARAMCD",
   "label": "Parameter Code",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "VS.VSTESTCD"
+  "derivation": "LB.LBTESTCD"
  },
  {
   "variable": "PARAM",
   "label": "Parameter",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "VS.VSTEST"
+  "derivation": "LB.LBTEST"
  },
  {
   "variable": "PARAMN",
-  "label": "Parameter Numeric",
+  "label": "Parameter (N)",
   "type": "integer",
-  "origin": "derived",
-  "derivation": "Derived from VS.VSTESTCD"
+  "origin": "assigned",
+  "derivation": "Sequential integer assigned per unique PARAMCD"
  },
  {
   "variable": "PARCAT1",
   "label": "Parameter Category 1",
   "type": "text",
-  "origin": "derived",
-  "derivation": "Derived from VS.VSTESTCD"
+  "origin": "predecessor",
+  "derivation": "LB.LBCAT"
  },
  {
   "variable": "AVAL",
-  "label": "Analyzed Value",
+  "label": "Analysis Value",
   "type": "float",
   "origin": "predecessor",
-  "derivation": "VS.VSORRES"
+  "derivation": "LB.LBSTRESN"
  },
  {
   "variable": "AVALC",
-  "label": "Analyzed Value Character",
+  "label": "Analysis Value (C)",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "VS.VSORRES"
+  "derivation": "LB.LBSTRESC"
  },
  {
   "variable": "BASE",
   "label": "Baseline Value",
   "type": "float",
-  "origin": "predecessor",
-  "derivation": "VS.VSORRES"
+  "origin": "derived",
+  "derivation": "AVAL from the record where ABLFL='Y' for the same USUBJID and PARAMCD; baseline defined as the last non-missing assessment on or prior to the date of first exposure (TRTSDT) per SAP Section 8.3 and 11.5 (Visit 1, Week -2)"
  },
  {
   "variable": "BASETYPE",
   "label": "Baseline Type",
   "type": "text",
   "origin": "assigned",
-  "derivation": "Assigned value"
+  "derivation": "'LAST NON-MISSING ON OR PRIOR TO TRTSDT'"
  },
  {
   "variable": "CHG",
@@ -207,83 +207,293 @@
   "label": "Percent Change from Baseline",
   "type": "float",
   "origin": "derived",
-  "derivation": "(AVAL - BASE) / BASE * 100"
+  "derivation": "100 * (AVAL - BASE) / BASE"
  },
  {
   "variable": "ABLFL",
-  "label": "Above Baseline Flag",
+  "label": "Baseline Record Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Derived from CHG"
+  "derivation": "'Y' for the record selected as baseline per BASETYPE rule; blank otherwise"
  },
  {
   "variable": "AVISIT",
   "label": "Analysis Visit",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "VS.VISIT"
+  "origin": "derived",
+  "derivation": "Mapped from LB.VISIT/VISITNUM per SAP Section 8.2 assessment windows for laboratory assessments: Baseline (Visit 1), Week 2 (Visit 4), Week 4 (Visit 5), Week 6 (Visit 7), Week 8 (Visit 8), Week 12 (Visit 9), Week 16 (Visit 10), Week 20 (Visit 11), Week 24 (Visit 12), Week 26 (Visit 13); unscheduled/retrieval visits mapped to the appropriate window based on LBDTC relative to randomization date"
  },
  {
   "variable": "AVISITN",
-  "label": "Analysis Visit Numeric",
-  "type": "integer",
-  "origin": "predecessor",
-  "derivation": "VS.VISITNUM"
+  "label": "Analysis Visit (N)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "Numeric equivalent of AVISIT: Baseline=0, Week 2=2, Week 4=4, Week 6=6, Week 8=8, Week 12=12, Week 16=16, Week 20=20, Week 24=24, Week 26=26"
  },
  {
   "variable": "VISIT",
-  "label": "Visit",
+  "label": "Visit Name",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "VS.VISIT"
+  "derivation": "LB.VISIT"
  },
  {
   "variable": "VISITNUM",
   "label": "Visit Number",
-  "type": "integer",
+  "type": "float",
   "origin": "predecessor",
-  "derivation": "VS.VISITNUM"
+  "derivation": "LB.VISITNUM"
  },
  {
   "variable": "ADT",
   "label": "Analysis Date",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "VS.VSDTC"
+  "origin": "derived",
+  "derivation": "datepart of LB.LBDTC; partial-date imputation: sponsor convention - REVIEW"
  },
  {
   "variable": "ADY",
-  "label": "Analysis Day",
+  "label": "Analysis Relative Day",
   "type": "integer",
-  "origin": "predecessor",
-  "derivation": "VS.VSDY"
+  "origin": "derived",
+  "derivation": "ADT - TRTSDT + 1 if ADT >= TRTSDT else ADT - TRTSDT"
  },
  {
   "variable": "ANRIND",
-  "label": "Analysis Record Indicator",
+  "label": "Analysis Normal Range Indicator",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Assigned value"
+  "origin": "derived",
+  "derivation": "Derived per SAP Section 8.3: 'L' if AVAL <= LBSTNRLO; 'N' if AVAL > LBSTNRLO and AVAL < LBSTNRHI; 'H' if AVAL >= LBSTNRHI; blank if normal range limits missing"
  },
  {
   "variable": "BNRIND",
-  "label": "Baseline Record Indicator",
+  "label": "Baseline Normal Range Indicator",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Assigned value"
+  "origin": "derived",
+  "derivation": "ANRIND value from the baseline record (where ABLFL='Y') for the same USUBJID and PARAMCD"
  },
  {
   "variable": "ANL01FL",
-  "label": "Analysis Flag",
+  "label": "Last On-Treatment Record Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Assigned value"
+  "origin": "derived",
+  "derivation": "'Y' for the last record per USUBJID and PARAMCD where ADT <= TRTEDT (or last dose date) and AVISITN <= 24 (Week 24) per SAP Section 8.3; blank otherwise"
  },
  {
   "variable": "DTYPE",
-  "label": "Data Type",
+  "label": "Derivation Type",
   "type": "text",
   "origin": "assigned",
-  "derivation": "Assigned value"
+  "derivation": "Blank for original records; 'LOCF' for imputed post-baseline efficacy records per SAP Section 8.1 (though LOCF applies to efficacy, not lab); 'AVERAGE' if multiple values averaged within a window; otherwise as applicable per CDISC CT"
+ },
+ {
+  "variable": "LBNRIND",
+  "label": "Normal Range Indicator (SDTM)",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBNRIND"
+ },
+ {
+  "variable": "LBSTNRLO",
+  "label": "Standardized Normal Range Lower Limit",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "LB.LBSTNRLO"
+ },
+ {
+  "variable": "LBSTNRHI",
+  "label": "Standardized Normal Range Upper Limit",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "LB.LBSTNRHI"
+ },
+ {
+  "variable": "LBORNRLO",
+  "label": "Original Normal Range Lower Limit",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "LB.LBORNRLO"
+ },
+ {
+  "variable": "LBORNRHI",
+  "label": "Original Normal Range Upper Limit",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "LB.LBORNRHI"
+ },
+ {
+  "variable": "LBORRES",
+  "label": "Original Result",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBORRES"
+ },
+ {
+  "variable": "LBORRESU",
+  "label": "Original Result Units",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBORRESU"
+ },
+ {
+  "variable": "LBSTRESC",
+  "label": "Standardized Result (C)",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBSTRESC"
+ },
+ {
+  "variable": "LBSTRESU",
+  "label": "Standardized Result Units",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBSTRESU"
+ },
+ {
+  "variable": "LBBLFL",
+  "label": "Baseline Flag (SDTM)",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBBLFL"
+ },
+ {
+  "variable": "VISITDY",
+  "label": "Planned Study Day of Visit",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "LB.VISITDY"
+ },
+ {
+  "variable": "LBDY",
+  "label": "Study Day of Specimen Collection",
+  "type": "integer",
+  "origin": "predecessor",
+  "derivation": "LB.LBDY"
+ },
+ {
+  "variable": "ANRLO",
+  "label": "Analysis Normal Range Lower Limit",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "LB.LBSTNRLO"
+ },
+ {
+  "variable": "ANRHI",
+  "label": "Analysis Normal Range Upper Limit",
+  "type": "float",
+  "origin": "predecessor",
+  "derivation": "LB.LBSTNRHI"
+ },
+ {
+  "variable": "A1LO",
+  "label": "Threshold Lower Limit (0.5 * LLN)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "0.5 * LBSTNRLO per SAP Section 8.3 threshold range definition"
+ },
+ {
+  "variable": "A1HI",
+  "label": "Threshold Upper Limit (1.5 * ULN)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "1.5 * LBSTNRHI per SAP Section 8.3 threshold range definition"
+ },
+ {
+  "variable": "ANRINDT",
+  "label": "Threshold Range Indicator",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "'L' if AVAL <= A1LO; 'H' if AVAL >= A1HI; 'N' otherwise per SAP Section 8.3 and 8.4.1"
+ },
+ {
+  "variable": "BNRINDT",
+  "label": "Baseline Threshold Range Indicator",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "ANRINDT value from the baseline record (where ABLFL='Y') for the same USUBJID and PARAMCD"
+ },
+ {
+  "variable": "SHIFT1",
+  "label": "Shift from Baseline (Normal Range)",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Concatenation of BNRIND and ANRIND (e.g., 'N to H') per SAP Section 11.5 shift table requirement"
+ },
+ {
+  "variable": "SHIFT1T",
+  "label": "Shift from Baseline (Threshold Range)",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Concatenation of BNRINDT and ANRINDT (e.g., 'N to H') per SAP Section 11.5 shift table requirement"
+ },
+ {
+  "variable": "R2A1LO",
+  "label": "Ratio to Threshold Lower Limit (AVAL/A1LO)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AVAL / A1LO per SAP Section 8.3"
+ },
+ {
+  "variable": "R2A1HI",
+  "label": "Ratio to Threshold Upper Limit (AVAL/A1HI)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AVAL / A1HI per SAP Section 8.3"
+ },
+ {
+  "variable": "R2ANRLO",
+  "label": "Ratio to Normal Range Lower Limit (AVAL/ANRLO)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AVAL / ANRLO per SAP Section 8.3"
+ },
+ {
+  "variable": "R2ANRHI",
+  "label": "Ratio to Normal Range Upper Limit (AVAL/ANRHI)",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AVAL / ANRHI per SAP Section 8.3"
+ },
+ {
+  "variable": "CHGPRV",
+  "label": "Change from Previous Scheduled Visit",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AVAL - AVAL of the previous scheduled visit record (by AVISITN) for the same USUBJID and PARAMCD per SAP Section 8.3"
+ },
+ {
+  "variable": "PCHGPRV",
+  "label": "Percent Change from Previous Scheduled Visit",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "100 * CHGPRV / AVAL of previous scheduled visit per SAP Section 8.3"
+ },
+ {
+  "variable": "ABNFL",
+  "label": "Abnormal Flag (Significant Change from Previous)",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "'Y' if ABS(CHGPRV) > 0.5 * (ANRHI - ANRLO) per SAP Section 8.3; blank otherwise"
+ },
+ {
+  "variable": "HYSLAWFL",
+  "label": "Hy's Law Criteria Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "'Y' if (PARAMCD in ('ALT','AST') and AVAL > 1.5 * ANRHI) and (exists record for same USUBJID and AVISIT with PARAMCD='BILI' and AVAL > 1.5 * ANRHI) per SAP Section 8.3; blank otherwise"
+ },
+ {
+  "variable": "ONTRTFL",
+  "label": "On-Treatment Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "'Y' if ADT <= TRTEDT (or last dose date + washout per SAP Section 8.1); blank otherwise"
+ },
+ {
+  "variable": "LBCAT",
+  "label": "Lab Category",
+  "type": "text",
+  "origin": "predecessor",
+  "derivation": "LB.LBCAT"
  }
 ]

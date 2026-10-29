@@ -1,165 +1,164 @@
 # Sapient
 
-Sapient is an AI assistant for clinical statistical programming. It reads a study's Statistical Analysis Plan (SAP) and produces the R programs that create submission-ready analysis datasets and the tables, listings, and figures built from them.
+**AI help for clinical statistical programming, built so you can check every step.**
 
-A useful way to picture it: a very fast junior statistical programmer who
+Sapient reads a study's Statistical Analysis Plan (SAP), drafts the ADaM dataset specifications, and writes the R programs that build the datasets, using `admiral` and the pharmaverse packages. It runs every program, checks the output, and stops to ask a person whenever it is unsure.
 
-- reads the SAP and works out which analyses are needed,
-- drafts the dataset specifications and the R programs (using familiar tools: `admiral` and the pharmaverse packages),
-- runs every program and checks its output against the written rules,
-- and **stops and asks a human whenever it is not sure**.
-
-It also works in a second mode that matters even more in practice: operating *inside* a company's existing library of validated standard programs   reusing them wherever possible and changing only what the new study truly requires.
+It is meant for statistical programmers who want to see exactly what AI can and can't do on real clinical work, measured honestly on a public study.
 
 ---
 
-## The golden rule: the AI never invents clinical data
+## How it fits the work you already do
 
-Language models are good at writing code and bad at being trusted with numbers. Sapient takes advantage of the first and removes the second risk:
+Sapient doesn't replace the usual process. It speeds up the translation steps and leaves the judgement and sign-off with people.
 
-- The model's only job is to write R code. It never generates a clinical value.
-- Every actual number comes from running that R code deterministically on real trial data.
-- The model version is pinned, creativity is switched off (temperature 0), and every response is cached   so the same inputs always produce the same outputs.
+| Step you know | What Sapient does | Who decides |
+|---|---|---|
+| Read the SAP | Finds the sections that define populations, baselines, windows and treatment-emergence | – |
+| Write the ADaM spec | Drafts it from the SAP plus the ADaM Implementation Guide, then checks that every column it cites exists | **You approve the spec** |
+| Program the datasets | Writes the R code one variable at a time, runs it, and fixes its own errors from the exact message | – |
+| QC | Compares every value with a reference, cell by cell, and reports what didn't match | **You review the differences** |
+| Reuse company standards | Reuses an approved standard program, or edits **a copy** when the study differs | **You sign off anything new** |
 
-This is the design goal: **consistency by construction**.
+## The golden rule: the AI never invents a number
 
----
+- The AI's only job is to **write R code**. It never produces a clinical value.
+- Every number comes from **running that code on the trial data**.
+- Settings are fixed and every AI answer is saved, so the same inputs give the same outputs.
 
-## Mode 1: from SAP to programs
+## Guardrails: the food inspector in the kitchen
 
-```
-SAP ──▶ which analyses are needed ──▶ dataset specifications ──▶ R programs ──▶ run + verify
-        (AI plans this)              (AI drafts, rules check)    (AI drafts)     (deterministic)
-```
+Think of the AI as a fast junior programmer. Around it sit simple, cheap checks that don't use AI:
 
-The AI handles the steps that need reading and judgment; software handles every step that needs exactness. Each stage's work is checked before the next stage starts, so mistakes are caught where they happen instead of surfacing months later in a table.
+1. **Real names only.** Dataset, variable and function names must exist in CDISC standards or in the installed R package.
+2. **Checked before it runs:** syntax, allowed packages, no hard-coded treatment labels.
+3. **Checked after it runs:**
+   - Is a date really a date?
+   - Are the values in the spec's codelist?
+   - Does a value the code compares against actually occur in the data?
+4. **Conformance checks**, like Pinnacle 21's: type, length, format and controlled terminology, taken from the spec.
+5. **People decide** anything ambiguous or new.
 
-## Mode 2: working inside your existing library (the harness)
+Every run records what each check caught, plus the time and AI usage (`python scripts/run_report.py`). Nothing that fails a check reaches the final dataset.
 
-Clinical programming groups already own libraries of **validated** standard programs. Rewriting those from scratch is waste and risky. Sapient therefore behaves like a well-briefed team member:
+## The goal
 
-| Situation | What Sapient does |
-|---|---|
-| An approved standard already fits the study | Reuses it unchanged |
-| The study differs slightly (e.g., a different safety population definition) | Applies the smallest possible edit **to a copy**. The original standard is never touched |
-| It genuinely cannot tell two approved standards apart | Stops and asks a human, laying out the evidence it never guesses |
-| No program exists for something the study needs | Drafts a proposal, builds and tests it, then **halts for human sign-off** before anything enters the library |
+![Sapient target workflow: study inputs, SAP understanding, an independent SDTM branch, ADaM spec and generation, requirement coverage, final outputs](docs/target-workflow.png)
 
-And because "it ran fine" is not proof of correctness, Sapient verifies edits the way a reviewer would:
+The end goal is the whole path from a study's SAP to its analysis outputs. Every output is traced back to the SAP requirement it satisfies. Everything except SDTM comes first; SDTM is an independent branch for later.
 
-- **Before vs after:** the edited program's output is compared record-by-record, cell-by-cell against the original standard's output, proving that *only* the intended values changed.
-- **Nothing extra:** the diff between the submitted copy and the officially sanctioned edit is checked, catching gratuitous rewrites even when they behave identically.
-- **Only the right files:** when a change targets one shared function, the audit proves every other module stayed byte-for-byte untouched.
+| Stage | The goal | Where we are |
+|---|---|---|
+| 1. Study inputs | SAP, CDISC standards and controlled terminology; CRFs and raw data later, for SDTM | **Working** on the public CDISC pilot: its SAP, CDISC terminology from NCI-EVS, and ADaM IG rules. |
+| 2. SAP understanding | Read the SAP; extract its requirements (explicit, inferred or unresolved, each with the quote it came from); plan the list of tables | **Partly there.** Finding the right SAP sections works. Requirement extraction works on test SAPs, not yet on a real one. Table-list planning is paused: our first way of scoring it was wrong, and the SAP's own table list is now the answer key. |
+| 3. SDTM (independent branch) | Write, run and validate SDTM programs | **Not started as AI output.** Hand-written `sdtm.oak` programs exist (98–100% match), but the AI doesn't write them yet. |
+| 4. ADaM spec and generation | Mock shells, ADaM spec, human review, metacore, ADaM code, run and accept, then tables, listings and figures (TLFs) | **ADaM works; TLFs don't yet.** Spec drafting, mock shells, code generation one variable at a time, and run-and-accept all work and are measured. TLF programs don't run yet. |
+| 5. Coverage and traceability | Trace SAP → table list → spec → ADaM → TLFs; report what's covered, missing or conflicting | **Groundwork only.** Coverage scoring exists and is tested on synthetic SAPs, but isn't connected to the pipeline yet. |
+| 6. Final outputs | Specs, ADaM datasets and programs, TLFs, validation reports, a coverage report, a run manifest | **Specs, ADaM datasets and programs, and per-run check and cost reports today.** TLFs, the coverage report and the run manifest are still to come. |
 
-Every one of these behaviors is enforced by automated test cases including deliberately planted wrong implementations (a rewrite that corrupts a derived flag; an unnecessary regeneration of unrelated modules) that execute perfectly and *must still be caught*.
+## Results at a glance
 
----
+These are measured on the public CDISC pilot study and compared with the pilot's own datasets. Full numbers are in [docs/RESULTS.md](docs/RESULTS.md).
 
-## Guardrails
+- **From the official spec,** the AI's code reproduces **98.6%** of adverse-event (ADAE) values exactly, and 84.0% of the subject-level (ADSL) ones.
+- **Specs written by the AI** from the SAP plus ADaM Implementation Guide rules reached **97.7%** on ADAE, with no spec errors left.
+- **The hard parts are honest:** lab and time-to-event datasets are much weaker. Where the AI can't find a valid source, it marks the variable **REVIEW** for a person instead of guessing.
+- **Cost:** a dataset takes minutes of AI time on a free-tier model.
+- **Corrected along the way:** several early numbers turned out to be wrong and were withdrawn. They're listed in the results document with the reasons.
 
-1. **Real names only.** Models like to invent plausible-sounding dataset, variable, and function names. Sapient only allows names that exist in the official CDISC standards or in the target R package itself; anything else is flagged for review, never silently used.
-2. **Cheap checks before expensive ones.** Deterministic validation (syntax, allowed packages, forbidden shortcuts such as hard-coded treatment labels) runs before any AI involvement. Failures never reach the model.
-3. **Conformance like Pinnacle 21.** Variable type, length, format, and controlled terminology are compiled from the study specification and checked mechanically on the built dataset, with terminology enforced against the free public CDISC CT.
-4. **Rules, not examples.** At zero creativity the model copies worked examples blindly including their mistakes. So prompts carry machine-checkable constraints (real function signatures, real input columns, spec rules), not templates to imitate.
-5. **Human gates at the points of judgment.** Approval of new capabilities, resolution of ambiguity, anything unverifiable all escalate.
+## MCP or code mode?
 
-Every run records what each guardrail caught, along with tokens and time (`python scripts/run_report.py`). Example, ADSL from the official specification, after adding post-execution checks on type, codelist values and string literals:
+MCP (Model Context Protocol) is a standard way to plug tools into an AI. "Code mode" gives the AI a small, documented API and lets it write one program that uses it. We tested both on the same job, over four kinds of ADaM dataset:
 
-| Generated steps checked by the gate | Rejected by the gate | Execution or check failures caught | Recovered via error feedback | Never passed (left out of the dataset) |
-|---|---|---|---|---|
-| 75 | 5 | 50 (7 wrong literals, 2 wrong types, 41 runtime errors) | 15 | 5 |
+- **MCP with a few hand-picked tools** works well.
+- **MCP with everything plugged in** cost about **30× more** for worse results. The AI re-reads every tool's description on every step.
+- **Code mode** is the cheapest, but **only with a carefully designed API.** With our redesigned API it scored 12 of 20 in every run, against 13.7 for MCP with a few tools (3 runs each). It used about a third of the tokens, never got stuck retrying, and never sent patient rows to the AI. With our first API it scored lower and did send patient rows.
 
-Nothing that failed a check reached the final dataset.
+Details: [docs/RESULTS.md](docs/RESULTS.md), section 6. The benchmark code is on the `bench/mcp-vs-code-mode` branch.
 
----
+## What we've learned
 
-## Results (public CDISC pilot study)
+1. **The errors live in the spec, not the code.** From the official spec, the AI's code matches 98.6% of ADAE values. When a spec was wrong (made-up age bands, a missing date conversion), the code faithfully reproduced the mistake. So we judge a spec by running the code it produces.
+2. **The SAP's value is in the derivations, not the variable names.** Judged on names alone, an AI spec is no better than the standard ADaM IG list. The SAP is what supplies the right age bands, population definitions and treatment-emergent rule.
+3. **Rules work better than examples.** Shown a worked example, the model copies it, mistakes included. Given rules it can be checked against (real function signatures, real input columns, the spec's types and codelists), it does better. A wrong rule is worse than no rule.
+4. **Running the code is the judge.** A program that runs and passes the checks overrules an AI reviewer that calls it wrong. Three cheap checks after each step took ADSL from 13 to 18 exactly reproduced variables, without making the prompt longer.
+5. **Temperature 0 alone doesn't make answers repeatable.** In our benchmark, the same model at temperature 0 gave slightly different answers between runs. Sapient makes runs repeatable by saving every AI answer and replaying it when the same prompt comes back.
+6. **How the AI reaches your tools matters as much as which AI it is.** Plugging in every function as a tool cost about 30 times more for worse results. Code mode works, but only on top of a carefully designed API.
+7. **Measuring honestly changed our numbers.** Several early figures were wrong and have been withdrawn; [docs/RESULTS.md](docs/RESULTS.md) lists them with the reasons.
 
-Inputs are the pilot study's own SAP (Appendix 9 of the public CDISC pilot study report) and its SDTM data. The pilot's official specification and the `pharmaverseadam`/`pharmaversesdtm` community datasets are used only as scoring references, never as generator input.
+## What's next
 
-- **Dataset specifications from the SAP** (ADSL, ADAE). The honest comparison is against a no-model baseline: the standard ADaMIG variable list alone. Variable-name F1 vs the pilot specification:
+In order of priority:
 
-  | | Standard list alone | Model, no SAP | Model + SAP |
-  |---|---|---|---|
-  | ADSL | 0.744 | 0.719 | **0.792** |
-  | ADAE | 0.598 | 0.885 | 0.833 |
+1. **January 2027: a beginner-friendly Sapient API and command line.** One install, one study config file, one command per job, and a quickstart on the CDISC pilot. Design: [docs/API_DESIGN.md](docs/API_DESIGN.md).
+2. **Any study, not just the pilot.** Today the study set-up (which SDTM domains feed which dataset) is written into the code. It moves into the study config, and each dataset's starting structure will be built from its spec.
+3. **One pipeline.** The variable-by-variable code generation that produced the results above is not yet the default path in the end-to-end pipeline.
+4. **TLFs that run.** Ground table code on the real arguments of `rtables` and `tern` functions, the same kind of fix that made the ADaM code work.
+5. **Requirements on real SAPs, then the coverage report** (stages 2 and 5). Extract requirements from real SAP text and trace each one to the outputs that satisfy it.
+6. **Excel specs.** Read specifications in the spreadsheet form most sponsors keep them in.
+7. **Full replay.** A rerun from saved answers should make zero new AI calls. A few still slip through today, when an error message fed back to the AI differs between runs.
+8. **Later:** a table-list recommender trained on past studies (Phase 2), and AI-written SDTM programs (stage 3).
 
-  Variable names are the wrong yardstick for what the SAP adds. Without the SAP, derivations are placeholders or invented ("per SAP age cut-points"; a made-up "+30 day" treatment-emergent window). With it, they carry the study's actual rules: age bands `<65, 65-80, >80`, the safety/ITT/efficacy population definitions, and the SAP's treatment-emergence rule. Next step: score derivations by executing them, not by name overlap.
-- **Derivations scored by running them.** The same code generator is run from three specifications: the pilot's official one, one the model wrote from the SAP alone, and one it wrote from the SAP plus ADaM Implementation Guide conventions. Every derived variable is compared cell-by-cell against the **CDISC pilot's own ADaM datasets**, which were built from this same SAP and specification.
-
-  | | Official spec | Model spec: SAP only | Model spec: SAP + IG conventions |
-  |---|---|---|---|
-  | ADAE derivations reproduced exactly | **14 / 16** | 5 / 15 | 7 / 11 |
-  | ADAE cell agreement | **98.6%** | 80.0% | **90.2%** |
-  | ADAE specification defects | – | 8 | **2** |
-  | ADSL derivations reproduced exactly | **18 / 28** | 4 / 18 | 5 / 17 |
-  | ADSL cell agreement | **84.0%** | 54.0% | 71.0% |
-
-  The denominators differ because each specification decides which variables to derive rather than copy.
-
-  Swapping specifications while keeping the code generator fixed shows where each error comes from. **The SAP says *what* to analyse; a specification must also say *how*.** Most of the *how* is standardised in the ADaM Implementation Guides: copy subject-level variables from ADSL, the first-occurrence flag algorithm, date conversion with an imputation flag. Adding those conventions cut ADAE specification defects from 8 to 2. For example, all three first-occurrence flags went from 0–24% to 99–100%.
-
-  The two remaining ADAE defects are dates that come out exactly 3,653 days off: the gap between the SAS and R date origins. ADSL code generation improved from 13/26 to 18/28 once three cheap post-execution checks were added (a date left as text, values outside the spec codelist, a compared string that never occurs in the data), one wrong prompt rule was corrected (flags are Y/N where the spec says so), and the pilot's QS/SC domains were loaded. These checks add no prompt tokens, but they turned 15 failures into correct variables through extra regeneration rounds, which raised ADSL's token use by about 50%. Remaining ADSL misses: rounding (HEIGHTBL/WEIGHTBL are within 0.1), SITEGR1 (the official spec defers to the SAP), VISNUMEN, BMIBL and DURDIS. The SAP-only column was measured before these fixes.
-- **Mock shells.** Shells for the SAP's 24 display templates are generated from the table titles in the SAP's own table list. They are scored against the real templates, which are never shown to the generator. Giving the model the SAP's analysis sections raises population accuracy from 58% to **92%**. Titles (0.97 F1), statistics (0.85 F1) and row labels (47% recall) are similar with and without the SAP.
-- **Earlier figures were overstated and have been withdrawn.** The earlier 94–98% value-match numbers had three problems: they were scored against `pharmaverseadam`, which is not the pilot's dataset and lacks most derived variables; a comparison bug silently dropped any variable with a one-sided missing value; and they covered fewer variables.
-- **Scaffolding, not generation:** the default pipeline currently builds ADSL/ADAE from hand-written derivation templates, and SDTM is mapped by hand-written `sdtm.oak` programs (98–100% across five domains vs `pharmaversesdtm`). These close the raw → SDTM → ADaM chain but are not model output.
-- **Cost** is metered per call (tokens, time, retries) on a free-tier model:
-
-  | Step | Calls | Prompt tokens | Model time |
-  |---|---|---|---|
-  | Specification | 1 per dataset | about 6k | under 1 minute |
-  | ADSL code | about 50 | about 130k | under 4 minutes |
-  | ADAE code | 16–30 | 35–67k | 1–2 minutes |
-  | All 24 mock shells | 24 | about 122k | about 4.5 minutes |
-- One honest negative result: an earlier table-list benchmark was scored against a study whose SAP was not the one fed to the model. It was retired rather than gamed. Now that the matched SAP is in place, it can be rebuilt on verifiable ground.
+If you have a study to test on, get in touch.
 
 ---
 
-## Trying it
+## Try it
 
-Requirements: Python 3, R (`Rscript` on PATH), and a free NVIDIA Build API key.
+You need:
+- Python 3;
+- R, with `Rscript` on your PATH;
+- a free [NVIDIA Build](https://build.nvidia.com) API key.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 printf 'NVIDIA_API_KEY=your_key_here\nHF_TOKEN=your_key_here\n' > .env
 
-# automated test suite no API calls, no data needed
+# the automated tests: no AI calls, no data needed
 python -m unittest discover -s tests
 
-# see mode 2 end-to-end: resolve a requirement, apply a delta, execute it
+# reuse a company standard program and apply a small study-specific edit to a copy
 python scripts/harness_case.py tests/cases/TC-R-006.yaml --apply
 ```
 
-R packages used: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak` (+ `dplyr`, `testthat` for the harness suite).
+R packages: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak`, plus `dplyr` and `testthat` for the tests.
 
----
+**Coming in January 2027:** one install command, one study config file, and one command per job (`sapient spec ADSL`, `sapient build ADAE`), with a five-minute quickstart on the CDISC pilot. Design: [docs/API_DESIGN.md](docs/API_DESIGN.md).
 
 ## What lives where
 
-| Folder | In one sentence |
+| Folder | What's in it |
 |---|---|
-| `orchestration/` | The step-by-step pipeline connecting the stages above |
-| `harness/` | Mode 2: reuse/delta decisions, verification, human escalation |
-| `sponsor_r_env/` | A small make-believe company library used to exercise Mode 2 safely |
-| `knowledge/` | The vocabularies and extracted metadata that keep the model grounded |
-| `specs/`, `templates/` | Specification handling and code scaffolding |
-| `r_layer/` | Everything R: execution, deterministic checks, output comparison |
-| `tests/` | The automated suite (117 tests, no network access) |
-| `data/` | Input/reference data (not part of the repository) |
+| `scripts/` | The tools you run: spec drafting (`gen_spec.py`), code generation (`gen_derivations.py`), scoring and reports |
+| `r_layer/` | Everything R: running programs, checks, value comparison |
+| `knowledge/` | The reference material that keeps the AI grounded: CDISC terminology, ADaM standards, R function signatures |
+| `harness/` | Working inside a company's existing library of standard programs |
+| `sponsor_r_env/` | A small make-believe company library used to test that safely |
+| `specs/`, `templates/` | Specification handling and program scaffolding |
+| `orchestration/` | The end-to-end pipeline that connects the steps |
+| `tests/` | The automated tests (117, no internet needed) |
+| `docs/` | [Results](docs/RESULTS.md) and the [API design](docs/API_DESIGN.md) |
 
----
+## Words you'll see
 
-## Status
-
-- The generation pipeline runs end-to-end with real R execution and conformance checking.
-- Mode 2 (the harness) is implemented and verified: reuse, minimal deltas with preservation proof, capability lifecycle gated on human approval, and ambiguity escalation plus module-level operation (change one shared function, prove nothing else moved).
-- Next: measuring the weakest layer (extracting analysis requirements from SAP text) before building more generation on top of it, and deepening module-level reuse.
+| Term | Meaning |
+|---|---|
+| **Model / AI model** | The AI that writes the R code (here an open model on NVIDIA's free tier) |
+| **Token** | The unit AI usage is counted and billed in, roughly ¾ of a word. Fewer tokens means cheaper and faster. |
+| **Prompt** | The text sent to the AI: instructions plus the facts it needs |
+| **Temperature 0** | The setting that makes the AI's answers as consistent as possible. On its own it doesn't guarantee the same answer every time. |
+| **MCP** | Model Context Protocol: a standard way to connect tools to an AI |
+| **Code mode** | Giving the AI an API and letting it write a program, instead of calling tools one at a time |
+| **Guardrail** | An automatic check that rejects bad output before it's used |
+| **Spec** | The ADaM dataset specification: each variable, its type and how it's derived |
+| **IG** | CDISC's ADaM Implementation Guide |
+| **Value match** | The share of cells in our dataset that equal the reference dataset's |
 
 ## References
 
-- [CDISC CORE](https://www.cdisc.org/core) and the [CDISC Rules Engine](https://github.com/cdisc-org/cdisc-rules-engine) open, machine-readable conformance rules (the open counterpart to Pinnacle 21 checks).
+- [CDISC CORE](https://www.cdisc.org/core) and the [CDISC Rules Engine](https://github.com/cdisc-org/cdisc-rules-engine): open conformance rules.
 - [Pinnacle 21 ADaM validation checks](https://www.pinnacle21.com/blog/how-does-pinnacle-21-implement-adam-validation-checks).
-- [Automation in clinical trial statistical programming, a scoping review](https://www.medrxiv.org/content/10.64898/2025.12.24.25342988v2.full)   documents why guardrails matter (21–50% hallucination rates on clinical LLM tasks).
+- [Automation in clinical trial statistical programming, a scoping review](https://www.medrxiv.org/content/10.64898/2025.12.24.25342988v2.full): why guardrails matter.
 - [Using LLMs to generate clinical trial tables and figures](https://arxiv.org/pdf/2409.12046) (arXiv:2409.12046).
-- Public data: pharmaverse packages, CDISC SDTM/ADaM pilot project, CDISC ADaMIG and Controlled Terminology.
+- Data: the pharmaverse packages, the [CDISC SDTM/ADaM pilot project](https://github.com/cdisc-org/sdtm-adam-pilot-project), and CDISC ADaMIG and Controlled Terminology.

@@ -1,0 +1,687 @@
+[
+  {
+    "name": "%>%",
+    "title": "",
+    "args": ["lhs", "rhs"]
+  },
+  {
+    "name": "admiral_labels_attrs_section",
+    "title": "Output Boilerplate for the \"Add Labels and Attributes\" Vignette Section",
+    "args": {}
+  },
+  {
+    "name": "basket_select",
+    "title": "Create a basket_select object",
+    "args": ["name", "id", "scope", "type"]
+  },
+  {
+    "name": "call_derivation",
+    "title": "Call a Single Derivation Multiple Times",
+    "args": ["dataset", "derivation", "variable_params"]
+  },
+  {
+    "name": "call_user_fun",
+    "title": "Calls a Function Provided by the User",
+    "args": "call"
+  },
+  {
+    "name": "censor_source",
+    "title": "Create a censor_source Object",
+    "args": ["dataset_name", "filter", "date", "censor", "set_values_to", "order", "consider_end_dates"]
+  },
+  {
+    "name": "chr2vars",
+    "title": "Turn a Character Vector into a List of Expressions",
+    "args": "chr"
+  },
+  {
+    "name": "compute_age_years",
+    "title": "Compute Age in Years",
+    "args": ["age", "age_unit"]
+  },
+  {
+    "name": "compute_bmi",
+    "title": "Compute Body Mass Index (BMI)",
+    "args": ["height", "weight"]
+  },
+  {
+    "name": "compute_bsa",
+    "title": "Compute Body Surface Area (BSA)",
+    "args": ["height", "weight", "method"]
+  },
+  {
+    "name": "compute_dtf",
+    "title": "Derive the Date Imputation Flag",
+    "args": ["dtc", "dt"]
+  },
+  {
+    "name": "compute_duration",
+    "title": "Compute Duration",
+    "args": ["start_date", "end_date", "in_unit", "out_unit", "floor_in", "add_one", "trunc_out", "type"]
+  },
+  {
+    "name": "compute_egfr",
+    "title": "Compute Estimated Glomerular Filtration Rate (eGFR) for Kidney Function",
+    "args": ["creat", "creatu", "age", "weight", "sex", "race", "method"]
+  },
+  {
+    "name": "compute_framingham",
+    "title": "Compute Framingham Heart Study Cardiovascular Disease 10-Year Risk Score",
+    "args": ["sysbp", "chol", "cholhdl", "age", "sex", "smokefl", "diabetfl", "trthypfl"]
+  },
+  {
+    "name": "compute_map",
+    "title": "Compute Mean Arterial Pressure (MAP)",
+    "args": ["diabp", "sysbp", "hr"]
+  },
+  {
+    "name": "compute_qtc",
+    "title": "Compute Corrected QT",
+    "args": ["qt", "rr", "method"]
+  },
+  {
+    "name": "compute_qual_imputation",
+    "title": "Function to Impute Values When Qualifier Exists in Character Result",
+    "args": ["character_value", "imputation_type", "factor"]
+  },
+  {
+    "name": "compute_qual_imputation_dec",
+    "title": "Compute Factor for Value Imputations When Character Value Contains < or >",
+    "args": "character_value_decimal"
+  },
+  {
+    "name": "compute_rr",
+    "title": "Compute RR Interval From Heart Rate",
+    "args": "hr"
+  },
+  {
+    "name": "compute_scale",
+    "title": "Compute Scale Parameters",
+    "args": ["source", "source_range", "target_range", "flip_direction", "min_n"]
+  },
+  {
+    "name": "compute_tmf",
+    "title": "Derive the Time Imputation Flag",
+    "args": ["dtc", "dtm", "ignore_seconds_flag"]
+  },
+  {
+    "name": "consolidate_metadata",
+    "title": "Consolidate Multiple Meta Datasets Into a Single One",
+    "args": ["datasets", "key_vars", "source_var", "check_vars", "check_type"]
+  },
+  {
+    "name": "convert_blanks_to_na",
+    "title": "Convert Blank Strings Into NAs",
+    "args": "x"
+  },
+  {
+    "name": "convert_date_to_dtm",
+    "title": "Convert a Date into a Datetime Object",
+    "args": ["dt", "highest_imputation", "date_imputation", "time_imputation", "min_dates", "max_dates", "preserve"]
+  },
+  {
+    "name": "convert_dtc_to_dt",
+    "title": "Convert a Date Character Vector into a Date Object",
+    "args": ["dtc", "highest_imputation", "date_imputation", "min_dates", "max_dates", "preserve"]
+  },
+  {
+    "name": "convert_dtc_to_dtm",
+    "title": "Convert a Date Character Vector into a Datetime Object",
+    "args": ["dtc", "highest_imputation", "date_imputation", "time_imputation", "min_dates", "max_dates", "preserve"]
+  },
+  {
+    "name": "convert_na_to_blanks",
+    "title": "Convert NAs Into Blank Strings",
+    "args": "x"
+  },
+  {
+    "name": "convert_xxtpt_to_hours",
+    "title": "Convert XXTPT Strings to Hours",
+    "args": ["xxtpt", "treatment_duration", "range_method"]
+  },
+  {
+    "name": "count_vals",
+    "title": "Count Number of Observations Where a Variable Equals a Value",
+    "args": ["var", "val"]
+  },
+  {
+    "name": "create_period_dataset",
+    "title": "Create a Reference Dataset for Subperiods, Periods, or Phases",
+    "args": ["dataset", "new_vars", "subject_keys"]
+  },
+  {
+    "name": "create_query_data",
+    "title": "Creates a queries dataset as input dataset to the dataset_queries argument in derive_vars_query()",
+    "args": ["queries", "version", "get_terms_fun"]
+  },
+  {
+    "name": "create_single_dose_dataset",
+    "title": "Create dataset of single doses",
+    "args": ["dataset", "dose_freq", "start_date", "start_datetime", "end_date", "end_datetime", "lookup_table", "lookup_column", "nominal_time", "keep_source_vars"]
+  },
+  {
+    "name": "date_source",
+    "title": "Create a date_source object",
+    "args": ["dataset_name", "filter", "date", "set_values_to"]
+  },
+  {
+    "name": "default_qtc_paramcd",
+    "title": "Get Default Parameter Code for Corrected QT",
+    "args": "method"
+  },
+  {
+    "name": "derivation_slice",
+    "title": "Create a derivation_slice Object",
+    "args": ["filter", "args"]
+  },
+  {
+    "name": "derive_basetype_records",
+    "title": "Derive Basetype Variable",
+    "args": ["dataset", "basetypes"]
+  },
+  {
+    "name": "derive_expected_records",
+    "title": "Derive Expected Records",
+    "args": ["dataset", "dataset_ref", "by_vars", "set_values_to"]
+  },
+  {
+    "name": "derive_extreme_event",
+    "title": "Add the Worst or Best Observation for Each By Group as New Records",
+    "args": ["dataset", "by_vars", "events", "tmp_event_nr_var", "order", "mode", "source_datasets", "check_type", "set_values_to", "keep_source_vars"]
+  },
+  {
+    "name": "derive_extreme_records",
+    "title": "Add the First or Last Observation for Each By Group as New Records",
+    "args": ["dataset", "dataset_add", "dataset_ref", "by_vars", "order", "mode", "filter_add", "check_type", "exist_flag", "true_value", "false_value", "keep_source_vars", "set_values_to", "missing_values"]
+  },
+  {
+    "name": "derive_locf_records",
+    "title": "Derive LOCF (Last Observation Carried Forward) Records",
+    "args": ["dataset", "dataset_ref", "by_vars", "id_vars_ref", "analysis_var", "imputation", "order", "keep_vars"]
+  },
+  {
+    "name": "derive_param_bmi",
+    "title": "Adds a Parameter for BMI",
+    "args": ["dataset", "by_vars", "set_values_to", "weight_code", "height_code", "get_unit_expr", "filter", "constant_by_vars"]
+  },
+  {
+    "name": "derive_param_bsa",
+    "title": "Adds a Parameter for BSA (Body Surface Area) Using the Specified Method",
+    "args": ["dataset", "by_vars", "method", "set_values_to", "height_code", "weight_code", "get_unit_expr", "filter", "constant_by_vars"]
+  },
+  {
+    "name": "derive_param_computed",
+    "title": "Adds a Parameter Computed from the Analysis Value of Other Parameters",
+    "args": ["dataset", "dataset_add", "by_vars", "parameters", "set_values_to", "filter", "constant_by_vars", "constant_parameters", "keep_nas"]
+  },
+  {
+    "name": "derive_param_doseint",
+    "title": "Adds a Parameter for Dose Intensity",
+    "args": ["dataset", "by_vars", "set_values_to", "tadm_code", "tpadm_code", "zero_doses", "filter"]
+  },
+  {
+    "name": "derive_param_exist_flag",
+    "title": "Add an Existence Flag Parameter",
+    "args": ["dataset", "dataset_ref", "dataset_add", "condition", "true_value", "false_value", "missing_value", "filter_add", "by_vars", "set_values_to"]
+  },
+  {
+    "name": "derive_param_exposure",
+    "title": "Add an Aggregated Parameter and Derive the Associated Start and End Dates",
+    "args": ["dataset", "dataset_add", "by_vars", "input_code", "filter_add", "set_values_to"]
+  },
+  {
+    "name": "derive_param_extreme_record",
+    "title": "Adds a Parameter Based on First or Last Record from Multiple Sources",
+    "args": ["dataset", "sources", "source_datasets", "by_vars", "order", "mode", "set_values_to"]
+  },
+  {
+    "name": "derive_param_framingham",
+    "title": "Adds a Parameter for Framingham Heart Study Cardiovascular Disease 10-Year Risk Score",
+    "args": ["dataset", "by_vars", "set_values_to", "sysbp_code", "chol_code", "cholhdl_code", "age", "sex", "smokefl", "diabetfl", "trthypfl", "get_unit_expr", "filter"]
+  },
+  {
+    "name": "derive_param_map",
+    "title": "Adds a Parameter for Mean Arterial Pressure",
+    "args": ["dataset", "by_vars", "set_values_to", "sysbp_code", "diabp_code", "hr_code", "get_unit_expr", "filter"]
+  },
+  {
+    "name": "derive_param_qtc",
+    "title": "Adds a Parameter for Corrected QT (an ECG measurement)",
+    "args": ["dataset", "by_vars", "method", "set_values_to", "qt_code", "rr_code", "get_unit_expr", "filter"]
+  },
+  {
+    "name": "derive_param_rr",
+    "title": "Adds a Parameter for Derived RR (an ECG measurement)",
+    "args": ["dataset", "by_vars", "set_values_to", "hr_code", "get_unit_expr", "filter"]
+  },
+  {
+    "name": "derive_param_tte",
+    "title": "Derive a Time-to-Event Parameter",
+    "args": ["dataset", "dataset_adsl", "source_datasets", "by_vars", "start_date", "end_dates", "event_conditions", "censor_conditions", "event_type", "create_datetime", "set_values_to", "subject_keys", "check_type"]
+  },
+  {
+    "name": "derive_param_wbc_abs",
+    "title": "Add a parameter for lab differentials converted to absolute values",
+    "args": ["dataset", "by_vars", "set_values_to", "get_unit_expr", "wbc_unit", "wbc_code", "diff_code", "diff_type"]
+  },
+  {
+    "name": "derive_summary_records",
+    "title": "Add New Records Within By Groups Using Aggregation Functions",
+    "args": ["dataset", "dataset_add", "dataset_ref", "by_vars", "filter_add", "constant_values", "set_values_to", "missing_values"]
+  },
+  {
+    "name": "derive_var_age_years",
+    "title": "Derive Age in Years",
+    "args": ["dataset", "age_var", "age_unit", "new_var"]
+  },
+  {
+    "name": "derive_var_analysis_ratio",
+    "title": "Derive Ratio Variable",
+    "args": ["dataset", "numer_var", "denom_var", "new_var"]
+  },
+  {
+    "name": "derive_var_anrind",
+    "title": "Derive Reference Range Indicator",
+    "args": ["dataset", "signif_dig", "use_a1hia1lo"]
+  },
+  {
+    "name": "derive_var_atoxgr",
+    "title": "Derive Lab High toxicity Grade 0 - 4 and Low Toxicity Grades 0 - (-4)",
+    "args": ["dataset", "lotox_description_var", "hitox_description_var"]
+  },
+  {
+    "name": "derive_var_atoxgr_dir",
+    "title": "Derive Lab Toxicity Grade 0 - 4",
+    "args": ["dataset", "new_var", "tox_description_var", "meta_criteria", "criteria_direction", "abnormal_indicator", "high_indicator", "low_indicator", "get_unit_expr", "signif_dig"]
+  },
+  {
+    "name": "derive_var_base",
+    "title": "Derive Baseline Variables",
+    "args": ["dataset", "by_vars", "source_var", "new_var", "filter"]
+  },
+  {
+    "name": "derive_var_chg",
+    "title": "Derive Change from Baseline",
+    "args": "dataset"
+  },
+  {
+    "name": "derive_var_dthcaus",
+    "title": "Derive Death Cause",
+    "args": ["dataset", "source_datasets", "subject_keys"]
+  },
+  {
+    "name": "derive_var_extreme_dt",
+    "title": "Derive First or Last Date from Multiple Sources",
+    "args": ["dataset", "new_var", "source_datasets", "mode", "subject_keys"]
+  },
+  {
+    "name": "derive_var_extreme_dtm",
+    "title": "Derive First or Last Datetime from Multiple Sources",
+    "args": ["dataset", "new_var", "source_datasets", "mode", "subject_keys"]
+  },
+  {
+    "name": "derive_var_extreme_flag",
+    "title": "Add a Variable Flagging the First or Last Observation Within Each By Group",
+    "args": ["dataset", "by_vars", "order", "new_var", "mode", "true_value", "false_value", "flag_all", "check_type"]
+  },
+  {
+    "name": "derive_var_joined_exist_flag",
+    "title": "Derives a Flag Based on an Existing Flag",
+    "args": ["dataset", "dataset_add", "by_vars", "order", "new_var", "tmp_obs_nr_var", "join_vars", "join_type", "first_cond_lower", "first_cond_upper", "filter_add", "filter_join", "true_value", "false_value", "check_type"]
+  },
+  {
+    "name": "derive_var_merged_ef_msrc",
+    "title": "Merge an Existence Flag From Multiple Sources",
+    "args": ["dataset", "by_vars", "flag_events", "source_datasets", "new_var", "true_value", "false_value", "missing_value"]
+  },
+  {
+    "name": "derive_var_merged_exist_flag",
+    "title": "Merge an Existence Flag",
+    "args": ["dataset", "dataset_add", "by_vars", "new_var", "condition", "true_value", "false_value", "missing_value", "filter_add"]
+  },
+  {
+    "name": "derive_var_merged_summary",
+    "title": "Merge Summary Variables",
+    "args": ["dataset", "dataset_add", "by_vars", "new_vars", "filter_add", "missing_values"]
+  },
+  {
+    "name": "derive_var_nfrlt",
+    "title": "Derive Nominal Relative Time from First Dose (NFRLT)",
+    "args": ["dataset", "new_var", "new_var_unit", "out_unit", "tpt_var", "visit_day", "first_dose_day", "treatment_duration", "range_method", "set_values_to_na"]
+  },
+  {
+    "name": "derive_var_obs_number",
+    "title": "Adds a Variable Numbering the Observations Within Each By Group",
+    "args": ["dataset", "by_vars", "order", "new_var", "check_type"]
+  },
+  {
+    "name": "derive_var_ontrtfl",
+    "title": "Derive On-Treatment Flag Variable",
+    "args": ["dataset", "new_var", "start_date", "end_date", "ref_start_date", "ref_end_date", "ref_end_window", "ignore_time_for_ref_end_date", "filter_pre_timepoint", "span_period"]
+  },
+  {
+    "name": "derive_var_pchg",
+    "title": "Derive Percent Change from Baseline",
+    "args": "dataset"
+  },
+  {
+    "name": "derive_var_relative_flag",
+    "title": "Flag Observations Before or After a Condition is Fulfilled",
+    "args": ["dataset", "by_vars", "order", "new_var", "condition", "mode", "selection", "inclusive", "flag_no_ref_groups", "check_type"]
+  },
+  {
+    "name": "derive_var_shift",
+    "title": "Derive Shift",
+    "args": ["dataset", "new_var", "from_var", "to_var", "missing_value", "sep_val"]
+  },
+  {
+    "name": "derive_var_trtdurd",
+    "title": "Derive Total Treatment Duration (Days)",
+    "args": ["dataset", "start_date", "end_date"]
+  },
+  {
+    "name": "derive_var_trtemfl",
+    "title": "Derive Treatment-emergent Flag",
+    "args": ["dataset", "new_var", "start_date", "end_date", "trt_start_date", "trt_end_date", "end_window", "ignore_time_for_trt_end", "initial_intensity", "intensity", "group_var", "subject_keys"]
+  },
+  {
+    "name": "derive_vars_aage",
+    "title": "Derive Analysis Age",
+    "args": ["dataset", "start_date", "end_date", "age_unit", "type"]
+  },
+  {
+    "name": "derive_vars_atc",
+    "title": "Derive ATC Class Variables",
+    "args": ["dataset", "dataset_facm", "by_vars", "id_vars", "value_var"]
+  },
+  {
+    "name": "derive_vars_cat",
+    "title": "Derive Categorization Variables Like AVALCATy and AVALCAyN",
+    "args": ["dataset", "definition", "by_vars"]
+  },
+  {
+    "name": "derive_vars_computed",
+    "title": "Adds Variable(s) Computed from the Analysis Value of one or more Parameters",
+    "args": ["dataset", "dataset_add", "by_vars", "parameters", "new_vars", "filter_add", "constant_by_vars", "constant_parameters"]
+  },
+  {
+    "name": "derive_vars_crit_flag",
+    "title": "Derive Criterion Flag Variables CRITy , CRITyFL , and CRITyFN",
+    "args": ["dataset", "crit_nr", "condition", "description", "values_yn", "create_numeric_flag"]
+  },
+  {
+    "name": "derive_vars_dt",
+    "title": "Derive/Impute a Date from a Character Date",
+    "args": ["dataset", "new_vars_prefix", "dtc", "highest_imputation", "date_imputation", "flag_imputation", "min_dates", "max_dates", "preserve"]
+  },
+  {
+    "name": "derive_vars_dtm",
+    "title": "Derive/Impute a Datetime from a Character Date",
+    "args": ["dataset", "new_vars_prefix", "dtc", "highest_imputation", "date_imputation", "time_imputation", "flag_imputation", "min_dates", "max_dates", "preserve", "ignore_seconds_flag"]
+  },
+  {
+    "name": "derive_vars_dtm_to_dt",
+    "title": "Derive Date Variables from Datetime Variables",
+    "args": ["dataset", "source_vars"]
+  },
+  {
+    "name": "derive_vars_dtm_to_tm",
+    "title": "Derive Time Variables from Datetime Variables",
+    "args": ["dataset", "source_vars"]
+  },
+  {
+    "name": "derive_vars_duration",
+    "title": "Derive Duration",
+    "args": ["dataset", "new_var", "new_var_unit", "start_date", "end_date", "in_unit", "out_unit", "floor_in", "add_one", "trunc_out", "type"]
+  },
+  {
+    "name": "derive_vars_dy",
+    "title": "Derive Relative Day Variables",
+    "args": ["dataset", "reference_date", "source_vars"]
+  },
+  {
+    "name": "derive_vars_extreme_event",
+    "title": "Add the Worst or Best Observation for Each By Group as New Variables",
+    "args": ["dataset", "by_vars", "events", "tmp_event_nr_var", "order", "mode", "source_datasets", "check_type", "new_vars"]
+  },
+  {
+    "name": "derive_vars_joined",
+    "title": "Add Variables from an Additional Dataset Based on Conditions from Both Datasets",
+    "args": ["dataset", "dataset_add", "by_vars", "order", "new_vars", "tmp_obs_nr_var", "join_vars", "join_type", "filter_add", "first_cond_lower", "first_cond_upper", "filter_join", "mode", "exist_flag", "true_value", "false_value", "missing_values", "check_type"]
+  },
+  {
+    "name": "derive_vars_joined_summary",
+    "title": "Summarize Variables from an Additional Dataset Based on Conditions from Both Datasets",
+    "args": ["dataset", "dataset_add", "by_vars", "order", "new_vars", "tmp_obs_nr_var", "join_vars", "join_type", "filter_add", "first_cond_lower", "first_cond_upper", "filter_join", "missing_values", "check_type"]
+  },
+  {
+    "name": "derive_vars_merged",
+    "title": "Add New Variable(s) to the Input Dataset Based on Variables from Another Dataset",
+    "args": ["dataset", "dataset_add", "by_vars", "order", "new_vars", "filter_add", "mode", "exist_flag", "true_value", "false_value", "missing_values", "check_type", "duplicate_msg", "relationship"]
+  },
+  {
+    "name": "derive_vars_merged_lookup",
+    "title": "Merge Lookup Table with Source Dataset",
+    "args": ["dataset", "dataset_add", "by_vars", "order", "new_vars", "mode", "filter_add", "check_type", "duplicate_msg", "print_not_mapped"]
+  },
+  {
+    "name": "derive_vars_merged_summary",
+    "title": "Merge Summary Variables",
+    "args": ["dataset", "dataset_add", "by_vars", "new_vars", "filter_add", "missing_values"]
+  },
+  {
+    "name": "derive_vars_period",
+    "title": "Add Subperiod, Period, or Phase Variables to ADSL",
+    "args": ["dataset", "dataset_ref", "new_vars", "subject_keys"]
+  },
+  {
+    "name": "derive_vars_query",
+    "title": "Derive Query Variables",
+    "args": ["dataset", "dataset_queries"]
+  },
+  {
+    "name": "derive_vars_transposed",
+    "title": "Derive Variables by Transposing and Merging a Second Dataset",
+    "args": ["dataset", "dataset_merge", "by_vars", "id_vars", "key_var", "value_var", "filter", "relationship"]
+  },
+  {
+    "name": "desc",
+    "title": "",
+    "args": "x"
+  },
+  {
+    "name": "dthcaus_source",
+    "title": "Create a dthcaus_source Object",
+    "args": ["dataset_name", "filter", "date", "order", "mode", "dthcaus", "set_values_to"]
+  },
+  {
+    "name": "event",
+    "title": "Create an event Object",
+    "args": ["dataset_name", "condition", "mode", "order", "set_values_to", "keep_source_vars", "description"]
+  },
+  {
+    "name": "event_joined",
+    "title": "Create a event_joined Object",
+    "args": ["dataset_name", "filter_source", "condition", "by_vars", "order", "tmp_obs_nr_var", "join_vars", "join_type", "first_cond_lower", "first_cond_upper", "set_values_to", "keep_source_vars", "description"]
+  },
+  {
+    "name": "event_source",
+    "title": "Create an event_source Object",
+    "args": ["dataset_name", "filter", "date", "set_values_to", "order"]
+  },
+  {
+    "name": "exprs",
+    "title": "",
+    "args": [".named", ".ignore_empty", ".unquote_names"]
+  },
+  {
+    "name": "extract_duplicate_records",
+    "title": "Extract Duplicate Records",
+    "args": ["dataset", "by_vars"]
+  },
+  {
+    "name": "extract_unit",
+    "title": "Extract Unit From Parameter Description",
+    "args": "x"
+  },
+  {
+    "name": "filter_exist",
+    "title": "Returns records that fit into existing by groups in a filtered source dataset",
+    "args": ["dataset", "dataset_add", "by_vars", "filter_add"]
+  },
+  {
+    "name": "filter_extreme",
+    "title": "Filter the First or Last Observation for Each By Group",
+    "args": ["dataset", "by_vars", "order", "mode", "check_type"]
+  },
+  {
+    "name": "filter_joined",
+    "title": "Filter Observations Taking Other Observations into Account",
+    "args": ["dataset", "dataset_add", "by_vars", "join_vars", "join_type", "first_cond_lower", "first_cond_upper", "order", "tmp_obs_nr_var", "filter_add", "filter_join", "check_type"]
+  },
+  {
+    "name": "filter_not_exist",
+    "title": "Returns records that don't fit into existing by groups in a filtered source dataset",
+    "args": ["dataset", "dataset_add", "by_vars", "filter_add"]
+  },
+  {
+    "name": "filter_relative",
+    "title": "Filter the Observations Before or After a Condition is Fulfilled",
+    "args": ["dataset", "by_vars", "order", "condition", "mode", "selection", "inclusive", "keep_no_ref_groups", "check_type"]
+  },
+  {
+    "name": "flag_event",
+    "title": "Create a flag_event Object",
+    "args": ["dataset_name", "condition", "by_vars"]
+  },
+  {
+    "name": "get_admiral_option",
+    "title": "Get the Value of an Admiral Option",
+    "args": "option"
+  },
+  {
+    "name": "get_duplicates_dataset",
+    "title": "Get Duplicate Records that Led to a Prior Error",
+    "args": {}
+  },
+  {
+    "name": "get_flagged_records",
+    "title": "Create an Existence Flag",
+    "args": ["dataset", "new_var", "condition", "filter"]
+  },
+  {
+    "name": "get_many_to_one_dataset",
+    "title": "Get Many to One Values that Led to a Prior Error",
+    "args": {}
+  },
+  {
+    "name": "get_not_mapped",
+    "title": "Get list of records not mapped from the lookup table.",
+    "args": {}
+  },
+  {
+    "name": "get_one_to_many_dataset",
+    "title": "Get One to Many Values that Led to a Prior Error",
+    "args": {}
+  },
+  {
+    "name": "get_summary_records",
+    "title": "Create Summary Records",
+    "args": ["dataset", "by_vars", "filter", "set_values_to"]
+  },
+  {
+    "name": "get_vars_query",
+    "title": "Get Query Variables",
+    "args": ["dataset", "dataset_queries"]
+  },
+  {
+    "name": "impute_dtc_dt",
+    "title": "Impute Partial Date Portion of a --DTC Variable",
+    "args": ["dtc", "highest_imputation", "date_imputation", "min_dates", "max_dates", "preserve"]
+  },
+  {
+    "name": "impute_dtc_dtm",
+    "title": "Impute Partial Date(-time) Portion of a --DTC Variable",
+    "args": ["dtc", "highest_imputation", "date_imputation", "time_imputation", "min_dates", "max_dates", "preserve"]
+  },
+  {
+    "name": "list_all_templates",
+    "title": "List All Available ADaM Templates",
+    "args": "package"
+  },
+  {
+    "name": "list_tte_source_objects",
+    "title": "List all tte_source Objects Available in a Package",
+    "args": "package"
+  },
+  {
+    "name": "max_cond",
+    "title": "Maximum Value on a Subset",
+    "args": ["var", "cond"]
+  },
+  {
+    "name": "min_cond",
+    "title": "Minimum Value on a Subset",
+    "args": ["var", "cond"]
+  },
+  {
+    "name": "negate_vars",
+    "title": "Negate List of Variables",
+    "args": "vars"
+  },
+  {
+    "name": "params",
+    "title": "Create a Set of Parameters",
+    "args": []
+  },
+  {
+    "name": "print_named_list",
+    "title": "Print Named List",
+    "args": ["list", "indent"]
+  },
+  {
+    "name": "query",
+    "title": "Create an query object",
+    "args": ["prefix", "name", "id", "add_scope_num", "definition"]
+  },
+  {
+    "name": "records_source",
+    "title": "Create a records_source Object",
+    "args": ["dataset_name", "filter", "new_vars"]
+  },
+  {
+    "name": "restrict_derivation",
+    "title": "Execute a Derivation on a Subset of the Input Dataset",
+    "args": ["dataset", "derivation", "args", "filter"]
+  },
+  {
+    "name": "set_admiral_options",
+    "title": "Set the Value of admiral Options",
+    "args": ["subject_keys", "signif_digits", "save_memory"]
+  },
+  {
+    "name": "signal_duplicate_records",
+    "title": "Signal Duplicate Records",
+    "args": ["dataset", "by_vars", "msg", "cnd_type", "class"]
+  },
+  {
+    "name": "slice_derivation",
+    "title": "Execute a Derivation with Different Arguments for Subsets of the Input Dataset",
+    "args": ["dataset", "derivation", "args"]
+  },
+  {
+    "name": "transform_range",
+    "title": "Transform Range",
+    "args": ["source", "source_range", "target_range", "flip_direction", "outside_range"]
+  },
+  {
+    "name": "use_ad_template",
+    "title": "Open an ADaM Template Script",
+    "args": ["adam_name", "save_path", "package", "overwrite"]
+  },
+  {
+    "name": "yn_to_numeric",
+    "title": "Map \"Y\" and \"N\" to Numeric Values",
+    "args": "arg"
+  }
+]

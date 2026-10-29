@@ -96,7 +96,7 @@ In order of priority:
 4. **TLFs that run.** Ground table code on the real arguments of `rtables` and `tern` functions, the same kind of fix that made the ADaM code work.
 5. **Requirements on real SAPs, then the coverage report** (stages 2 and 5). Extract requirements from real SAP text and trace each one to the outputs that satisfy it.
 6. **Excel specs.** Read specifications in the spreadsheet form most sponsors keep them in.
-7. **Full replay.** A rerun from saved answers should make zero new AI calls. A few still slip through today, when an error message fed back to the AI differs between runs.
+7. **Replay for everyone.** A rebuild from saved answers already makes zero AI calls (`python scripts/replay_check.py`), but only on a machine that has those answers. Next: publish them, so anyone can replay the results.
 8. **Later:** a table-list recommender trained on past studies (Phase 2), and AI-written SDTM programs (stage 3).
 
 If you have a study to test on, get in touch.

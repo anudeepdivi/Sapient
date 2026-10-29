@@ -53,7 +53,7 @@ def main():
         x["models"].add(r["model"])
 
     print("## Cost (real model calls; cached calls are free and not counted)\n")
-    print("| run | calls | prompt tok | completion tok | model time | retries | models |" +
+    print("| run | calls | prompt tok | completion tok | wall time (incl. rate-limit waits) | rate-limit retries | models |" +
           (" est. USD |" if a.price_in is not None else ""))
     print("|---|---|---|---|---|---|---|" + ("---|" if a.price_in is not None else ""))
     for tag, x in sorted(llm.items()):
@@ -72,8 +72,8 @@ def main():
         return
     print("\n## Guardrails (what each check caught before anything was accepted)\n")
     print("| run | gate checks | gate rejections | execution failures caught | "
-          "recovered by feedback | never passed | rejections by check |")
-    print("|---|---|---|---|---|---|---|")
+          "recovered by feedback | never passed | rejections by check | execution failures by check |")
+    print("|---|---|---|---|---|---|---|---|")
     for tag, evs in sorted(runs.items()):
         gate = [e for e in evs if e["guardrail"] == "deterministic_gate"]
         rej = [e for e in gate if e["outcome"] == "rejected"]
@@ -87,8 +87,13 @@ def main():
         checks = defaultdict(int)
         for e in rej:
             checks[next((n for n, pat in GATE_CHECKS if re.search(pat, e["detail"])), "other")] += 1
+        ex_kinds = defaultdict(int)
+        for e in ex_fail:
+            m = re.match(r"ERROR: (TYPE|VALUES|LITERAL):", e["detail"])
+            ex_kinds[m.group(1).lower() if m else "runtime error"] += 1
         print(f"| {tag} | {len(gate)} | {len(rej)} | {len(ex_fail)} | {recovered} | {never} | "
-              f"{', '.join(f'{k} {v}' for k, v in sorted(checks.items())) or '-'} |")
+              f"{', '.join(f'{k} {v}' for k, v in sorted(checks.items())) or '-'} | "
+              f"{', '.join(f'{k} {v}' for k, v in sorted(ex_kinds.items())) or '-'} |")
 
 
 if __name__ == "__main__":

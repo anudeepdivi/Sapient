@@ -4,216 +4,216 @@
   "label": "Study Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.STUDYID"
+  "derivation": "ADSL.STUDYID"
  },
  {
   "variable": "USUBJID",
   "label": "Unique Subject Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.USUBJID"
+  "derivation": "ADSL.USUBJID"
  },
  {
   "variable": "SUBJID",
-  "label": "Subject Identifier",
+  "label": "Subject Identifier for the Study",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SUBJID"
+  "derivation": "ADSL.SUBJID"
  },
  {
   "variable": "SITEID",
-  "label": "Site Identifier",
+  "label": "Study Site Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SITEID"
+  "derivation": "ADSL.SITEID"
  },
  {
   "variable": "TRTP",
-  "label": "Treatment Group",
+  "label": "Planned Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ARMCD"
+  "derivation": "ADSL.TRT01P"
  },
  {
   "variable": "TRTPN",
-  "label": "Treatment Group Number",
+  "label": "Planned Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.ARMNRS"
+  "derivation": "ADSL.TRT01PN"
  },
  {
   "variable": "TRTA",
   "label": "Actual Treatment",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ACTARMCD"
+  "derivation": "ADSL.TRT01A"
  },
  {
   "variable": "TRTAN",
-  "label": "Actual Treatment Number",
+  "label": "Actual Treatment (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.ACTARMUD"
+  "derivation": "ADSL.TRT01AN"
  },
  {
   "variable": "TRTSDT",
-  "label": "Treatment Start Date",
+  "label": "Date of First Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFXSTDTC"
+  "derivation": "ADSL.TRTSDT"
  },
  {
   "variable": "TRTEDT",
-  "label": "Treatment End Date",
+  "label": "Date of Last Exposure to Treatment",
   "type": "date",
   "origin": "predecessor",
-  "derivation": "DM.RFXENDTC"
+  "derivation": "ADSL.TRTEDT"
  },
  {
   "variable": "AGE",
   "label": "Age",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.AGE"
+  "derivation": "ADSL.AGE"
  },
  {
   "variable": "AGEGR1",
-  "label": "Age Group 1",
+  "label": "Pooled Age Group 1",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.AGEU"
+  "derivation": "ADSL.AGEGR1"
  },
  {
   "variable": "AGEGR1N",
-  "label": "Age Group 1 Number",
+  "label": "Pooled Age Group 1 (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.AGE"
+  "derivation": "ADSL.AGEGR1N"
  },
  {
   "variable": "SEX",
   "label": "Sex",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SEX"
+  "derivation": "ADSL.SEX"
  },
  {
   "variable": "RACE",
   "label": "Race",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.RACE"
+  "derivation": "ADSL.RACE"
  },
  {
   "variable": "RACEN",
-  "label": "Race Number",
+  "label": "Race (N)",
   "type": "integer",
   "origin": "predecessor",
-  "derivation": "DM.RACE"
+  "derivation": "ADSL.RACEN"
  },
  {
   "variable": "ETHNIC",
-  "label": "Ethnic Origin",
+  "label": "Ethnicity",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.ETHNIC"
+  "derivation": "ADSL.ETHNIC"
  },
  {
   "variable": "SAFFL",
-  "label": "Safety Analysis Flag",
+  "label": "Safety Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "predecessor",
+  "derivation": "ADSL.SAFFL"
  },
  {
   "variable": "ITTFL",
-  "label": "Intent-to-Treat Analysis Flag",
+  "label": "Intent-To-Treat Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "predecessor",
+  "derivation": "ADSL.ITTFL"
  },
  {
   "variable": "EFFFL",
-  "label": "Efficacy Analysis Flag",
+  "label": "Efficacy Population Flag",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "Y"
+  "origin": "predecessor",
+  "derivation": "ADSL.EFFFL"
  },
  {
   "variable": "PARAMCD",
   "label": "Parameter Code",
   "type": "text",
   "origin": "assigned",
-  "derivation": "TTE"
+  "derivation": "Assigned per SAP: 'PFS' for Progression-Free Survival, 'OS' for Overall Survival"
  },
  {
   "variable": "PARAM",
   "label": "Parameter",
   "type": "text",
   "origin": "assigned",
-  "derivation": "Time-to-Event"
+  "derivation": "Assigned per SAP: 'Progression-Free Survival' for PARAMCD=PFS, 'Overall Survival' for PARAMCD=OS"
  },
  {
   "variable": "PARAMN",
-  "label": "Parameter Number",
+  "label": "Parameter (N)",
   "type": "integer",
   "origin": "assigned",
-  "derivation": "1"
+  "derivation": "Assigned: 1 for PFS, 2 for OS"
  },
  {
   "variable": "AVAL",
-  "label": "Analytic Value",
-  "type": "float",
+  "label": "Analysis Value",
+  "type": "integer",
   "origin": "derived",
-  "derivation": "ADT - STARTDT"
+  "derivation": "ADT - STARTDT + 1 (in days)"
  },
  {
   "variable": "STARTDT",
-  "label": "Start Date",
+  "label": "Time Origin Date",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "DM.RFXSTDTC"
+  "origin": "derived",
+  "derivation": "For PFS: ADSL.TRTSDT (date of first dose). For OS: ADSL.TRTSDT (date of first dose)."
  },
  {
   "variable": "ADT",
   "label": "Analysis Date",
   "type": "date",
-  "origin": "predecessor",
-  "derivation": "AE.AESTDTC"
+  "origin": "derived",
+  "derivation": "For PFS (PARAMCD=PFS): If event (CNSR=0), date of first disease progression or death from ADAE where AEDECOD indicates progression or death, converted from AESTDTC with partial-date imputation: sponsor convention - REVIEW; else (CNSR=1) censoring date per SAP (e.g., last known alive date from ADSL or DS). For OS (PARAMCD=OS): If event (CNSR=0), date of death from DM.DTHDTC converted with partial-date imputation: sponsor convention - REVIEW; else (CNSR=1) censoring date per SAP (e.g., last known alive date). [REVIEW: DM is not an input of ADTTE (inputs: ADAE, ADSL)]"
  },
  {
   "variable": "CNSR",
-  "label": "Censoring Indicator",
-  "type": "text",
+  "label": "Censoring Variable",
+  "type": "integer",
   "origin": "derived",
-  "derivation": "Y if AE.AESDTH = Y, else N"
+  "derivation": "For PFS: 0 if disease progression or death event occurred (per AEDECOD criteria), 1 if censored (no event by data cutoff or lost to follow-up). For OS: 0 if death occurred (DM.DTHFL='Y'), 1 if censored (alive at data cutoff). [REVIEW: DM is not an input of ADTTE (inputs: ADAE, ADSL)]"
  },
  {
   "variable": "EVNTDESC",
-  "label": "Event Description",
+  "label": "Event or Censoring Description",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "AE.AETERM"
+  "origin": "derived",
+  "derivation": "For PFS: If CNSR=0, 'Disease Progression' or 'Death' per AEDECOD; if CNSR=1, 'Censored: No Event' or 'Censored: Lost to Follow-up'. For OS: If CNSR=0, 'Death'; if CNSR=1, 'Censored: Alive at Data Cutoff'."
  },
  {
   "variable": "SRCDOM",
   "label": "Source Domain",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "AE"
+  "origin": "derived",
+  "derivation": "For PFS: 'AE' if event from ADAE, 'DS' if censoring from disposition, 'DM' if from demographics. For OS: 'DM' for death date, 'DS' or 'ADSL' for censoring date."
  },
  {
   "variable": "SRCVAR",
   "label": "Source Variable",
   "type": "text",
-  "origin": "assigned",
-  "derivation": "AESTDTC"
+  "origin": "derived",
+  "derivation": "For PFS event: 'AESTDTC'; for PFS censoring: 'DSSTDTC' or 'RFENDTC'; for OS event: 'DTHDTC'; for OS censoring: 'DSSTDTC' or 'RFENDTC'."
  },
  {
   "variable": "SRCSEQ",
   "label": "Source Sequence Number",
   "type": "integer",
-  "origin": "predecessor",
-  "derivation": "AE.AESEQ"
+  "origin": "derived",
+  "derivation": "For PFS event: ADAE.AESEQ; for PFS censoring: DS.DSSEQ or null; for OS event: null (DM has no sequence); for OS censoring: DS.DSSEQ or null. [REVIEW: DS is not an input of ADTTE (inputs: ADAE, ADSL)]"
  }
 ]

@@ -1,0 +1,99 @@
+{
+ "arm": "A",
+ "dataset": "ADLBC",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 988,
+   "completion_tokens": 38,
+   "tools": [
+    "brief"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3423,
+   "completion_tokens": 47,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3502,
+   "completion_tokens": 47,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3584,
+   "completion_tokens": 69,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 3680,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 3796,
+   "completion_tokens": 62,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 3899,
+   "completion_tokens": 112,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 4057,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "brief": 1,
+  "run_step": 6
+ },
+ "tool_result_bytes": 7668,
+ "patient_data_bytes": 0,
+ "n_tools": 8,
+ "tool_definition_tokens_est": 673,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 3,
+  "correct": [
+   "AVAL",
+   "ADT",
+   "ADY"
+  ],
+  "rates": {
+   "PARAMCD": null,
+   "AVAL": 1,
+   "ADT": 1,
+   "ADY": 1,
+   "ABLFL": 0.976
+  }
+ },
+ "wall_seconds": 93.2,
+ "n_turns": 8,
+ "prompt_tokens_total": 26929,
+ "completion_tokens_total": 456,
+ "max_context_tokens": 4057
+}

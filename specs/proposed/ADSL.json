@@ -74,14 +74,14 @@
   "label": "Date of First Exposure to Treatment",
   "type": "date",
   "origin": "derived",
-  "derivation": "Minimum of EX.EXSTDTC converted to numeric date for each USUBJID; partial-date imputation: sponsor convention - REVIEW"
+  "derivation": "Date of first dose of study treatment per SAP: date of first dose at Week 0 (Visit 3). If SAP is silent, first exposure record (EX.EXSTDTC) where EX.EXTRT matches randomized treatment, sorted by EXSTDTC, EXSEQ; convert to date with partial-date imputation: sponsor convention - REVIEW"
  },
  {
   "variable": "TRTEDT",
   "label": "Date of Last Exposure to Treatment",
   "type": "date",
   "origin": "derived",
-  "derivation": "Maximum of EX.EXENDTC converted to numeric date for each USUBJID; partial-date imputation: sponsor convention - REVIEW"
+  "derivation": "Date of last dose of study treatment per SAP. If SAP is silent, last exposure record (EX.EXENDTC) where EX.EXTRT matches randomized treatment, sorted by EXENDTC, EXSEQ; convert to date with partial-date imputation: sponsor convention - REVIEW"
  },
  {
   "variable": "TRTDURD",
@@ -99,28 +99,28 @@
  },
  {
   "variable": "AGEGR1",
-  "label": "Age Group 1",
+  "label": "Pooled Age Group 1",
   "type": "text",
   "origin": "derived",
   "derivation": "Per SAP Section 9.2: Age category (<65, 65-80, >80). If AGE < 65 then '<65'; else if AGE <= 80 then '65-80'; else '>80'"
  },
  {
   "variable": "AGEGR1N",
-  "label": "Age Group 1 (N)",
+  "label": "Pooled Age Group 1 (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Numeric code for AGEGR1: 1='<65', 2='65-80', 3='>80'"
+  "derivation": "Numeric code for AGEGR1 in order of categories: 1='<65', 2='65-80', 3='>80'"
  },
  {
   "variable": "AGEGR2",
-  "label": "Age Group 2",
+  "label": "Pooled Age Group 2",
   "type": "text",
   "origin": "derived",
   "derivation": "Not defined in SAP; set to null"
  },
  {
   "variable": "AGEGR2N",
-  "label": "Age Group 2 (N)",
+  "label": "Pooled Age Group 2 (N)",
   "type": "integer",
   "origin": "derived",
   "derivation": "Not defined in SAP; set to null"
@@ -151,7 +151,7 @@
   "label": "Race (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Numeric code assigned to each unique value of RACE in alphabetical order"
+  "derivation": "Per study codelist - REVIEW"
  },
  {
   "variable": "ETHNIC",
@@ -165,35 +165,35 @@
   "label": "Safety Population Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Per SAP Section 6: 'All patients randomized and known to have taken at least one dose of randomized drug'. Y if USUBJID in DM where ARM ne '' and USUBJID in EX where EX.EXSTDTC is not null; else N"
+  "derivation": "Per SAP Section 6: All patients randomized and known to have taken at least one dose of randomized drug. If randomized (DM.ARM ne '') and at least one EX record with EX.EXTRT matching randomized treatment and EX.EXSTDTC not missing then 'Y' else 'N'"
  },
  {
   "variable": "ITTFL",
-  "label": "Intent-To-Treat Population Flag",
+  "label": "Intent-to-Treat Population Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Per SAP Section 6: 'All patients randomized'. Y if DM.ARM ne ''; else N"
+  "derivation": "Per SAP Section 6: All patients randomized. If DM.ARM ne '' then 'Y' else 'N'"
  },
  {
   "variable": "EFFFL",
   "label": "Efficacy Population Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Per SAP Section 6: 'All patients who were randomized and took drug, and have at least 1 post-baseline measure for both ADAS-Cog and CIBIC+'. Y if SAFFL='Y' and exists post-baseline ADAS-Cog and CIBIC+ records in efficacy dataset; else N"
+  "derivation": "Per SAP Section 6: All patients who were randomized and took drug, and have at least 1 post-baseline measure for both ADAS-Cog and CIBIC+. If ITTFL='Y' and SAFFL='Y' and at least one post-baseline ADAS-Cog and CIBIC+ assessment exists in efficacy datasets then 'Y' else 'N'"
  },
  {
   "variable": "COMPLFL",
   "label": "Completers Population Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Per SAP Section 6: 'All patients in the efficacy population who completed their Week 24 visit (Visit 12)'. Y if EFFFL='Y' and DS.DSDECOD='COMPLETED' at VISITNUM=12; else N"
+  "derivation": "Per SAP Section 6: All patients in the efficacy population who completed their Week 24 visit (Visit 12). If EFFFL='Y' and DS record with DSCAT='DISPOSITION EVENT' and VISITNUM=12 and DSDECOD='COMPLETED' then 'Y' else 'N'"
  },
  {
   "variable": "DISCONFL",
-  "label": "Discontinued from Study Flag",
+  "label": "Subject Discontinued Study Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Y if DS.DSDECOD ne 'COMPLETED' for the last DS record per USUBJID; else N"
+  "derivation": "If DS record with DSCAT='DISPOSITION EVENT' and DSDECOD ne 'COMPLETED' then 'Y' else 'N'"
  },
  {
   "variable": "DTHFL",
@@ -207,21 +207,21 @@
   "label": "End of Study Status",
   "type": "text",
   "origin": "derived",
-  "derivation": "DS.DSDECOD from the last DS record per USUBJID (sorted by DS.DSDTC, DS.DSSEQ); mapped to controlled terminology: COMPLETED, DISCONTINUED, ONGOING"
+  "derivation": "From DS record where DSCAT='DISPOSITION EVENT' (SDTMIG). If DSDECOD='COMPLETED' then 'COMPLETED'; else if DSDECOD in ('ADVERSE EVENT','DEATH','WITHDRAWAL BY SUBJECT','PROTOCOL VIOLATION','LOST TO FOLLOW-UP','PHYSICIAN DECISION','SPONSOR REQUEST','OTHER') then 'DISCONTINUED'; else 'ONGOING'"
  },
  {
   "variable": "DCDECOD",
   "label": "Standardized Disposition Term",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "DS.DSDECOD from the last DS record per USUBJID"
+  "origin": "derived",
+  "derivation": "From DS record where DSCAT='DISPOSITION EVENT'. DSDECOD mapped to CDISC CT values per SAP Section 9.1"
  },
  {
   "variable": "DCSREAS",
-  "label": "Reason for Discontinuation from Study",
+  "label": "Reason for Discontinuation (Standardized)",
   "type": "text",
-  "origin": "predecessor",
-  "derivation": "DS.DSDECOD from the last DS record per USUBJID where DSDECOD ne 'COMPLETED'; else null"
+  "origin": "derived",
+  "derivation": "From DS record where DSCAT='DISPOSITION EVENT'. DSDECOD mapped to CDISC CT values per SAP Section 9.1"
  },
  {
   "variable": "RFSTDTC",
@@ -249,55 +249,62 @@
   "label": "Duration of Disease (Months)",
   "type": "float",
   "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'computed as months between date of Week -2 (Visit 1) and date of onset of first definite symptoms of Alzheimer\\'s Disease'. (SV.SVSTDTC at VISITNUM=1) - (MH.MHSTDTC where MHTERM indicates onset of Alzheimer\\'s symptoms) / 30.4375"
+  "derivation": "Per SAP Section 9.2: Duration of disease [computed as months between date of Week -2 (Visit 1) and date of onset of the first definite symptoms of Alzheimer's Disease]. Months between SV.SVSTDTC where VISITNUM=1 (Week -2) and MH.MHSTDTC where MHTERM indicates onset of first definite symptoms of Alzheimer's Disease, divided by 30.4375"
  },
  {
   "variable": "EDUYRS",
   "label": "Years of Education",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'Years of education'. Derived from supplemental qualification or DM.SCOBID if collected; else set to null"
+  "derivation": "Per SAP Section 9.2: Years of education. From QS where QSTESTCD='EDUYRS' or similar education test code at baseline, QSSTRESN"
  },
  {
   "variable": "MMSEBL",
-  "label": "Baseline Mini-Mental State Examination Score",
-  "type": "float",
+  "label": "Baseline MMSE Score",
+  "type": "integer",
   "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'Baseline comparisons across treatment groups for the Mini-Mental State Examination (MMSE)'. LB.LBSTRESN where LBTESTCD='MMSE' and VISITNUM=3 (Week 0 Visit 3) and LBBLFL='Y'; if multiple, average"
- },
- {
-  "variable": "WEIGHTBL",
-  "label": "Baseline Weight (kg)",
-  "type": "float",
-  "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'Weight, height, BMI at Baseline (Visit 3 for weight and BMI, Visit 1 for height)'. VS.VSSTRESN where VSTESTCD='WEIGHT' and VISITNUM=3 and VSBLFL='Y'"
- },
- {
-  "variable": "HEIGHTBL",
-  "label": "Baseline Height (cm)",
-  "type": "float",
-  "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'Weight, height, BMI at Baseline (Visit 3 for weight and BMI, Visit 1 for height)'. VS.VSSTRESN where VSTESTCD='HEIGHT' and VISITNUM=1 and VSBLFL='Y'"
+  "derivation": "Per SAP Section 9.2: Mini-Mental State. From QS where QSTESTCD='MMSE' and VISITNUM=3 (Week 0, Visit 3), QSSTRESN"
  },
  {
   "variable": "BMIBL",
-  "label": "Baseline Body Mass Index (kg/m2)",
+  "label": "Baseline BMI",
   "type": "float",
   "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'BMI at Baseline (Visit 3 for weight and BMI, Visit 1 for height)'. WEIGHTBL / (HEIGHTBL/100)^2"
+  "derivation": "Per SAP Section 9.2: BMI at Baseline (Visit 3 for weight and BMI, Visit 1 for height). Weight from VS where VSTESTCD='WEIGHT' and VISITNUM=3; Height from VS where VSTESTCD='HEIGHT' and VISITNUM=1; BMI = Weight(kg) / (Height(m))^2"
  },
  {
   "variable": "BMICAT",
   "label": "Baseline BMI Category",
   "type": "text",
   "origin": "derived",
-  "derivation": "Per SAP Section 9.2: 'BMI category (BMI<25, BMI 25-<30, BMI>=30)'. If BMIBL < 25 then 'BMI<25'; else if BMIBL < 30 then 'BMI 25-<30'; else 'BMI>=30'"
+  "derivation": "Per SAP Section 9.2: BMI category (BMI<25, BMI 25-<30, BMI>=30). If BMIBL < 25 then 'BMI<25'; else if BMIBL < 30 then 'BMI 25-<30'; else 'BMI>=30'"
  },
  {
   "variable": "BMICATN",
   "label": "Baseline BMI Category (N)",
   "type": "integer",
   "origin": "derived",
-  "derivation": "Numeric code for BMICAT: 1='BMI<25', 2='BMI 25-<30', 3='BMI>=30'"
+  "derivation": "Numeric code for BMICAT in order of categories: 1='BMI<25', 2='BMI 25-<30', 3='BMI>=30'"
+ },
+ {
+  "variable": "FASFL",
+  "label": "Full Analysis Set Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Per LoT tables 14.1.1, 14.2.1, 14.3.1, 14.4.1, 14.3.5: Full Analysis Set population. If ITTFL='Y' then 'Y' else 'N'"
+ },
+ {
+  "variable": "MITTFL",
+  "label": "Modified Intent-to-Treat Analysis Set Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Per LoT tables 14.3.1-14.3.4, 14.3.6, 14.3.7: Modified Intent-to-Treat Analysis Set. If ITTFL='Y' and SAFFL='Y' then 'Y' else 'N'"
+ },
+ {
+  "variable": "PDSFL",
+  "label": "Pharmacodynamics Analysis Set Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Per LoT tables 14.4.1, 14.5.1: Pharmacodynamics Analysis Set. If SAFFL='Y' and at least one PK/PD assessment exists then 'Y' else 'N'"
  }
 ]

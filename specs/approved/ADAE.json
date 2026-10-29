@@ -18,14 +18,14 @@
   "label": "Subject Identifier for the Study",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SUBJID"
+  "derivation": "ADSL.SUBJID"
  },
  {
   "variable": "SITEID",
   "label": "Study Site Identifier",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "DM.SITEID"
+  "derivation": "ADSL.SITEID"
  },
  {
   "variable": "TRTP",
@@ -140,64 +140,15 @@
   "derivation": "ADSL.EFFFL"
  },
  {
-  "variable": "ASTDT",
-  "label": "Analysis Start Date",
-  "type": "date",
-  "origin": "derived",
-  "derivation": "Convert AE.AESTDTC to numeric date; partial-date imputation: if year and month match TRTSDT year/month then impute to TRTSDT (date of first dose), else if partial date clearly indicates start prior to treatment then no imputation (leave missing), else impute to first day of month/year per sponsor convention - REVIEW"
- },
- {
-  "variable": "ASTDTF",
-  "label": "Analysis Start Date Imputation Flag",
-  "type": "text",
-  "origin": "derived",
-  "derivation": "Imputation level for ASTDT: 'D' if day imputed, 'M' if month imputed, 'Y' if year imputed, '' if complete date"
- },
- {
-  "variable": "ASTDY",
-  "label": "Analysis Start Relative Day",
-  "type": "integer",
-  "origin": "derived",
-  "derivation": "ASTDT - TRTSDT + 1 if ASTDT >= TRTSDT else ASTDT - TRTSDT"
- },
- {
-  "variable": "AENDT",
-  "label": "Analysis End Date",
-  "type": "date",
-  "origin": "derived",
-  "derivation": "Convert AE.AEENDTC to numeric date; partial-date imputation: sponsor convention - REVIEW"
- },
- {
-  "variable": "AENDY",
-  "label": "Analysis End Relative Day",
-  "type": "integer",
-  "origin": "derived",
-  "derivation": "AENDT - TRTSDT + 1 if AENDT >= TRTSDT else AENDT - TRTSDT"
- },
- {
-  "variable": "ADURN",
-  "label": "Analysis Duration",
-  "type": "float",
-  "origin": "derived",
-  "derivation": "AENDT - ASTDT + 1"
- },
- {
-  "variable": "ADURU",
-  "label": "Analysis Duration Unit",
-  "type": "text",
-  "origin": "assigned",
-  "derivation": "'DAYS'"
- },
- {
   "variable": "AESEQ",
-  "label": "AE Sequence Number",
+  "label": "Sequence Number",
   "type": "integer",
   "origin": "predecessor",
   "derivation": "AE.AESEQ"
  },
  {
   "variable": "AESPID",
-  "label": "AE Sponsor-Defined Identifier",
+  "label": "Sponsor-Defined Identifier",
   "type": "text",
   "origin": "predecessor",
   "derivation": "AE.AESPID"
@@ -270,7 +221,7 @@
   "label": "Body System or Organ Class",
   "type": "text",
   "origin": "predecessor",
-  "derivation": "AE.AEBODSYS"
+  "derivation": "AE.AEBODSYS (coded per MedDRA as specified in the SAP)"
  },
  {
   "variable": "AEBDSYCD",
@@ -378,38 +329,87 @@
   "derivation": "AE.AESOD"
  },
  {
+  "variable": "ASTDT",
+  "label": "Analysis Start Date",
+  "type": "date",
+  "origin": "derived",
+  "derivation": "Convert AE.AESTDTC to date; partial-date imputation: if year and month match TRTSDT year/month then impute day as TRTSDT day; if completely missing impute as TRTSDT; if partial date clearly indicates start prior to TRTSDT then leave missing; otherwise sponsor convention - REVIEW"
+ },
+ {
+  "variable": "ASTDTF",
+  "label": "Analysis Start Date Imputation Flag",
+  "type": "text",
+  "origin": "derived",
+  "derivation": "Derived per CDISC ADaMIG based on imputation applied to ASTDT (D=day, M=month, Y=year, blank=none)"
+ },
+ {
+  "variable": "ASTDY",
+  "label": "Analysis Start Relative Day",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "If ASTDT >= TRTSDT then ASTDT - TRTSDT + 1 else ASTDT - TRTSDT"
+ },
+ {
+  "variable": "AENDT",
+  "label": "Analysis End Date",
+  "type": "date",
+  "origin": "derived",
+  "derivation": "Convert AE.AEENDTC to date; partial-date imputation: sponsor convention - REVIEW"
+ },
+ {
+  "variable": "AENDY",
+  "label": "Analysis End Relative Day",
+  "type": "integer",
+  "origin": "derived",
+  "derivation": "If AENDT >= TRTSDT then AENDT - TRTSDT + 1 else AENDT - TRTSDT"
+ },
+ {
+  "variable": "ADURN",
+  "label": "Analysis Duration",
+  "type": "float",
+  "origin": "derived",
+  "derivation": "AENDT - ASTDT + 1 (if both non-missing)"
+ },
+ {
+  "variable": "ADURU",
+  "label": "Analysis Duration Unit",
+  "type": "text",
+  "origin": "assigned",
+  "derivation": "'DAYS'"
+ },
+ {
   "variable": "TRTEMFL",
   "label": "Treatment Emergent Analysis Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Flag 'Y' if event meets treatment-emergent definition per SAP: (ASTDT >= TRTSDT) OR (ASTDT < TRTSDT and AENDT >= TRTSDT and worsening after TRTSDT per investigator) OR (ASTDT < TRTSDT and AENDT < TRTSDT and recurrence after TRTSDT); else blank. For partial dates: if year/month same as TRTSDT year/month then 'Y'; if completely missing ASTDT then impute ASTDT = TRTSDT and flag 'Y'; if partial date clearly prior to treatment then blank."
+  "derivation": "Y if (ASTDT >= TRTSDT) OR (ASTDT < TRTSDT and AENDT >= TRTSDT and AEOUT indicates worsening/recurrence per SAP) OR (ASTDT missing and imputed per SAP rules); else blank"
  },
  {
   "variable": "AOCCFL",
   "label": "First Occurrence Flag (Any AE)",
   "type": "text",
   "origin": "derived",
-  "derivation": "Subset: TRTEMFL = 'Y'; by-group: USUBJID; sort: ASTDT, AESEQ; flag first record per by-group 'Y', else blank"
+  "derivation": "Subset TRTEMFL='Y'; by USUBJID; sort by ASTDT, AESEQ; flag first record per USUBJID as 'Y', else blank"
  },
  {
   "variable": "AOCCPFL",
   "label": "First Occurrence Flag (Preferred Term)",
   "type": "text",
   "origin": "derived",
-  "derivation": "Subset: TRTEMFL = 'Y'; by-group: USUBJID, AEDECOD; sort: ASTDT, AESEQ; flag first record per by-group 'Y', else blank"
+  "derivation": "Subset TRTEMFL='Y'; by USUBJID, AEDECOD; sort by ASTDT, AESEQ; flag first record per USUBJID/AEDECOD as 'Y', else blank"
  },
  {
   "variable": "AOCCSFL",
   "label": "First Occurrence Flag (System Organ Class)",
   "type": "text",
   "origin": "derived",
-  "derivation": "Subset: TRTEMFL = 'Y'; by-group: USUBJID, AESOC; sort: ASTDT, AESEQ; flag first record per by-group 'Y', else blank"
+  "derivation": "Subset TRTEMFL='Y'; by USUBJID, AESOC; sort by ASTDT, AESEQ; flag first record per USUBJID/AESOC as 'Y', else blank"
  },
  {
   "variable": "ADERMFL",
-  "label": "Dermatological Event of Special Interest Flag",
+  "label": "Dermatological Event Flag",
   "type": "text",
   "origin": "derived",
-  "derivation": "Flag 'Y' if AEDECOD is in the predefined list of dermatological preferred terms (rash, pruritus, dermatitis, etc.) per medical review and SAP; else blank"
+  "derivation": "Y if AEDECOD is in the predefined list of dermatological preferred terms per SAP medical review; else blank"
  }
 ]

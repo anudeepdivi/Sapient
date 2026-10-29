@@ -1,0 +1,165 @@
+{
+ "arm": "A",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 881,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 1039,
+   "completion_tokens": 15,
+   "tools": [
+    "get_conventions"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 1749,
+   "completion_tokens": 29,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 1843,
+   "completion_tokens": 81,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 1956,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 2048,
+   "completion_tokens": 83,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 2168,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 2292,
+   "completion_tokens": 30,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 2350,
+   "completion_tokens": 60,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 2451,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 2551,
+   "completion_tokens": 31,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 2683,
+   "completion_tokens": 89,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 2817,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 2942,
+   "completion_tokens": 31,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 3030,
+   "completion_tokens": 99,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 16,
+   "prompt_tokens": 3178,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 5,
+  "get_conventions": 1,
+  "get_admiral_signature": 4,
+  "run_step": 5
+ },
+ "tool_result_bytes": 4576,
+ "patient_data_bytes": 0,
+ "n_tools": 6,
+ "tool_definition_tokens_est": 515,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "ASTDT",
+   "AENDT",
+   "ASTDY",
+   "AOCCFL"
+  ],
+  "rates": {
+   "ASTDT": 0.9908,
+   "AENDT": 1,
+   "ASTDY": 0.9908,
+   "TRTEMFL": 0.9118,
+   "AOCCFL": 0.9958
+  }
+ },
+ "wall_seconds": 82.0,
+ "n_turns": 16,
+ "prompt_tokens_total": 35978,
+ "completion_tokens_total": 685,
+ "max_context_tokens": 3178
+}

@@ -1,0 +1,163 @@
+{
+ "arm": "A",
+ "dataset": "ADTTE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 878,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 963,
+   "completion_tokens": 47,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 1042,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 1127,
+   "completion_tokens": 51,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 1230,
+   "completion_tokens": 15,
+   "tools": [
+    "list_input_columns"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 1859,
+   "completion_tokens": 50,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 1944,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 2056,
+   "completion_tokens": 72,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 2200,
+   "completion_tokens": 104,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 2344,
+   "completion_tokens": 99,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 2516,
+   "completion_tokens": 121,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 2675,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 2779,
+   "completion_tokens": 86,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 2906,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 2988,
+   "completion_tokens": 54,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 16,
+   "prompt_tokens": 3086,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 5,
+  "run_step": 9,
+  "list_input_columns": 1
+ },
+ "tool_result_bytes": 2611,
+ "patient_data_bytes": 0,
+ "n_tools": 6,
+ "tool_definition_tokens_est": 515,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 2,
+  "correct": [
+   "PARAMCD",
+   "STARTDT"
+  ],
+  "rates": {
+   "PARAMCD": 1,
+   "STARTDT": 1,
+   "ADT": 0.4685,
+   "CNSR": 0.6299,
+   "AVAL": 0.4685
+  }
+ },
+ "wall_seconds": 60.1,
+ "n_turns": 16,
+ "prompt_tokens_total": 32593,
+ "completion_tokens_total": 833,
+ "max_context_tokens": 3086
+}

@@ -1,0 +1,72 @@
+{
+ "arm": "C",
+ "dataset": "ADTTE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 475,
+   "completion_tokens": 426
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 2608,
+   "completion_tokens": 1022
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3837,
+   "completion_tokens": 934
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 4958,
+   "completion_tokens": 154
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 5385,
+   "completion_tokens": 1036
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 6487,
+   "completion_tokens": 1511
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 8134,
+   "completion_tokens": 959
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 9136,
+   "completion_tokens": 2862
+  }
+ ],
+ "programs_run": 8,
+ "sandbox_rejections": 0,
+ "output_bytes_to_model": 6921,
+ "patient_data_bytes": 355,
+ "api_doc_tokens_est": 221,
+ "score": {
+  "built": true,
+  "targets_correct": 2,
+  "correct": [
+   "PARAMCD",
+   "STARTDT"
+  ],
+  "rates": {
+   "PARAMCD": 1,
+   "STARTDT": 1,
+   "ADT": null,
+   "CNSR": null,
+   "AVAL": null
+  }
+ },
+ "wall_seconds": 418.5,
+ "n_turns": 8,
+ "prompt_tokens_total": 41020,
+ "completion_tokens_total": 8904,
+ "max_context_tokens": 9136
+}

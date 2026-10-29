@@ -1,0 +1,182 @@
+{
+ "arm": "A",
+ "dataset": "ADLBC",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 879,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 1095,
+   "completion_tokens": 30,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 1209,
+   "completion_tokens": 74,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 1308,
+   "completion_tokens": 15,
+   "tools": [
+    "list_input_columns"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 1865,
+   "completion_tokens": 47,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 1944,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 2025,
+   "completion_tokens": 47,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 2107,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 2189,
+   "completion_tokens": 15,
+   "tools": [
+    "get_conventions"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 3040,
+   "completion_tokens": 29,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 3134,
+   "completion_tokens": 69,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 3230,
+   "completion_tokens": 69,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 3337,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 3416,
+   "completion_tokens": 30,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 3474,
+   "completion_tokens": 62,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 16,
+   "prompt_tokens": 3577,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 17,
+   "prompt_tokens": 3659,
+   "completion_tokens": 112,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 18,
+   "prompt_tokens": 3817,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 5,
+  "get_admiral_signature": 3,
+  "run_step": 7,
+  "list_input_columns": 1,
+  "get_conventions": 1
+ },
+ "tool_result_bytes": 5481,
+ "patient_data_bytes": 0,
+ "n_tools": 6,
+ "tool_definition_tokens_est": 515,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 3,
+  "correct": [
+   "AVAL",
+   "ADT",
+   "ADY"
+  ],
+  "rates": {
+   "PARAMCD": null,
+   "AVAL": 1,
+   "ADT": 1,
+   "ADY": 1,
+   "ABLFL": 0.976
+  }
+ },
+ "wall_seconds": 88.6,
+ "n_turns": 18,
+ "prompt_tokens_total": 45305,
+ "completion_tokens_total": 733,
+ "max_context_tokens": 3817
+}

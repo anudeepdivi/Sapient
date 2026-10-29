@@ -1,0 +1,356 @@
+{
+ "arm": "B",
+ "dataset": "ADTTE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 48659,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 48744,
+   "completion_tokens": 52,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 48828,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 48913,
+   "completion_tokens": 15,
+   "tools": [
+    "list_input_columns"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 49542,
+   "completion_tokens": 52,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 49629,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 49741,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 49892,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 50043,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 50194,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 50345,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 50496,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 50647,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 50798,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 50949,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 16,
+   "prompt_tokens": 51100,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 17,
+   "prompt_tokens": 51251,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 18,
+   "prompt_tokens": 51402,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 19,
+   "prompt_tokens": 51553,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 20,
+   "prompt_tokens": 51704,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 21,
+   "prompt_tokens": 51855,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 22,
+   "prompt_tokens": 52006,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 23,
+   "prompt_tokens": 52157,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 24,
+   "prompt_tokens": 52308,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 25,
+   "prompt_tokens": 52459,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 26,
+   "prompt_tokens": 52610,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 27,
+   "prompt_tokens": 52761,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 28,
+   "prompt_tokens": 52912,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 29,
+   "prompt_tokens": 53063,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 30,
+   "prompt_tokens": 53214,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 31,
+   "prompt_tokens": 53365,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 32,
+   "prompt_tokens": 53516,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 33,
+   "prompt_tokens": 53667,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 34,
+   "prompt_tokens": 53818,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 35,
+   "prompt_tokens": 53969,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 36,
+   "prompt_tokens": 54120,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 37,
+   "prompt_tokens": 54271,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 38,
+   "prompt_tokens": 54422,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 39,
+   "prompt_tokens": 54573,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 40,
+   "prompt_tokens": 54724,
+   "completion_tokens": 78,
+   "tools": [
+    "run_step"
+   ]
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 3,
+  "run_step": 36,
+  "list_input_columns": 1
+ },
+ "tool_result_bytes": 6435,
+ "patient_data_bytes": 0,
+ "n_tools": 142,
+ "tool_definition_tokens_est": 33508,
+ "score": {
+  "built": true,
+  "targets_correct": 2,
+  "correct": [
+   "PARAMCD",
+   "STARTDT"
+  ],
+  "rates": {
+   "PARAMCD": 1,
+   "STARTDT": 1,
+   "ADT": null,
+   "CNSR": null,
+   "AVAL": null
+  }
+ },
+ "wall_seconds": 390.7,
+ "n_turns": 40,
+ "prompt_tokens_total": 2070220,
+ "completion_tokens_total": 2849,
+ "max_context_tokens": 54724
+}

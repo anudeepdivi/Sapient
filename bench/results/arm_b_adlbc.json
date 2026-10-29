@@ -1,0 +1,140 @@
+{
+ "arm": "B",
+ "dataset": "ADLBC",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 48660,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 48876,
+   "completion_tokens": 52,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 48960,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 49041,
+   "completion_tokens": 52,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 49128,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 49210,
+   "completion_tokens": 57,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 49294,
+   "completion_tokens": 57,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 49389,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 49468,
+   "completion_tokens": 58,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 49574,
+   "completion_tokens": 61,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 49676,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 49758,
+   "completion_tokens": 55,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 49859,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 5,
+  "run_step": 7
+ },
+ "tool_result_bytes": 1244,
+ "patient_data_bytes": 0,
+ "n_tools": 142,
+ "tool_definition_tokens_est": 33508,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "AVAL",
+   "ADT",
+   "ADY",
+   "ABLFL"
+  ],
+  "rates": {
+   "PARAMCD": null,
+   "AVAL": 1,
+   "ADT": 1,
+   "ADY": 1,
+   "ABLFL": 1
+  }
+ },
+ "wall_seconds": 149.2,
+ "n_turns": 13,
+ "prompt_tokens_total": 640893,
+ "completion_tokens_total": 526,
+ "max_context_tokens": 49859
+}

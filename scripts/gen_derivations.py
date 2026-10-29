@@ -81,7 +81,7 @@ def spine(dataset: str) -> str:
 ADMIRAL_CONVENTIONS = """ADMIRAL IDIOMS (verified shapes — a --DTC date, flag, or occurrence-flag step MUST use these):
 - --DTC to numeric date: derive_vars_dt(new_vars_prefix = "<PREFIX>", dtc = <XXDTC>, highest_imputation = "M", date_imputation = "first"|"last", min_dates|max_dates = exprs(...)). The prefix is the target WITHOUT the trailing "DT": prefix "AST" over AESTDTC creates BOTH ASTDT and its imputation flag ASTDTF; prefix "AEN" over AEENDTC creates AENDT + AENDTF. NEVER prefix "ASTDT" (that yields ASTDTDT). Start dates: date_imputation = "first" with min_dates = exprs(TRTSDT). End dates: "last" with max_dates = exprs(TRTEDT). Because this one call also emits the --DTF flag, a separate --DTF step is NOT needed — skip it.
 - NEVER call as.Date() or convert_dtc_to_dt() directly on a --DTC variable (they silently return NA for partial dates).
-- Flags are "Y" or NA_character_, never "N". Simple condition flag: mutate(XXFL = if_else(<condition>, "Y", NA_character_)).
+- Flag values follow the spec. If the spec says "N otherwise" or its codelist is Y|N (ADSL population/completion flags: SAFFL, ITTFL, EFFFL, COMPxxFL): mutate(XXFL = if_else(<condition>, "Y", "N", missing = "N")). Otherwise ("Null otherwise", record-level flags): mutate(XXFL = if_else(<condition>, "Y", NA_character_)).
 - First/last occurrence flag (AOCC*): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID), order = exprs(ASTDT, AESEQ), new_var = <AOCCxxFL>, mode = "first"), filter = <population condition, e.g. TRTEMFL == "Y">). derive_var_extreme_flag has NO filter/filter_add arg — the population restriction goes in restrict_derivation(filter = ...).
 - A categorical grouping variable is a plain mutate(<VAR> = case_when(...)); NEVER use derive_param_computed or set_values_to (those add PARAMCD rows, not columns). The comparison operators (<, >=, between) apply to the CONTINUOUS source column (AGE, BMIBL), NEVER to a 1/2/3 group code. The numeric group var <VAR>N is case_when over the continuous column returning integers; the text label <VAR> maps the SAME cut-points to strings — either from the continuous column directly, or by case_when(<VAR>N == 1 ~ "...", ...) — but NEVER `<VAR>N < 65`, because <VAR>N holds 1/2/3, not the measurement."""
 
@@ -186,19 +186,83 @@ def topo_order(snippets: dict[str, str], spec_order: list[str]) -> list[str]:
     return ordered
 
 
-def run_steps(dataset, snippets, spec_order, scratch):
+# Post-execution checks: a step that runs can still be wrong in ways the data and spec
+# reveal for free (no prompt tokens): a type the spec contradicts, values outside the
+# spec codelist, or a string literal that never occurs in the column it is compared to.
+# Failures go back to the model as specific feedback, like any execution error.
+CHECK_R = r"""
+.check <- function(nm, out, kind, ct, lits) {
+  col <- out[[nm]]
+  inputs <- Filter(Negate(is.null), mget(.input_names, envir = globalenv(), ifnotfound = list(NULL)))
+  for (l in lits) {
+    srcs <- Filter(function(d) l$col %in% names(d), c(list(out), inputs))
+    if (length(srcs) && !any(vapply(srcs, function(d) l$val %in% d[[l$col]], logical(1)))) {
+      vals <- unique(unlist(lapply(srcs, function(d) as.character(d[[l$col]]))))
+      return(sprintf('LITERAL: "%s" never occurs in %s (values: %s)', l$val, l$col,
+                     paste(head(vals[!is.na(vals)], 8), collapse = ", ")))
+    }
+  }
+  if (identical(kind, "date") && !inherits(col, "Date"))
+    return(sprintf(paste0('TYPE: %s is %s but the spec says a DATE9 date. Convert the --DTC text with ',
+      'derive_vars_dt(new_vars_prefix = "%s", dtc = <--DTC column>); if the --DTC comes from a merge, ',
+      'merge it under a temporary name, convert, then drop the temporary column.'), nm, class(col)[1], sub("DT$", "", nm)))
+  if (identical(kind, "num") && !(is.numeric(col) || inherits(col, "Date")))
+    return(sprintf("TYPE: %s is %s but the spec says numeric.", nm, class(col)[1]))
+  if (identical(kind, "char") && !is.character(col))
+    return(sprintf("TYPE: %s is %s but the spec says text.", nm, class(col)[1]))
+  if (length(ct)) {
+    bad <- setdiff(unique(as.character(col[!is.na(col)])), ct)
+    if (length(bad)) return(sprintf("VALUES: %s has values outside the spec codelist {%s}: %s",
+                                    nm, paste(ct, collapse = "|"), paste(head(bad, 6), collapse = ", ")))
+  }
+  NULL
+}
+"""
+LIT_EQ_RE = re.compile(r'\b([A-Z][A-Z0-9]+)\s*(?:==|!=)\s*"([^"]*)"')
+LIT_IN_RE = re.compile(r'\b([A-Z][A-Z0-9]+)\s*%in%\s*c\(([^)]*)\)')
+
+
+def literals(code: str) -> list[tuple[str, str]]:
+    found = LIT_EQ_RE.findall(code)
+    for col, vals in LIT_IN_RE.findall(code):
+        found += [(col, v) for v in re.findall(r'"([^"]*)"', vals)]
+    return sorted(set(found))
+
+
+def check_spec(rule: dict) -> tuple[str | None, list[str]]:
+    """(kind, codelist) the produced column must satisfy, from the spec rule."""
+    fmt = rule.get("format") if isinstance(rule.get("format"), str) else ""
+    kind = "date" if "DATE" in fmt else {"integer": "num", "float": "num", "text": "char"}.get(rule.get("type"))
+    ct = rule.get("ct") if isinstance(rule.get("ct"), list) else []
+    return kind, [str(c) for c in ct]
+
+
+def r_str(x: str) -> str:
+    return json.dumps(x)  # a JSON string literal is a valid R string literal
+
+
+def run_steps(dataset, snippets, spec_order, scratch, checks=None):
+    checks = checks or {}
     order = topo_order(snippets, spec_order)
+    input_names = ", ".join(r_str(v) for v, _ in ADAM_INPUTS[dataset])
     lines = [render_header(dataset), "", spine(dataset), "",
+             f".input_names <- c({input_names})", CHECK_R,
              ".status <- list()",
-             ".try_step <- function(nm, f) {",
+             ".try_step <- function(nm, f, kind = NA, ct = character(0), lits = list()) {",
              "  out <- tryCatch(f(result), error = function(e) e)",
-             "  if (inherits(out, 'error')) .status[[nm]] <<- paste0('ERROR: ', conditionMessage(out))",
-             "  else if (!nm %in% names(out)) .status[[nm]] <<- 'ERROR: step ran but did not create the column'",
+             "  if (inherits(out, 'error')) { .status[[nm]] <<- paste0('ERROR: ', conditionMessage(out)); return(invisible()) }",
+             "  if (!nm %in% names(out)) { .status[[nm]] <<- 'ERROR: step ran but did not create the column'; return(invisible()) }",
+             "  bad <- .check(nm, out, kind, ct, lits)",
+             "  if (!is.null(bad)) .status[[nm]] <<- paste0('ERROR: ', bad)",
              "  else { .status[[nm]] <<- 'OK'; result <<- out }",
              "}"]
     for var in order:
         body = snippets[var].strip().replace("result <- result", "result", 1)
-        lines.append(f".try_step({var!r}, function(result) {{\n{body}\n}})")
+        kind, ct = checks.get(var, (None, []))
+        lits = ", ".join(f"list(col = {r_str(c)}, val = {r_str(v)})" for c, v in literals(snippets[var]))
+        lines.append(f".try_step({var!r}, function(result) {{\n{body}\n}}, "
+                     f"kind = {r_str(kind) if kind else 'NA'}, ct = c({', '.join(r_str(c) for c in ct)}), "
+                     f"lits = list({lits}))")
     lines.append("cat('\\n===STEP_STATUS===\\n'); cat(jsonlite::toJSON(.status, auto_unbox = TRUE))")
     driver = scratch / f"steps_{dataset}.R"
     driver.write_text("\n".join(lines))
@@ -277,7 +341,8 @@ def main(dataset: str):
                 continue
             gate_err.pop(var, None)
             snippets[var] = code
-        step_status, _ = run_steps(dataset, snippets, spec_order, scratch)
+        step_status, _ = run_steps(dataset, snippets, spec_order, scratch,
+                                   {r['variable']: check_spec(r) for r in rules})
         for var in list(snippets):
             st = step_status.get(var, "ERROR: step not executed")
             log_event(dataset, rnd, var, "execution", "passed" if st == "OK" else "failed",

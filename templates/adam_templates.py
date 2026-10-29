@@ -29,7 +29,10 @@ xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt")
 # any other dataset falls back to the full LLM-authored ADAM_SKELETON.
 ADAM_INPUTS = {
     "ADSL": [("dm", f"{SDTM_SOURCE}/DM.xpt"), ("ex", f"{SDTM_SOURCE}/EX.xpt"), ("ds", f"{SDTM_SOURCE}/DS.xpt"),
-             ("vs", f"{SDTM_SOURCE}/VS.xpt"), ("mh", f"{SDTM_SOURCE}/MH.xpt"), ("sv", f"{SDTM_SOURCE}/SV.xpt")],
+             ("vs", f"{SDTM_SOURCE}/VS.xpt"), ("mh", f"{SDTM_SOURCE}/MH.xpt"), ("sv", f"{SDTM_SOURCE}/SV.xpt"),
+             # QS/SC come from the CDISC pilot SDTM (pharmaversesdtm has no pilot QS/SC);
+             # needed for EFFFL/MMSETOT (QS) and EDUCLVL (SC)
+             ("qs", f"{SDTM_SOURCE}/QS.xpt"), ("sc", f"{SDTM_SOURCE}/SC.xpt")],
     "ADAE": [("sdtm", f"{SDTM_SOURCE}/AE.xpt"), ("adsl", "data/adam/ADSL.xpt")],
     "ADLBC": [("sdtm", f"{SDTM_SOURCE}/LB.xpt"), ("adsl", "data/adam/ADSL.xpt")],
 }

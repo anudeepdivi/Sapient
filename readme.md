@@ -63,11 +63,11 @@ Every one of these behaviors is enforced by automated test cases including delib
 4. **Rules, not examples.** At zero creativity the model copies worked examples blindly including their mistakes. So prompts carry machine-checkable constraints (real function signatures, real input columns, spec rules), not templates to imitate.
 5. **Human gates at the points of judgment.** Approval of new capabilities, resolution of ambiguity, anything unverifiable all escalate.
 
-Every run records what each guardrail caught, along with tokens and time (`python scripts/run_report.py`). Example, ADSL from the official specification:
+Every run records what each guardrail caught, along with tokens and time (`python scripts/run_report.py`). Example, ADSL from the official specification, after adding post-execution checks on type, codelist values and string literals:
 
-| Generated steps checked by the gate | Rejected by the gate | Execution failures caught | Recovered via error feedback | Never passed (left out of the dataset) |
+| Generated steps checked by the gate | Rejected by the gate | Execution or check failures caught | Recovered via error feedback | Never passed (left out of the dataset) |
 |---|---|---|---|---|
-| 60 | 5 | 34 | 3 | 7 |
+| 75 | 5 | 50 (7 wrong literals, 2 wrong types, 41 runtime errors) | 15 | 5 |
 
 Nothing that failed a check reached the final dataset.
 
@@ -89,17 +89,17 @@ Inputs are the pilot study's own SAP (Appendix 9 of the public CDISC pilot study
 
   | | Official spec | Model spec: SAP only | Model spec: SAP + IG conventions |
   |---|---|---|---|
-  | ADAE derivations reproduced exactly | **13 / 16** | 5 / 15 | 7 / 11 |
-  | ADAE cell agreement | **98.4%** | 80.0% | **90.2%** |
+  | ADAE derivations reproduced exactly | **14 / 16** | 5 / 15 | 7 / 11 |
+  | ADAE cell agreement | **98.6%** | 80.0% | **90.2%** |
   | ADAE specification defects | – | 8 | **2** |
-  | ADSL derivations reproduced exactly | 13 / 26 | 4 / 18 | 5 / 17 |
-  | ADSL cell agreement | 75.8% | 54.0% | 67.8% |
+  | ADSL derivations reproduced exactly | **18 / 28** | 4 / 18 | 5 / 17 |
+  | ADSL cell agreement | **84.0%** | 54.0% | 71.0% |
 
   The denominators differ because each specification decides which variables to derive rather than copy.
 
   Swapping specifications while keeping the code generator fixed shows where each error comes from. **The SAP says *what* to analyse; a specification must also say *how*.** Most of the *how* is standardised in the ADaM Implementation Guides: copy subject-level variables from ADSL, the first-occurrence flag algorithm, date conversion with an imputation flag. Adding those conventions cut ADAE specification defects from 8 to 2. For example, all three first-occurrence flags went from 0–24% to 99–100%.
 
-  The two remaining ADAE defects are dates that come out exactly 3,653 days off: the gap between the SAS and R date origins. ADSL's remaining misses are mostly code-generation gaps (treatment dates, dose, baseline measures) that persist even with the official specification.
+  The two remaining ADAE defects are dates that come out exactly 3,653 days off: the gap between the SAS and R date origins. ADSL code generation improved from 13/26 to 18/28 once three cheap post-execution checks were added (a date left as text, values outside the spec codelist, a compared string that never occurs in the data), one wrong prompt rule was corrected (flags are Y/N where the spec says so), and the pilot's QS/SC domains were loaded. These checks add no prompt tokens, but they turned 15 failures into correct variables through extra regeneration rounds, which raised ADSL's token use by about 50%. Remaining ADSL misses: rounding (HEIGHTBL/WEIGHTBL are within 0.1), SITEGR1 (the official spec defers to the SAP), VISNUMEN, BMIBL and DURDIS. The SAP-only column was measured before these fixes.
 - **Mock shells.** Shells for the SAP's 24 display templates are generated from the table titles in the SAP's own table list. They are scored against the real templates, which are never shown to the generator. Giving the model the SAP's analysis sections raises population accuracy from 58% to **92%**. Titles (0.97 F1), statistics (0.85 F1) and row labels (47% recall) are similar with and without the SAP.
 - **Earlier figures were overstated and have been withdrawn.** The earlier 94–98% value-match numbers had three problems: they were scored against `pharmaverseadam`, which is not the pilot's dataset and lacks most derived variables; a comparison bug silently dropped any variable with a one-sided missing value; and they covered fewer variables.
 - **Scaffolding, not generation:** the default pipeline currently builds ADSL/ADAE from hand-written derivation templates, and SDTM is mapped by hand-written `sdtm.oak` programs (98–100% across five domains vs `pharmaversesdtm`). These close the raw → SDTM → ADaM chain but are not model output.

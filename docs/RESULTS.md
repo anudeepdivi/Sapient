@@ -100,13 +100,14 @@ Same job, same AI model, same checks; only the way the AI calls the tools differ
 |---|---|---|---|
 | MCP, 6 hand-picked tools | 13 | 171k | none |
 | MCP, all 142 admiral functions as tools | 10 | **5.4 million** | none |
-| Code mode, first API | 8 | 156k | yes, twice |
-| MCP, 6 tools, redesigned API | 13 | 146k | none |
-| **Code mode, redesigned API** | **12** | **113k** | **none, by design** |
+| Code mode, first API | 10 | 156k | yes, twice |
+| MCP, 6 tools, redesigned API | 13.7 (13–14) | 321k (146k–416k) | none |
+| **Code mode, redesigned API** | **12 (12–12)** | **105k (92k–113k)** | **none, by design** |
 
 - **MCP with everything plugged in:** it re-read about 48k tokens of tool descriptions on every turn, and on two of the four datasets it ran out of turns.
 - **The redesigned API** gives the AI one call with everything it needs, returns column summaries instead of patient rows, and adds a progress check.
-- These are single runs; repeats are in progress.
+- **The redesigned-API rows are the mean (and range) of 3 runs**; the first three rows are single runs. Even at temperature 0, the live model gave slightly different answers between runs.
+- **MCP's token range comes from one dataset:** on ADTTE, in 2 of the 3 runs, it retried the same step until it ran out of turns (about 300k tokens each time, against 49k in the first run). Code mode never did this.
 
 ## Withdrawn figures
 

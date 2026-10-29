@@ -1,0 +1,133 @@
+{
+ "arm": "A",
+ "dataset": "ADSL",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 993,
+   "completion_tokens": 44,
+   "tools": [
+    "brief"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3642,
+   "completion_tokens": 115,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3791,
+   "completion_tokens": 155,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3986,
+   "completion_tokens": 77,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 4140,
+   "completion_tokens": 87,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 4270,
+   "completion_tokens": 239,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 4546,
+   "completion_tokens": 250,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 4883,
+   "completion_tokens": 248,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 5269,
+   "completion_tokens": 277,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 5593,
+   "completion_tokens": 121,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 5770,
+   "completion_tokens": 122,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 5945,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "brief": 1,
+  "run_step": 10
+ },
+ "tool_result_bytes": 8795,
+ "patient_data_bytes": 0,
+ "n_tools": 8,
+ "tool_definition_tokens_est": 673,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 5,
+  "correct": [
+   "TRTSDT",
+   "AGEGR1",
+   "SAFFL",
+   "EFFFL",
+   "DISCONFL"
+  ],
+  "rates": {
+   "TRTSDT": 1,
+   "AGEGR1": 1,
+   "SAFFL": 1,
+   "EFFFL": 1,
+   "DISCONFL": 1
+  }
+ },
+ "wall_seconds": 175.5,
+ "n_turns": 12,
+ "prompt_tokens_total": 52828,
+ "completion_tokens_total": 1738,
+ "max_context_tokens": 5945
+}

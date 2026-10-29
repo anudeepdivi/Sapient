@@ -1,0 +1,355 @@
+{
+ "arm": "A",
+ "dataset": "ADTTE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 987,
+   "completion_tokens": 37,
+   "tools": [
+    "brief"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3219,
+   "completion_tokens": 47,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3298,
+   "completion_tokens": 70,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3395,
+   "completion_tokens": 103,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 3533,
+   "completion_tokens": 102,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 3662,
+   "completion_tokens": 136,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 3893,
+   "completion_tokens": 170,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 4093,
+   "completion_tokens": 167,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 4315,
+   "completion_tokens": 179,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 4524,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 4796,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 5068,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 5340,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 5612,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 5884,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 16,
+   "prompt_tokens": 6156,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 17,
+   "prompt_tokens": 6428,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 18,
+   "prompt_tokens": 6700,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 19,
+   "prompt_tokens": 6972,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 20,
+   "prompt_tokens": 7244,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 21,
+   "prompt_tokens": 7516,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 22,
+   "prompt_tokens": 7788,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 23,
+   "prompt_tokens": 8060,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 24,
+   "prompt_tokens": 8332,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 25,
+   "prompt_tokens": 8604,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 26,
+   "prompt_tokens": 8876,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 27,
+   "prompt_tokens": 9148,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 28,
+   "prompt_tokens": 9420,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 29,
+   "prompt_tokens": 9692,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 30,
+   "prompt_tokens": 9964,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 31,
+   "prompt_tokens": 10236,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 32,
+   "prompt_tokens": 10508,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 33,
+   "prompt_tokens": 10780,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 34,
+   "prompt_tokens": 11052,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 35,
+   "prompt_tokens": 11324,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 36,
+   "prompt_tokens": 11596,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 37,
+   "prompt_tokens": 11868,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 38,
+   "prompt_tokens": 12140,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 39,
+   "prompt_tokens": 12412,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 40,
+   "prompt_tokens": 12684,
+   "completion_tokens": 176,
+   "tools": [
+    "run_step"
+   ]
+  }
+ ],
+ "tool_calls": {
+  "brief": 1,
+  "run_step": 39
+ },
+ "tool_result_bytes": 14613,
+ "patient_data_bytes": 0,
+ "n_tools": 8,
+ "tool_definition_tokens_est": 673,
+ "score": {
+  "built": true,
+  "targets_correct": 2,
+  "correct": [
+   "PARAMCD",
+   "STARTDT"
+  ],
+  "rates": {
+   "PARAMCD": 1,
+   "STARTDT": 1,
+   "ADT": null,
+   "CNSR": null,
+   "AVAL": null
+  }
+ },
+ "wall_seconds": 487.2,
+ "n_turns": 40,
+ "prompt_tokens_total": 297119,
+ "completion_tokens_total": 6467,
+ "max_context_tokens": 12684
+}

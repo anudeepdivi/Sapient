@@ -43,12 +43,13 @@ def openai_tools(mcp_tools) -> list[dict]:
 
 
 async def run(arm: str = "A", server_args: list[str] | None = None) -> dict:
-    os.environ["SAPIENT_RUN_TAG"] = f"bench-arm-{arm}"
+    os.environ["SAPIENT_RUN_TAG"] = f"bench-arm-{arm}-{DATASET}"
     llm = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=300.0, max_retries=0)
     params = StdioServerParameters(command=sys.executable,
-                                   args=server_args or [str(BASE_DIR / "bench" / "mcp_server.py")], cwd=str(BASE_DIR))
+                                   args=server_args or [str(BASE_DIR / "bench" / "mcp_server.py")], cwd=str(BASE_DIR),
+                                   env=dict(os.environ))  # the server needs SAPIENT_BENCH_DATASET
     started = time.monotonic()
-    log = {"arm": arm, "model": CODEGEN_MODEL, "turns": [], "tool_calls": {}, "tool_result_bytes": 0,
+    log = {"arm": arm, "dataset": DATASET, "model": CODEGEN_MODEL, "turns": [], "tool_calls": {}, "tool_result_bytes": 0,
            "patient_data_bytes": 0}
     async with Client(params, read_timeout_seconds=900) as mcp:
         tools = openai_tools((await mcp.list_tools()).tools)
@@ -96,5 +97,6 @@ if __name__ == "__main__":
     arm = sys.argv[1] if len(sys.argv) > 1 else "A"
     result = anyio.run(run, arm, [str(BASE_DIR / "bench" / SERVERS[arm])])
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / f"arm_{arm.lower()}.json").write_text(json.dumps(result, indent=1))
+    suffix = "" if DATASET == "ADAE" else f"_{DATASET.lower()}"
+    (RESULTS / f"arm_{arm.lower()}{suffix}.json").write_text(json.dumps(result, indent=1))
     print(json.dumps({k: v for k, v in result.items() if k != "turns"}, indent=1))

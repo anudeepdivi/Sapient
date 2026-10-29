@@ -28,11 +28,11 @@ from config import CODEGEN_MODEL, MAX_TOKENS, NO_THINKING, NVIDIA_API_KEY, NVIDI
 from orchestration.llm_retry import create_with_retry
 from tools import DATASET, SCRATCH, TARGETS, Session
 
-MAX_ROUNDS = 8
+MAX_ROUNDS = 10
 ALLOWED_IMPORTS = {"api", "json", "re"}
 FORBIDDEN_NAMES = {"open", "eval", "exec", "compile", "__import__", "getattr", "setattr", "delattr",
                    "globals", "locals", "vars", "input", "breakpoint"}
-RESULTS = BASE_DIR / "bench" / "results"
+RESULTS = BASE_DIR / "bench" / "results" / "v2"
 
 
 def api_doc() -> str:
@@ -52,7 +52,7 @@ You do this by writing ONE Python program that uses this API (import it with `im
 Every api function returns a plain-text string; only api.get_spec_rule returns JSON (parse it with json.loads).
 Text you want to read (conventions, columns, signatures, errors) reaches you only if your program prints it.
 Each R step passed to api.run_step must be one statement `result <- result |> ...` that creates the variable.
-Your program can look things up, call api.run_step for several variables, and inspect results in code.
+Start your first program with print(api.brief(<all targets>)). Your program can look things up, call api.run_step for several variables, and inspect results in code.
 Only what your program prints is shown back to you, so print what you need (for example each run_step result).
 I will run the program and show you its output. If some variables are not accepted yet, reply with a revised
 program; it starts from the steps already accepted. When every target is accepted, reply with the single word DONE.

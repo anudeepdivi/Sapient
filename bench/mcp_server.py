@@ -46,9 +46,23 @@ def run_step(variable: str, code: str) -> str:
 
 
 @server.tool()
-def preview_rows(columns: str, n: int = 5) -> str:
-    """Show the first n rows of the dataset built so far, for comma-separated columns."""
-    return session.preview_rows(columns, n)
+def brief(variables: str) -> str:
+    """Everything needed to derive the given comma-separated variables, in one text block:
+    spec rules, verified conventions, input columns and allowed admiral signatures."""
+    return session.brief(variables)
+
+
+@server.tool()
+def describe_columns(columns: str) -> str:
+    """Profile of comma-separated columns built so far (type, missing, distinct, common values of
+    low-cardinality text columns). Never returns patient-level rows."""
+    return session.describe_columns(columns)
+
+
+@server.tool()
+def status() -> str:
+    """Which target variables are accepted and which remain."""
+    return session.status()
 
 
 @server.tool()

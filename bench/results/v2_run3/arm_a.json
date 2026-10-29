@@ -1,0 +1,92 @@
+{
+ "arm": "A",
+ "dataset": "ADAE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 990,
+   "completion_tokens": 41,
+   "tools": [
+    "brief"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3417,
+   "completion_tokens": 81,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3530,
+   "completion_tokens": 83,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3650,
+   "completion_tokens": 60,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 3751,
+   "completion_tokens": 83,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 3879,
+   "completion_tokens": 99,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 4027,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "brief": 1,
+  "run_step": 5
+ },
+ "tool_result_bytes": 7751,
+ "patient_data_bytes": 0,
+ "n_tools": 8,
+ "tool_definition_tokens_est": 673,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "ASTDT",
+   "AENDT",
+   "ASTDY",
+   "AOCCFL"
+  ],
+  "rates": {
+   "ASTDT": 0.9908,
+   "AENDT": 1,
+   "ASTDY": 0.9908,
+   "TRTEMFL": 0.9454,
+   "AOCCFL": 1
+  }
+ },
+ "wall_seconds": 62.1,
+ "n_turns": 7,
+ "prompt_tokens_total": 23244,
+ "completion_tokens_total": 450,
+ "max_context_tokens": 4027
+}

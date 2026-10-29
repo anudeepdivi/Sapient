@@ -32,7 +32,7 @@ MAX_ROUNDS = 10
 ALLOWED_IMPORTS = {"api", "json", "re"}
 FORBIDDEN_NAMES = {"open", "eval", "exec", "compile", "__import__", "getattr", "setattr", "delattr",
                    "globals", "locals", "vars", "input", "breakpoint"}
-RESULTS = BASE_DIR / "bench" / "results" / "v2"
+RESULTS = BASE_DIR / "bench" / "results" / os.getenv("SAPIENT_BENCH_RESULTS", "v2")
 
 
 def api_doc() -> str:

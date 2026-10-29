@@ -22,10 +22,26 @@ from config import R_EXECUTABLE
 from knowledge.admiral_functions import get_signatures
 from r_layer.runner import run_adam_program
 from specs.metacore_loader import get_spec_rules
+from knowledge.adam_registry import classify
 from templates.adam_templates import ADAM_INPUTS, input_columns_block, render_footer, render_header
 
-DATASET = "ADAE"
-TARGETS = ["ASTDT", "AENDT", "ASTDY", "TRTEMFL", "AOCCFL"]
+# TTE has no spine in the main pipeline; the benchmark adds one here only (one row per
+# safety-population subject, ADSL variables carried), leaving the pipeline untouched.
+ADAM_INPUTS.setdefault("ADTTE", [("adsl", "data/adam/ADSL.xpt"), ("adae", "data/adam/ADAE.xpt")])
+g.SPINES.setdefault("ADTTE", '''result <- adsl |>
+  filter(SAFFL == "Y") |>
+  dplyr::transmute(STUDYID, SITEID, USUBJID, AGE, AGEGR1, AGEGR1N, RACE, RACEN, SEX, SAFFL,
+                   TRTSDT, TRTEDT, TRTP = TRT01P, TRTA = TRT01A, TRTAN = TRT01AN)''')
+
+# Target variables per dataset (one per ADaM class). SAPIENT_BENCH_DATASET selects one.
+TASKS = {
+    "ADSL": ["TRTSDT", "AGEGR1", "SAFFL", "EFFFL", "DISCONFL"],          # SUBJECT
+    "ADAE": ["ASTDT", "AENDT", "ASTDY", "TRTEMFL", "AOCCFL"],            # OCCDS
+    "ADLBC": ["PARAMCD", "AVAL", "ADT", "ADY", "ABLFL"],                 # BDS
+    "ADTTE": ["PARAMCD", "STARTDT", "ADT", "CNSR", "AVAL"],             # TTE
+}
+DATASET = os.getenv("SAPIENT_BENCH_DATASET", "ADAE")
+TARGETS = TASKS[DATASET]
 REFERENCE_DIR = "data/reference/pilot"
 SCRATCH = BASE_DIR / "cache_store" / "bench"
 
@@ -33,10 +49,12 @@ SCRATCH = BASE_DIR / "cache_store" / "bench"
 class Session:
     """One benchmark run's state: the steps accepted so far."""
 
-    def __init__(self):
+    def __init__(self, state_file: Path | None = None):
         self.rules = {r["variable"]: r for r in get_spec_rules(DATASET)}
         self.spec_order = list(self.rules)
-        self.accepted: dict[str, str] = {}
+        # code mode runs each program in a fresh process, so accepted steps persist on disk
+        self.state_file = state_file
+        self.accepted: dict[str, str] = json.loads(state_file.read_text()) if state_file and state_file.exists() else {}
         SCRATCH.mkdir(parents=True, exist_ok=True)
 
     # ---- tools exposed to the model ----
@@ -56,7 +74,7 @@ class Session:
                 f"\n`result` starts as the ADAE spine with columns: {', '.join(spine)}")
 
     def get_conventions(self) -> str:
-        return g.ADMIRAL_CONVENTIONS + g.CLASS_CONVENTIONS["OCCDS"]
+        return g.ADMIRAL_CONVENTIONS + g.CLASS_CONVENTIONS.get(classify(DATASET) or "", "")
 
     def run_step(self, variable: str, code: str) -> str:
         """Execute one `result <- result |> ...` step after the accepted ones; keep it if it passes."""
@@ -70,6 +88,8 @@ class Session:
         st = status.get(variable, "ERROR: step not executed")
         if st == "OK":
             self.accepted[variable] = code
+            if self.state_file:
+                self.state_file.write_text(json.dumps(self.accepted))
             return f"OK: {variable} created and kept. Accepted so far: {', '.join(self.accepted)}"
         return st
 

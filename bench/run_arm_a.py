@@ -90,8 +90,11 @@ async def run(arm: str = "A", server_args: list[str] | None = None) -> dict:
     return log
 
 
+SERVERS = {"A": "mcp_server.py", "B": "mcp_server_b.py"}
+
 if __name__ == "__main__":
-    result = anyio.run(run)
+    arm = sys.argv[1] if len(sys.argv) > 1 else "A"
+    result = anyio.run(run, arm, [str(BASE_DIR / "bench" / SERVERS[arm])])
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / "arm_a.json").write_text(json.dumps(result, indent=1))
+    (RESULTS / f"arm_{arm.lower()}.json").write_text(json.dumps(result, indent=1))
     print(json.dumps({k: v for k, v in result.items() if k != "turns"}, indent=1))

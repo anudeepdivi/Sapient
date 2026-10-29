@@ -1,0 +1,132 @@
+{
+ "arm": "B",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 48662,
+   "completion_tokens": 26,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 48820,
+   "completion_tokens": 15,
+   "tools": [
+    "get_conventions"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 49530,
+   "completion_tokens": 81,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 49643,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 49735,
+   "completion_tokens": 83,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 49855,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 49979,
+   "completion_tokens": 60,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 50080,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 50180,
+   "completion_tokens": 89,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 50314,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 50439,
+   "completion_tokens": 112,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 50600,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 5,
+  "get_conventions": 1,
+  "run_step": 5
+ },
+ "tool_result_bytes": 3897,
+ "patient_data_bytes": 0,
+ "n_tools": 142,
+ "tool_definition_tokens_est": 33508,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "ASTDT",
+   "AENDT",
+   "ASTDY",
+   "AOCCFL"
+  ],
+  "rates": {
+   "ASTDT": 0.9908,
+   "AENDT": 1,
+   "ASTDY": 0.9908,
+   "TRTEMFL": 0.9118,
+   "AOCCFL": 0.9958
+  }
+ },
+ "wall_seconds": 99.4,
+ "n_turns": 12,
+ "prompt_tokens_total": 597837,
+ "completion_tokens_total": 577,
+ "max_context_tokens": 50600
+}

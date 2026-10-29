@@ -1,0 +1,198 @@
+{
+ "arm": "A",
+ "dataset": "ADSL",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 884,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 983,
+   "completion_tokens": 31,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 1122,
+   "completion_tokens": 29,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 1216,
+   "completion_tokens": 15,
+   "tools": [
+    "list_input_columns"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 2055,
+   "completion_tokens": 123,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 2205,
+   "completion_tokens": 137,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 2376,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 2480,
+   "completion_tokens": 31,
+   "tools": [
+    "get_admiral_signature"
+   ]
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 2545,
+   "completion_tokens": 158,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 2729,
+   "completion_tokens": 150,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 2919,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 3018,
+   "completion_tokens": 84,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 3201,
+   "completion_tokens": 76,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 3320,
+   "completion_tokens": 27,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 3454,
+   "completion_tokens": 281,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 16,
+   "prompt_tokens": 3772,
+   "completion_tokens": 292,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 17,
+   "prompt_tokens": 4202,
+   "completion_tokens": 321,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 18,
+   "prompt_tokens": 4570,
+   "completion_tokens": 28,
+   "tools": [
+    "get_spec_rule"
+   ]
+  },
+  {
+   "turn": 19,
+   "prompt_tokens": 4662,
+   "completion_tokens": 120,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 20,
+   "prompt_tokens": 4835,
+   "completion_tokens": 3,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "get_spec_rule": 5,
+  "get_admiral_signature": 3,
+  "list_input_columns": 1,
+  "run_step": 10
+ },
+ "tool_result_bytes": 4014,
+ "patient_data_bytes": 0,
+ "n_tools": 6,
+ "tool_definition_tokens_est": 515,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "TRTSDT",
+   "AGEGR1",
+   "SAFFL",
+   "EFFFL"
+  ],
+  "rates": {
+   "TRTSDT": 1,
+   "AGEGR1": 1,
+   "SAFFL": 1,
+   "EFFFL": 1,
+   "DISCONFL": 0.5669
+  }
+ },
+ "wall_seconds": 98.4,
+ "n_turns": 20,
+ "prompt_tokens_total": 56548,
+ "completion_tokens_total": 1987,
+ "max_context_tokens": 4835
+}

@@ -14,7 +14,7 @@ from knowledge.ct_lookup import variable_ct
 from specs.lint import REF_RE, source_columns
 from specs.sap import sap_sections
 from r_layer.rscript import xpt_columns
-from study import DATASETS
+from study import ADAM_PREFIX, DATASETS
 from config import BASE_DIR, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, GUARDRAIL_LOG, MAX_TOKENS, SDTM_SOURCE
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
@@ -120,12 +120,12 @@ def sap_excerpts(adam_class: str) -> str:
 SPEC_ROUNDS = 3
 
 
-def ask(prompt: str) -> str:
+def ask(prompt: str) -> llm.Answer:
     # DiffusionGemma truncates/hallucinates var names — never use it for spec-gen
     answer = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL, timeout=300.0)
     if answer.truncated:
         raise RuntimeError(f"spec truncated at max_tokens={MAX_TOKENS}; not cached")
-    return answer.text
+    return answer
 
 
 def bad_references(dataset: str, spec: list[dict], domains: dict) -> list[str]:
@@ -163,13 +163,13 @@ def propose(dataset: str) -> Path:
                                 ig_conventions=IG_CONVENTIONS["COMMON"] + "\n" + IG_CONVENTIONS.get(adam_class, ""),
                                 lot_entries=json.dumps(relevant, indent=1),
                                 sdtm_columns=sdtm_columns())
-    domains = source_columns(SDTM_SOURCE, "data/adam")
+    domains = source_columns(SDTM_SOURCE, ADAM_PREFIX)
     # a citation must point at a dataset this one actually reads, not just anything in the study
     inputs = {Path(path).stem.upper() for _, path in DATASETS[dataset].inputs} if dataset in DATASETS else set()
     domains = {d: cols for d, cols in domains.items() if d in inputs} if inputs else domains
     feedback = ""
     for rnd in range(1, SPEC_ROUNDS + 1):
-        spec = json.loads(ask(prompt + feedback).strip().replace("```json", "").replace("```", ""))
+        spec = json.loads(ask(prompt + feedback).json_text)
         issues = bad_references(dataset, spec, domains)
         log_spec_event(dataset, rnd, issues)
         if not issues:

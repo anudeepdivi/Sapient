@@ -15,6 +15,7 @@ Command line: scripts/lint_spec.py
 import re
 
 from config import BASE_DIR
+from study import ADAM_PREFIX
 from knowledge.adam_registry import resolve_class
 from r_layer.rscript import xpt_columns
 from specs.metacore_loader import get_spec_rules
@@ -55,7 +56,7 @@ def lint(dataset: str, sdtm_dir: str) -> list[dict]:
 
     spec_vars = {r["variable"].upper() for r in rules}
     derivations = {r["variable"].upper(): str(r.get("derivation") or "") for r in rules}
-    domains = source_columns(sdtm_dir, "data/adam")
+    domains = source_columns(sdtm_dir, ADAM_PREFIX)
     klass = resolve_class(dataset, spec_vars)
     findings, seen = [], set()
 

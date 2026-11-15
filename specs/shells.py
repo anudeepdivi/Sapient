@@ -8,12 +8,11 @@ Command line: scripts/gen_shells.py
 """
 import json
 import re
-import subprocess
 from pathlib import Path
 
 import llm
 from config import BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL
-from specs.sap import SAP_FILE, sap_sections
+from specs.sap import layout_text, sap_sections
 
 OUT_DIR = BASE_DIR / "data/mockshells"
 LIST_RE = re.compile(r"(?m)^\s*\d+\.\s+(.+?)\(\s*Template\s+(\d+)\s*\)", re.S)
@@ -34,8 +33,7 @@ TABLE: {title}
 
 def table_titles() -> dict[int, str]:
     """Template number -> first table title that uses it, from SAP §13.1.1."""
-    text = subprocess.run(["pdftotext", "-layout", str(SAP_FILE), "-"],
-                          capture_output=True, text=True).stdout
+    text = layout_text()
     start = text.rfind("13.1.1.")  # the body list, not the table-of-contents entry
     block = text[start:text.find("13.1.2.", start)]
     titles = {}
@@ -55,10 +53,11 @@ def generate(arm: str) -> Path:
     shells = []
     for num, title in sorted(table_titles().items()):
         prompt = SHELL_PROMPT.format(title=title, sap_block=context)
-        content = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL,
-                               timeout=300.0).text
+        answer = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL,
+                              timeout=300.0)
+        content = answer.text
         try:
-            shell = json.loads(content.strip().replace("```json", "").replace("```", ""))
+            shell = json.loads(answer.json_text)
         except json.JSONDecodeError:
             shell = {"error": "unparseable", "raw": content[:500]}
         shells.append({"template": num, **shell})

@@ -10,7 +10,6 @@ Usage:
 """
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -18,7 +17,7 @@ import fitz
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import BASE_DIR
-from specs.sap import SAP_FILE
+from specs.sap import SAP_FILE, layout_text
 
 REF_FILE = BASE_DIR / "data/reference/pilot_shells.json"
 
@@ -85,8 +84,7 @@ def build_reference() -> list[dict]:
     shells, last = [], 0
     for n in range(1, fitz.open(SAP_FILE).page_count + 1):
         # -layout keeps the stub column and cells apart; fitz's reading order does not
-        text = subprocess.run(["pdftotext", "-f", str(n), "-l", str(n), "-layout", str(SAP_FILE), "-"],
-                              capture_output=True, text=True).stdout
+        text = layout_text(n)
         shell = parse_page(text)
         if shell and shell["template"] == last + 1:  # §13.2 runs 1..24; later appendices restart
             shells.append(shell)

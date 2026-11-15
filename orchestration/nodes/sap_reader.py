@@ -54,8 +54,8 @@ Return as valid JSON only. No explanation.
 SAP TEXT:
 {combined}
 """
-    content = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True).text
-    text = content.strip().replace("```json", "").replace("```", "")
+    answer = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True)
+    text = answer.json_text
     try:
         return json.loads(text)
     except json.JSONDecodeError:

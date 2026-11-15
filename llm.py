@@ -22,6 +22,11 @@ class Answer(NamedTuple):
     text: str
     truncated: bool = False  # the model stopped at max_tokens
 
+    @property
+    def json_text(self) -> str:
+        """The text with the markdown fence a model wraps JSON in removed, ready for json.loads."""
+        return self.text.strip().replace("```json", "").replace("```", "")
+
 
 def client(timeout: float = 180.0) -> OpenAI:
     if not NVIDIA_API_KEY:

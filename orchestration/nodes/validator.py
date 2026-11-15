@@ -56,13 +56,14 @@ def run(state: SapientState) -> SapientState:
 
         lot_entry = lot_map.get(name, {})
         prompt = VALIDATOR_PROMPT.format(lot_entry=json.dumps(lot_entry, indent=2), program=code)
-        content = complete(prompt, REASONING_MODEL, timeout=60.0, cache=False).text
+        answer = complete(prompt, REASONING_MODEL, timeout=60.0, cache=False)
+        content = answer.text
         if not content:
             result = {"status": "fail", "stage": "llm_validator", "issues": ["Validator: empty response from LLM"], "severity": "error"}
             validation_results[name] = result
             needs_regeneration.append(name)
             continue
-        raw = content.strip().replace("```json", "").replace("```", "")
+        raw = answer.json_text
         try:
             result = json.loads(raw)
         except json.JSONDecodeError:

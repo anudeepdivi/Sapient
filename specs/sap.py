@@ -1,5 +1,6 @@
 """Read the study SAP: its numbered sections, with the table of contents skipped."""
 import re
+import subprocess
 from pathlib import Path
 
 import fitz
@@ -36,3 +37,11 @@ def sap_sections(path: Path = SAP_FILE) -> list[tuple[str, str, str]]:
             if sections and not (sections[-1][2] == [] and line.strip() == sections[-1][1]):
                 sections[-1][2].append(line)
     return [(n, t, " ".join(" ".join(b).split())) for n, t, b in sections]
+
+
+def layout_text(page: int | None = None, path: Path = SAP_FILE) -> str:
+    """The SAP as text with its column layout kept (pdftotext -layout), whole or one page.
+    Tables and numbered lists need this; fitz's reading order runs their cells together."""
+    pages = ["-f", str(page), "-l", str(page)] if page else []
+    return subprocess.run(["pdftotext", *pages, "-layout", str(path), "-"],
+                          capture_output=True, text=True).stdout

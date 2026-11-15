@@ -30,11 +30,12 @@ def run(state: SapientState) -> SapientState:
             lot_entry=json.dumps(entry, indent=2),
             metadata=metadata
         )
-        content = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True).text
+        answer = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True)
+        content = answer.text
         if not content:
             mockshells.append({"table_number": entry["table_number"], "error": "Empty response", "raw": ""})
             continue
-        raw = content.strip().replace("```json", "").replace("```", "")
+        raw = answer.json_text
         try:
             mockshell = json.loads(raw)
             mockshell["table_number"] = entry["table_number"]

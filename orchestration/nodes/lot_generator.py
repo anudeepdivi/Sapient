@@ -55,10 +55,11 @@ def run(state: SapientState) -> SapientState:
     print("lot_generator: starting")
     prompt = build_prompt(state)
     print(f"lot_generator: prompt built, length: {len(prompt)} chars")
-    content = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True).text
+    answer = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True)
+    content = answer.text
     if not content:
         return {**state, "errors": state.get("errors", []) + ["lot_generator: empty response from LLM"], "current_node": "lot_generator"}
-    raw = content.strip().replace("```json", "").replace("```", "")
+    raw = answer.json_text
     try:
         lot_entries = json.loads(raw)
     except json.JSONDecodeError:

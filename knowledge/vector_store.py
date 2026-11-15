@@ -37,13 +37,3 @@ def query_ig(query: str, doc_type: str, n_results: int = 5) -> list[str]:
         where={"doc_type": doc_type}
     )
     return results["documents"][0]
-
-
-def query_sap(query: str, study_id: str, n_results: int = 5) -> list[str]:
-    embedding = embedder.encode(query).tolist()
-    results = sap_collection.query(
-        query_embeddings=[embedding],
-        n_results=n_results,
-        where={"study_id": study_id}
-    )
-    return results["documents"][0]

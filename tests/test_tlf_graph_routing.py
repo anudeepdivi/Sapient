@@ -201,7 +201,7 @@ class GraphRetryTest(unittest.TestCase):
 
     def test_exhausted_retries_are_recorded_on_the_state(self):
         """The cap ends the loop with work outstanding. Without a record the run looks
-        finished, and test.py prints `completed` as the success signal."""
+        finished, and scripts/run_pipeline.py prints `completed` as the success signal."""
         final, _ = graph_run([{"ADSL": False}])
 
         self.assertEqual(final["regen_count"], 3)

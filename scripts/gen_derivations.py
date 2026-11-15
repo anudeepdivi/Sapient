@@ -22,7 +22,8 @@ from r_layer.deterministic_checks import fix_quoted_symbol_args, run_gate, strip
 from r_layer import rscript
 from r_layer.runner import run_adam_program
 from specs.metacore_loader import get_spec_rules
-from templates.adam_templates import ADAM_INPUTS, input_columns_block, render_footer, render_header
+from study import ADAM_PREFIX, DATASETS
+from templates.adam_templates import input_columns_block, render_footer, render_header
 
 # Spec-driven CT helper — decode->code map from the study spec codelists. Generic
 # across datasets; prepended to every spine via spine().
@@ -36,28 +37,6 @@ CT_MAP = '''ct_map <- function(dataset, variable) {
   setNames(suppressWarnings(as.numeric(codes$code)), codes$decode)
 }'''
 
-# Class-keyed structural spine (population/base + parent merge). Not dataset logic —
-# the same few lines serve every dataset of the class.
-SPINES = {
-    "ADSL": '''result <- dm |>
-  filter(ACTARMCD != "SCRNFAIL", ARMCD != "SCRNFAIL", !grepl("SCREEN", toupper(ARM)))''',
-    "ADAE": '''adsl_vars <- adsl |>
-  dplyr::transmute(STUDYID, USUBJID, SITEID, TRTSDT, TRTEDT, AGE, AGEGR1, AGEGR1N,
-                   RACE, RACEN, SEX, SAFFL, TRTA = TRT01A, TRTAN = TRT01AN)
-
-result <- sdtm |>
-  filter(!is.na(AETERM)) |>
-  derive_vars_merged(dataset_add = adsl_vars, by_vars = exprs(STUDYID, USUBJID))''',
-    "ADLBC": '''adsl_vars <- adsl |>
-  dplyr::transmute(STUDYID, USUBJID, SUBJID, TRTSDT, TRTEDT, AGE, AGEGR1, AGEGR1N,
-                   RACE, RACEN, SEX, SAFFL, COMP24FL, DSRAEFL,
-                   TRTP = TRT01P, TRTPN = TRT01PN, TRTA = TRT01A, TRTAN = TRT01AN)
-
-result <- sdtm |>
-  filter(LBCAT == "CHEMISTRY") |>
-  derive_vars_merged(dataset_add = adsl_vars, by_vars = exprs(STUDYID, USUBJID))''',
-}
-
 # A spec var already produced by the spine and sourced by a bare `DOMAIN.VAR`
 # reference is inherited (no codegen); anything with real derivation logic is not.
 # (a trailing note such as "(coded per MedDRA)" still counts as a bare reference)
@@ -65,7 +44,7 @@ INHERIT_RE = re.compile(r"^[A-Z][A-Z0-9]*\.[A-Z0-9_]+(\s*\(.*\))?$")
 
 
 def spine(dataset: str) -> str:
-    return CT_MAP + "\n\n" + SPINES[dataset]
+    return CT_MAP + "\n\n" + DATASETS[dataset].spine
 
 # Verified admiral idioms (shapes tested against the installed package) mined from
 # the RConsortium pharma-skills admiral skills (admiral, admiral-adsl, admiral-bds).
@@ -229,7 +208,7 @@ def r_str(x: str) -> str:
 def run_steps(dataset, snippets, spec_order, scratch, checks=None):
     checks = checks or {}
     order = topo_order(snippets, spec_order)
-    input_names = ", ".join(r_str(v) for v, _ in ADAM_INPUTS[dataset])
+    input_names = ", ".join(r_str(v) for v, _ in DATASETS[dataset].inputs)
     lines = [render_header(dataset), "", spine(dataset), "",
              f".input_names <- c({input_names})", CHECK_R,
              ".status <- list()",
@@ -282,7 +261,7 @@ def spine_columns(dataset: str, scratch) -> set[str]:
 def main(dataset: str):
     scratch = BASE_DIR / "cache_store"
     scratch.mkdir(exist_ok=True)
-    available = {Path(p).stem.upper() for _, p in ADAM_INPUTS[dataset]} | {dataset.upper()}
+    available = {Path(p).stem.upper() for _, p in DATASETS[dataset].inputs} | {dataset.upper()}
     rules = get_spec_rules(dataset)
     spine_cols = spine_columns(dataset, scratch)
 
@@ -355,8 +334,7 @@ def main(dataset: str):
     out = BASE_DIR / "data" / "adam" / f"{dataset}_pervar.R"
     out.write_text(program)
     (BASE_DIR / "data" / "adam_experiment").mkdir(exist_ok=True)
-    parents = {Path(path).stem: BASE_DIR / path for _, path in ADAM_INPUTS[dataset]
-               if path.startswith("data/adam/")}
+    parents = {name: BASE_DIR / ADAM_PREFIX / f"{name}.xpt" for name in DATASETS[dataset].parents}
     r = run_adam_program(dataset, program, adam_dir=BASE_DIR / "data" / "adam_experiment",
                          parent_inputs=parents, timeout=600)
     built = r["success"]

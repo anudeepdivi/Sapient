@@ -23,7 +23,7 @@ import gen_derivations
 import gen_shells
 import gen_spec
 import llm
-from templates.adam_templates import ADAM_INPUTS
+from study import DATASETS
 
 counts = {"hit": 0, "miss": 0}
 
@@ -86,7 +86,7 @@ def main(datasets):
     print(f"{'step':<8} {'target':<7} {'prompts':>7} {'misses':>6}")
     total = {"hit": 0, "miss": 0}
     for step, target, run in jobs:
-        if step != "shells" and target not in ADAM_INPUTS:
+        if step != "shells" and target not in DATASETS:
             print(f"{step:<8} {target:<7} {'-':>7} {'-':>6}  not set up in the pipeline")
             continue
         counts.update(hit=0, miss=0)

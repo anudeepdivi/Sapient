@@ -22,7 +22,7 @@ from knowledge.adamig_standard import standard_block
 from knowledge.ct_lookup import variable_ct
 from lint_spec import REF_RE, source_columns
 from r_layer.rscript import xpt_columns
-from templates.adam_templates import ADAM_INPUTS
+from study import DATASETS
 from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, GUARDRAIL_LOG, MAX_TOKENS, SAP_DIR, SDTM_SOURCE
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
@@ -203,7 +203,7 @@ def propose(dataset: str) -> Path:
                                 sdtm_columns=sdtm_columns())
     domains = source_columns(SDTM_SOURCE, "data/adam")
     # a citation must point at a dataset this one actually reads, not just anything in the study
-    inputs = {Path(path).stem.upper() for _, path in ADAM_INPUTS.get(dataset, [])}
+    inputs = {Path(path).stem.upper() for _, path in DATASETS[dataset].inputs} if dataset in DATASETS else set()
     domains = {d: cols for d, cols in domains.items() if d in inputs} if inputs else domains
     feedback = ""
     for rnd in range(1, SPEC_ROUNDS + 1):

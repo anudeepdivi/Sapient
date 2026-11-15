@@ -5,7 +5,7 @@ from llm import complete
 from orchestration.state import SapientState
 from templates.tlf_templates import TLF_SKELETON
 from r_layer.deterministic_checks import strip_markdown_fences
-from templates.adam_templates import BUILDABLE
+from study import DATASETS
 from knowledge.signatures import signatures_block
 from r_layer.rscript import RError, xpt_columns
 from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, BASE_DIR
@@ -153,8 +153,8 @@ def run(state: SapientState) -> SapientState:
             # Buildable datasets can still clear a later round (gate, execution or
             # metacore failure); a dataset with no input mapping and no derivation can
             # never be produced, so it blocks terminally rather than retrying forever.
-            retryable = [d for d in missing if d.upper() in BUILDABLE]
-            terminal = [d for d in missing if d.upper() not in BUILDABLE]
+            retryable = [d for d in missing if d.upper() in DATASETS]
+            terminal = [d for d in missing if d.upper() not in DATASETS]
             reasons = []
             # A table moves pending -> blocked between rounds, so the reason that no
             # longer applies must be cleared or the state keeps claiming a dataset is

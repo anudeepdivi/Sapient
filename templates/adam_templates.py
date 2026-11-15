@@ -1,49 +1,13 @@
 from pathlib import Path
 
-from config import BASE_DIR, SDTM_SOURCE
-from r_layer.rscript import code, xpt_columns
-
-ADAM_SKELETON = """
-library(admiral)
-library(metacore)
-library(xportr)
-library(tidyverse)
-library(haven)
-
-# Load spec
-mc <- metacore::load_metacore(Sys.getenv("SAPIENT_SPEC_RDS", unset = "specs/metacore_spec.rds"))
-# Load SDTM
-sdtm <- haven::read_xpt("data/sdtm/{dataset}.xpt")
-
-# --- Derivations go here ---
-
-# Metacore compliance check
-metatools::check_variables(dataset, mc)
-# Export
-xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt")
-"""
-
-# Known SDTM/ADaM inputs per ADaM dataset: (variable_name, file_path).
-# Paths are real, case-correct locations, not LLM-authored — this is what
-# makes wrong-case/wrong-directory filename bugs impossible by construction.
-# Only datasets listed here get the deterministic header/footer treatment;
-# any other dataset falls back to the full LLM-authored ADAM_SKELETON.
-ADAM_INPUTS = {
-    "ADSL": [("dm", f"{SDTM_SOURCE}/DM.xpt"), ("ex", f"{SDTM_SOURCE}/EX.xpt"), ("ds", f"{SDTM_SOURCE}/DS.xpt"),
-             ("vs", f"{SDTM_SOURCE}/VS.xpt"), ("mh", f"{SDTM_SOURCE}/MH.xpt"), ("sv", f"{SDTM_SOURCE}/SV.xpt"),
-             # QS/SC come from the CDISC pilot SDTM (pharmaversesdtm has no pilot QS/SC);
-             # needed for EFFFL/MMSETOT (QS) and EDUCLVL (SC)
-             ("qs", f"{SDTM_SOURCE}/QS.xpt"), ("sc", f"{SDTM_SOURCE}/SC.xpt")],
-    "ADAE": [("sdtm", f"{SDTM_SOURCE}/AE.xpt"), ("adsl", "data/adam/ADSL.xpt")],
-    "ADLBC": [("sdtm", f"{SDTM_SOURCE}/LB.xpt"), ("adsl", "data/adam/ADSL.xpt")],
-}
-
+from config import BASE_DIR
+from r_layer.rscript import xpt_columns
+from study import ADAM_PREFIX, DATASETS
 
 def render_header(dataset: str) -> str:
-    inputs = ADAM_INPUTS[dataset]
     load_lines = []
-    for var, path in inputs:
-        if path.startswith("data/adam/"):
+    for var, path in DATASETS[dataset].inputs:
+        if path.startswith(ADAM_PREFIX):
             source = f'file.path(Sys.getenv("SAPIENT_ADAM_INPUT_DIR", unset = Sys.getenv("SAPIENT_ADAM_DIR", unset = "data/adam")), "{Path(path).name}")'
         else:
             source = f'"{path}"'
@@ -62,45 +26,19 @@ def render_header(dataset: str) -> str:
     )
 
 
-# Hand-written derivation bodies (hybrid plan): datasets listed here skip the
-# LLM entirely — the body is spliced between the deterministic header/footer.
-DETERMINISTIC_DERIVATIONS = {
-    "ADSL": Path(__file__).parent / "derivations" / "ADSL.R",
-    "ADAE": Path(__file__).parent / "derivations" / "ADAE.R",
-}
-
-# Datasets the generator can actually produce: an input mapping or a hand-written
-# derivation. Mirrors the `supported` set in orchestration/nodes/adam_generator.py.
-BUILDABLE = set(ADAM_INPUTS) | set(DETERMINISTIC_DERIVATIONS)
-
 _input_columns_cache = {}
 
 
 def input_columns_block(dataset: str) -> str:
     if dataset not in _input_columns_cache:
-        existing = [path for _, path in ADAM_INPUTS[dataset] if (BASE_DIR / path).exists()]
+        inputs = DATASETS[dataset].inputs
+        existing = [path for _, path in inputs if (BASE_DIR / path).exists()]
         columns = xpt_columns(*existing)
         _input_columns_cache[dataset] = "\n".join(
             f"{var}: {', '.join(columns[Path(path).stem])}" if path in existing
             else f"{var}: (produced upstream at run time)"
-            for var, path in ADAM_INPUTS[dataset])
+            for var, path in inputs)
     return _input_columns_cache[dataset]
-
-
-ADMIRAL_TEMPLATE_FILES = {
-    "ADSL": "ad_adsl.R",
-    "ADAE": "ad_adae.R",
-}
-
-_admiral_template_cache = {}
-
-
-def get_admiral_template(dataset: str) -> str:
-    if dataset not in _admiral_template_cache:
-        _admiral_template_cache[dataset] = code(
-            f'cat(readLines(system.file("templates", "{ADMIRAL_TEMPLATE_FILES[dataset]}", package = "admiral")), sep = "\\n")',
-            timeout=30).stdout
-    return _admiral_template_cache[dataset]
 
 
 def render_footer(dataset: str) -> str:

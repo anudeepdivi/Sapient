@@ -5,7 +5,7 @@ from config import REASONING_MODEL, MAX_REGENERATIONS
 from r_layer.runner import run_all_adam_programs
 from r_layer.validator import validate_metacore, compare_reference, check_conformance
 from r_layer.deterministic_checks import run_gate
-from templates.adam_templates import ADAM_INPUTS
+from study import DATASETS
 
 VALIDATOR_PROMPT = """
 You are a clinical programming QC reviewer. Review this R program strictly.
@@ -40,7 +40,7 @@ def run(state: SapientState) -> SapientState:
     prev_results = state.get("validation_results") or {}
     prev_regen = set(state.get("needs_regeneration") or [])
     for name, code in all_programs.items():
-        if name in adam_programs and name not in ADAM_INPUTS:
+        if name in adam_programs and name not in DATASETS:
             validation_results[name] = {"status": "unsupported", "stage": "deterministic_gate",
                                         "issues": [f"{name} has no input mapping/spec — needs human review, excluded from pass rate"],
                                         "severity": "warning"}
@@ -81,7 +81,7 @@ def run(state: SapientState) -> SapientState:
     # Real pass-rate: R execution + metacore compliance, for ADaM programs that
     # cleared the deterministic gate. The LLM verdict is advisory — execution is
     # ground truth and overrules an LLM fail (the LLM false-positives on valid R).
-    supported_adam = {name: code for name, code in adam_programs.items() if name in ADAM_INPUTS}
+    supported_adam = {name: code for name, code in adam_programs.items() if name in DATASETS}
     gated_adam = {
         name: code for name, code in supported_adam.items()
         if not (validation_results.get(name, {}).get("status") == "fail"

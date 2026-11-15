@@ -3,6 +3,7 @@ from pathlib import Path
 from config import BASE_DIR
 from knowledge.signatures import ALLOWED_DERIVE_FUNCTIONS
 from r_layer import rscript
+from study import ADAM_PREFIX
 
 HARDCODED_LABEL_PATTERN = re.compile(
     r'"(placebo|active|drug\s*[a-z0-9]*|treatment\s*[a-z0-9]*|control|n\s*=\s*\d+)"',
@@ -66,7 +67,7 @@ def check_hardcoded_labels(code: str) -> list[str]:
 def check_input_files_exist(code: str) -> list[str]:
     issues = []
     for path in READ_XPT_PATTERN.findall(code):
-        if path.startswith("data/adam/"):
+        if path.startswith(ADAM_PREFIX):
             continue  # pipeline output, produced at run time
         full_path = BASE_DIR / path
         if not full_path.exists():

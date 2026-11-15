@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from config import SDTM_SOURCE
+from config import BASE_DIR, SDTM_SOURCE
+from r_layer.rscript import code, xpt_columns
 
 ADAM_SKELETON = """
 library(admiral)
@@ -76,21 +77,13 @@ _input_columns_cache = {}
 
 
 def input_columns_block(dataset: str) -> str:
-    import subprocess
-    from config import R_EXECUTABLE, BASE_DIR
     if dataset not in _input_columns_cache:
-        lines = []
-        for var, path in ADAM_INPUTS[dataset]:
-            full = BASE_DIR / path
-            if full.exists():
-                r = subprocess.run(
-                    [R_EXECUTABLE, "-e", f'cat(names(haven::read_xpt("{path}")), sep=", ")'],
-                    capture_output=True, text=True, timeout=60, cwd=BASE_DIR)
-                cols = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "?"
-                lines.append(f"{var}: {cols}")
-            else:
-                lines.append(f"{var}: (produced upstream at run time)")
-        _input_columns_cache[dataset] = "\n".join(lines)
+        existing = [path for _, path in ADAM_INPUTS[dataset] if (BASE_DIR / path).exists()]
+        columns = xpt_columns(*existing)
+        _input_columns_cache[dataset] = "\n".join(
+            f"{var}: {', '.join(columns[Path(path).stem])}" if path in existing
+            else f"{var}: (produced upstream at run time)"
+            for var, path in ADAM_INPUTS[dataset])
     return _input_columns_cache[dataset]
 
 
@@ -103,16 +96,10 @@ _admiral_template_cache = {}
 
 
 def get_admiral_template(dataset: str) -> str:
-    import subprocess
-    from config import R_EXECUTABLE
     if dataset not in _admiral_template_cache:
-        template_file = ADMIRAL_TEMPLATE_FILES[dataset]
-        result = subprocess.run(
-            [R_EXECUTABLE, "-e",
-             f'cat(readLines(system.file("templates", "{template_file}", package = "admiral")), sep = "\\n")'],
-            capture_output=True, text=True, timeout=30
-        )
-        _admiral_template_cache[dataset] = result.stdout
+        _admiral_template_cache[dataset] = code(
+            f'cat(readLines(system.file("templates", "{ADMIRAL_TEMPLATE_FILES[dataset]}", package = "admiral")), sep = "\\n")',
+            timeout=30).stdout
     return _admiral_template_cache[dataset]
 
 

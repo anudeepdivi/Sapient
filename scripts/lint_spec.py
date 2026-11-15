@@ -15,15 +15,15 @@ Usage: python scripts/lint_spec.py ADLBC [--sdtm data/sdtm]
 import argparse
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from config import R_EXECUTABLE, SDTM_SOURCE
+from config import SDTM_SOURCE
 from knowledge.adam_registry import resolve_class
+from r_layer.rscript import xpt_columns
 from specs.metacore_loader import get_spec_rules
 
 # DOMAIN.COLUMN reference inside a derivation ("LB.LBSTRESN", "ADSL.TRT01A")
@@ -49,22 +49,9 @@ def source_columns(*dirs: str) -> dict:
     """Real columns per domain/dataset, read from the actual .xpt files, each mapped to
     its storage type ("C" character / "N" numeric). Covers SDTM domains and any
     already-built parent ADaM, so ADSL.TRT01A is verifiable too."""
-    existing = [d for d in dirs if (BASE_DIR / d).is_dir()]
-    r = ('for (d in c(%s)) for (f in list.files(d, pattern="[.]xpt$", full.names=TRUE)) {'
-         ' x <- haven::read_xpt(f);'
-         ' cat(toupper(sub("[.]xpt$","",basename(f))), ":",'
-         ' paste0(names(x), "=", sapply(x, function(v) if (is.character(v)) "C" else "N"),'
-         ' collapse=","), "\\n", sep="") }'
-         ) % ",".join(f'"{d}"' for d in existing)
-    out = subprocess.run([R_EXECUTABLE, "-e", r], capture_output=True, text=True,
-                         timeout=300, cwd=BASE_DIR).stdout
-    cols = {}
-    for line in out.splitlines():
-        if ":" in line:
-            dom, names = line.split(":", 1)
-            cols[dom.strip()] = {c.split("=")[0].strip().upper(): c.split("=")[-1].strip()
-                                 for c in names.split(",") if "=" in c}
-    return cols
+    listing = xpt_columns(*[d for d in dirs if (BASE_DIR / d).is_dir()])
+    return {name.upper(): {col.upper(): kind for col, kind in columns.items()}
+            for name, columns in listing.items()}
 
 
 def lint(dataset: str, sdtm_dir: str) -> list[dict]:

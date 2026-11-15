@@ -278,13 +278,13 @@ class GraphStaleRebuildTest(unittest.TestCase):
     program must not survive as if it were still current."""
 
     def listing_fails_after_first_call(self):
-        """The column listing is the only R call that carries SAPIENT_ADAM_FILES, so this
+        """The column listing is the only R call that carries SAPIENT_XPT_SOURCES, so this
         fails the listing alone and leaves the XPT writers real."""
         real_run = subprocess.run
         seen = {"n": 0}
 
         def runner(cmd, *args, **kwargs):
-            if isinstance(kwargs.get("env"), dict) and "SAPIENT_ADAM_FILES" in kwargs["env"]:
+            if isinstance(kwargs.get("env"), dict) and "SAPIENT_XPT_SOURCES" in kwargs["env"]:
                 seen["n"] += 1
                 if seen["n"] > 1:
                     return subprocess.CompletedProcess(cmd, 1, "", "Error: cannot open XPT")

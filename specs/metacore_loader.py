@@ -1,17 +1,12 @@
 import json
-import subprocess
-from config import R_EXECUTABLE, BASE_DIR
 
-R_SCRIPTS_DIR = BASE_DIR / "r_layer" / "scripts"
+from r_layer import rscript
 
 _spec_rules_cache = {}
 
 
 def get_spec_variables(dataset_name: str) -> list[str]:
-    result = subprocess.run(
-        [R_EXECUTABLE, str(R_SCRIPTS_DIR / "list_spec_variables.R"), dataset_name],
-        capture_output=True, text=True, timeout=30
-    )
+    result = rscript.script("list_spec_variables.R", dataset_name, timeout=30)
     return [v for v in result.stdout.splitlines() if v]
 
 
@@ -20,10 +15,7 @@ def get_spec_rules(dataset_name: str) -> list[dict]:
     Sourced from the metacore spec (built from Define-XML) — this is the ground truth
     for the format/type/controlled-terminology error class."""
     if dataset_name not in _spec_rules_cache:
-        result = subprocess.run(
-            [R_EXECUTABLE, str(R_SCRIPTS_DIR / "extract_spec_rules.R"), dataset_name],
-            capture_output=True, text=True, timeout=60
-        )
+        result = rscript.script("extract_spec_rules.R", dataset_name)
         try:
             _spec_rules_cache[dataset_name] = json.loads(result.stdout.strip())
         except json.JSONDecodeError:

@@ -1,7 +1,7 @@
 import json
 from llm import complete
 from orchestration.state import SapientState
-from knowledge.admiral_functions import signatures_block
+from knowledge.signatures import signatures_block
 from r_layer.deterministic_checks import fix_quoted_symbol_args, strip_markdown_fences
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
@@ -188,7 +188,7 @@ def run(state: SapientState) -> SapientState:
                 dataset=dataset,
                 header=header,
                 spec_variables=spec_variables,
-                signatures=signatures_block(),
+                signatures=signatures_block("admiral"),
                 input_columns=input_columns_block(dataset),
                 lot_entry=json.dumps(relevant_entries[0], indent=2),
                 ig_context=ig_text

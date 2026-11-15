@@ -21,6 +21,7 @@ from knowledge.adam_registry import classify
 from knowledge.adamig_standard import standard_block
 from knowledge.ct_lookup import variable_ct
 from lint_spec import REF_RE, source_columns
+from r_layer.rscript import xpt_columns
 from templates.adam_templates import ADAM_INPUTS
 from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, GUARDRAIL_LOG, MAX_TOKENS, SAP_DIR, SDTM_SOURCE
 
@@ -119,11 +120,7 @@ AVAILABLE SDTM COLUMNS:
 
 
 def sdtm_columns() -> str:
-    import subprocess
-    from config import R_EXECUTABLE
-    r_code = 'for (f in list.files("data/sdtm", full.names=TRUE)) cat(sub(".xpt","",basename(f)), ": ", paste(names(haven::read_xpt(f)), collapse=", "), "\\n", sep="")'
-    result = subprocess.run([R_EXECUTABLE, "-e", r_code], capture_output=True, text=True, timeout=120, cwd=BASE_DIR)
-    return result.stdout.strip()
+    return "\n".join(f"{name}: {', '.join(columns)}" for name, columns in xpt_columns(SDTM_SOURCE).items())
 
 
 def sap_sections(path: Path = SAP_FILE) -> list[tuple[str, str, str]]:

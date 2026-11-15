@@ -3,11 +3,10 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from config import R_EXECUTABLE, BASE_DIR
+from config import BASE_DIR
+from r_layer import rscript
 from r_layer.validator import validate_metacore
 from templates.adam_templates import ADAM_INPUTS
-
-R_SCRIPTS_DIR = BASE_DIR / "r_layer" / "scripts"
 
 
 def _parents(dataset_name):
@@ -40,10 +39,8 @@ def run_adam_program(dataset_name: str, program_code: str, adam_dir=None,
             outputs.mkdir()
             for name in _parents(dataset_name):
                 shutil.copyfile(parents[name], inputs / f"{name}.xpt")
-            execution = subprocess.run(
-                [R_EXECUTABLE, str(R_SCRIPTS_DIR / "run_adam.R"), str(program_path),
-                 dataset_name, str(outputs), str(inputs)],
-                capture_output=True, text=True, timeout=timeout, cwd=BASE_DIR)
+            execution = rscript.script("run_adam.R", program_path, dataset_name, outputs, inputs,
+                                       timeout=timeout)
             result.update(stdout=execution.stdout, stderr=execution.stderr,
                           returncode=execution.returncode)
             if execution.returncode == 0:

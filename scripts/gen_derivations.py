@@ -10,16 +10,16 @@ Outputs: data/adam/{ds}_pervar.R, data/adam_experiment/{ds}.xpt, coverage report
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import llm
-from config import BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, GUARDRAIL_LOG, R_EXECUTABLE
+from config import BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, GUARDRAIL_LOG
 from knowledge.adam_registry import classify
-from knowledge.admiral_functions import signatures_block
+from knowledge.signatures import signatures_block
 from r_layer.deterministic_checks import fix_quoted_symbol_args, run_gate, strip_markdown_fences
+from r_layer import rscript
 from r_layer.runner import run_adam_program
 from specs.metacore_loader import get_spec_rules
 from templates.adam_templates import ADAM_INPUTS, input_columns_block, render_footer, render_header
@@ -126,7 +126,7 @@ def gen_step(dataset, var, meta, derivation, pending, feedback):
     prompt = STEP_PROMPT.format(
         dataset=dataset, var=var, meta=meta, derivation=derivation,
         pending=", ".join(pending), input_columns=input_columns_block(dataset),
-        signatures=signatures_block(),
+        signatures=signatures_block("admiral"),
         conventions=ADMIRAL_CONVENTIONS + CLASS_CONVENTIONS.get(classify(dataset) or "", ""))
     if feedback:
         prompt += f"\n\nYOUR PREVIOUS ATTEMPT FAILED — fix this exact problem:\n{feedback}\nPrevious attempt:\n{feedback_code.get(var, '')}"
@@ -251,8 +251,7 @@ def run_steps(dataset, snippets, spec_order, scratch, checks=None):
     lines.append("cat('\\n===STEP_STATUS===\\n'); cat(jsonlite::toJSON(.status, auto_unbox = TRUE))")
     driver = scratch / f"steps_{dataset}.R"
     driver.write_text("\n".join(lines))
-    r = subprocess.run([R_EXECUTABLE, str(driver)], capture_output=True, text=True,
-                       timeout=600, cwd=BASE_DIR)
+    r = rscript.run(driver, timeout=600)
     marker = "===STEP_STATUS==="
     if marker not in r.stdout:
         raise RuntimeError(f"step driver crashed:\n{r.stderr[-2000:]}")
@@ -274,8 +273,7 @@ def spine_columns(dataset: str, scratch) -> set[str]:
     probe = "\n".join([render_header(dataset), spine(dataset), "cat(names(result))"])
     f = scratch / f"probe_{dataset}.R"
     f.write_text(probe)
-    out = subprocess.run([R_EXECUTABLE, str(f)], capture_output=True, text=True,
-                         timeout=120, cwd=BASE_DIR)
+    out = rscript.run(f, timeout=120)
     if not out.stdout.split():
         raise RuntimeError(f"spine probe produced no columns:\n{out.stderr[-2000:]}")
     return set(out.stdout.split())
@@ -374,9 +372,7 @@ def main(dataset: str):
     if not built:
         print(r["stdout"][-500:], r["stderr"][-1500:], r.get("metacore"), r.get("error"))
     if built:
-        cmp = subprocess.run([R_EXECUTABLE, str(BASE_DIR / "r_layer" / "scripts" / "compare_reference.R"),
-                              dataset, "data/adam_experiment"], capture_output=True, text=True,
-                             timeout=300, cwd=BASE_DIR)
+        cmp = rscript.script("compare_reference.R", dataset, "data/adam_experiment", timeout=300)
         print(cmp.stdout)
 
 

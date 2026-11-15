@@ -6,7 +6,8 @@ from orchestration.state import SapientState
 from templates.tlf_templates import TLF_SKELETON
 from r_layer.deterministic_checks import strip_markdown_fences
 from templates.adam_templates import BUILDABLE
-from knowledge.tern_functions import signatures_block
+from knowledge.signatures import signatures_block
+from r_layer.rscript import RError, xpt_columns
 from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, BASE_DIR
 
 
@@ -67,21 +68,14 @@ def adam_columns_block(accepted_adam: dict) -> str:
     paths = [accepted_adam[name] for name in sorted(accepted_adam)]
     key = _adam_files_key(paths)
     if _adam_columns_cache is None or _adam_columns_cache_key != key:
-        import os
-        import subprocess
-        from config import R_EXECUTABLE
-        r_code = ('files <- strsplit(Sys.getenv("SAPIENT_ADAM_FILES"), "\\n", fixed=TRUE)[[1]]\n'
-                  'for (f in files) if (file.exists(f)) cat(sub(".xpt","",basename(f)), ": ", '
-                  'paste(names(haven::read_xpt(f)), collapse=", "), "\\n", sep="")')
-        env = {**os.environ, "SAPIENT_ADAM_FILES": "\n".join(paths)}
-        result = subprocess.run([R_EXECUTABLE, "-e", r_code], capture_output=True, text=True,
-                                timeout=120, cwd=BASE_DIR, env=env)
-        if result.returncode != 0:
+        try:
+            columns = xpt_columns(*[p for p in paths if Path(p).exists()], timeout=120)
+        except RError as error:
             # Never cache a failed listing: an empty block would tell the model that no
             # ADaM columns exist, and it would invent them.
-            return (f"{LISTING_UNAVAILABLE} (R exit {result.returncode}): "
-                    f"{result.stderr.strip()[:500]}")
-        _adam_columns_cache = result.stdout.strip()
+            return (f"{LISTING_UNAVAILABLE} (R exit {error.returncode}): "
+                    f"{error.stderr.strip()[:500]}")
+        _adam_columns_cache = "\n".join(f"{name}: {', '.join(cols)}" for name, cols in columns.items())
         _adam_columns_cache_key = key
     return _adam_columns_cache
 
@@ -195,7 +189,7 @@ def run(state: SapientState) -> SapientState:
         mockshell = mockshell_map.get(table_number, {})
         prompt = TLF_PROMPT.format(
             table_number=table_number,
-            signatures=signatures_block(),
+            signatures=signatures_block("tern"),
             adam_columns=columns_block,
             lot_entry=json.dumps(entry, indent=2),
             mockshell=json.dumps(mockshell, indent=2),

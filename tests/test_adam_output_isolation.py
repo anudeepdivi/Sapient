@@ -173,9 +173,9 @@ class TestAdamOutputIsolation(unittest.TestCase):
 
         broken = subprocess.CompletedProcess([], 1, '', 'Rscript: could not open')
         healthy = subprocess.CompletedProcess([], 0, 'haven\ndplyr\nrtables\n', '')
-        with patch('r_layer.deterministic_checks.subprocess.run', return_value=broken):
+        with patch('subprocess.run', return_value=broken):
             self.assertEqual(deterministic_checks._installed_packages(), set())
-        with patch('r_layer.deterministic_checks.subprocess.run', return_value=healthy):
+        with patch('subprocess.run', return_value=healthy):
             self.assertIn('haven', deterministic_checks._installed_packages())
             self.assertEqual(deterministic_checks.check_package_allowlist('library(haven)'), [])
 

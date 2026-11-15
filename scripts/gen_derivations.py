@@ -7,7 +7,6 @@ never pass are omitted and flagged — the program still builds from the passing
 Usage: python scripts/gen_derivations.py ADSL
 Outputs: data/adam/{ds}_pervar.R, data/adam_experiment/{ds}.xpt, coverage report.
 """
-import hashlib
 import json
 import os
 import re
@@ -16,19 +15,14 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from openai import OpenAI
-from cache.prompt_cache import get_cached, set_cached
-from config import (BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, MAX_TOKENS,
-                    NO_THINKING, NVIDIA_API_KEY, NVIDIA_BASE_URL, R_EXECUTABLE, TEMPERATURE)
+import llm
+from config import BASE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, GUARDRAIL_LOG, R_EXECUTABLE
 from knowledge.adam_registry import classify
 from knowledge.admiral_functions import signatures_block
-from orchestration.llm_retry import create_with_retry
 from r_layer.deterministic_checks import fix_quoted_symbol_args, run_gate, strip_markdown_fences
 from r_layer.runner import run_adam_program
 from specs.metacore_loader import get_spec_rules
 from templates.adam_templates import ADAM_INPUTS, input_columns_block, render_footer, render_header
-
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
 # Spec-driven CT helper — decode->code map from the study spec codelists. Generic
 # across datasets; prepended to every spine via spine().
@@ -136,18 +130,9 @@ def gen_step(dataset, var, meta, derivation, pending, feedback):
         conventions=ADMIRAL_CONVENTIONS + CLASS_CONVENTIONS.get(classify(dataset) or "", ""))
     if feedback:
         prompt += f"\n\nYOUR PREVIOUS ATTEMPT FAILED — fix this exact problem:\n{feedback}\nPrevious attempt:\n{feedback_code.get(var, '')}"
-    key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()
-    cached = get_cached(key)
-    if cached:
-        return cached
-    resp = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
-                             model=CODEGEN_MODEL,
-                             messages=[{"role": "user", "content": prompt}],
-                             temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
-                             extra_body=NO_THINKING)  # reasoning-on writes its thinking into content
-    code = fix_quoted_symbol_args(strip_markdown_fences(resp.choices[0].message.content.strip()))
-    set_cached(key, code)
-    return code
+    # reasoning-on writes its thinking into content
+    answer = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL)
+    return fix_quoted_symbol_args(strip_markdown_fences(answer.text.strip()))
 
 
 def snippet_gate(code: str) -> str | None:
@@ -278,9 +263,6 @@ feedback_code: dict[str, str] = {}
 
 # One line per guardrail outcome, so a run report can count what each guardrail caught
 # (scripts/run_report.py). Tagged like llm_usage.jsonl via SAPIENT_RUN_TAG.
-GUARDRAIL_LOG = BASE_DIR / "cache_store" / "guardrail_events.jsonl"
-
-
 def log_event(dataset, rnd, var, guardrail, outcome, detail=""):
     with GUARDRAIL_LOG.open("a") as f:
         f.write(json.dumps({"tag": os.getenv("SAPIENT_RUN_TAG", ""), "dataset": dataset,

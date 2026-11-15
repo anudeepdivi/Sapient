@@ -1,13 +1,11 @@
 import json
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS, MAX_REGENERATIONS
+from config import REASONING_MODEL, MAX_REGENERATIONS
 from r_layer.runner import run_all_adam_programs
 from r_layer.validator import validate_metacore, compare_reference, check_conformance
 from r_layer.deterministic_checks import run_gate
 from templates.adam_templates import ADAM_INPUTS
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
 
 VALIDATOR_PROMPT = """
 You are a clinical programming QC reviewer. Review this R program strictly.
@@ -58,13 +56,7 @@ def run(state: SapientState) -> SapientState:
 
         lot_entry = lot_map.get(name, {})
         prompt = VALIDATOR_PROMPT.format(lot_entry=json.dumps(lot_entry, indent=2), program=code)
-        response = create_with_retry(client,
-            model=REASONING_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS
-        )
-        content = response.choices[0].message.content
+        content = complete(prompt, REASONING_MODEL, timeout=60.0, cache=False).text
         if not content:
             result = {"status": "fail", "stage": "llm_validator", "issues": ["Validator: empty response from LLM"], "severity": "error"}
             validation_results[name] = result

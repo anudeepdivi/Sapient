@@ -6,7 +6,6 @@ Usage:
     python scripts/gen_spec.py ADSL --approve  # mark human-approved -> specs/approved/ADSL.json
     python scripts/eval_spec.py ADSL           # score approved/proposed spec vs Define.xml spec
 """
-import hashlib
 import json
 import os
 import re
@@ -17,15 +16,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 import fitz
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
-from cache.prompt_cache import get_cached, set_cached
+import llm
 from knowledge.adam_registry import classify
 from knowledge.adamig_standard import standard_block
 from knowledge.ct_lookup import variable_ct
 from lint_spec import REF_RE, source_columns
 from templates.adam_templates import ADAM_INPUTS
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS, NO_THINKING, SAP_DIR, SDTM_SOURCE
+from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, GUARDRAIL_LOG, MAX_TOKENS, SAP_DIR, SDTM_SOURCE
 
 PROPOSED_DIR = BASE_DIR / "specs/proposed"
 APPROVED_DIR = BASE_DIR / "specs/approved"
@@ -162,23 +159,14 @@ def sap_excerpts(adam_class: str) -> str:
 
 
 SPEC_ROUNDS = 3
-GUARDRAIL_LOG = BASE_DIR / "cache_store" / "guardrail_events.jsonl"
 
 
 def ask(prompt: str) -> str:
-    cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()
-    content = get_cached(cache_key)
-    if content is None:
-        client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=300.0, max_retries=0)
-        response = create_with_retry(client, model=CODEGEN_MODEL, fallback_model=CODEGEN_FALLBACK_MODEL,  # DiffusionGemma truncates/hallucinates var names — never use it for spec-gen
-                                     messages=[{"role": "user", "content": prompt}],
-                                     temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
-                                     extra_body=NO_THINKING)
-        if response.choices[0].finish_reason == "length":
-            raise RuntimeError(f"spec truncated at max_tokens={MAX_TOKENS}; not cached")
-        content = response.choices[0].message.content
-        set_cached(cache_key, content)
-    return content
+    # DiffusionGemma truncates/hallucinates var names — never use it for spec-gen
+    answer = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL, timeout=300.0)
+    if answer.truncated:
+        raise RuntimeError(f"spec truncated at max_tokens={MAX_TOKENS}; not cached")
+    return answer.text
 
 
 def bad_references(dataset: str, spec: list[dict], domains: dict) -> list[str]:

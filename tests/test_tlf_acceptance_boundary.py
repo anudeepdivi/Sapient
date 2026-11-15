@@ -37,6 +37,7 @@ for _name in _STUBBED:
         sys.modules[_name] = _stub
 
 from config import R_EXECUTABLE
+from llm import Answer
 from r_layer.runner import run_adam_program
 from orchestration.graph import should_regenerate
 from orchestration.nodes import adam_executor, tlf_generator, validator
@@ -81,19 +82,14 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
         self.calls = []
         tlf_generator._adam_columns_cache = None
         tlf_generator._adam_columns_cache_key = None
-        self.retry = patch("orchestration.nodes.tlf_generator.create_with_retry",
+        self.retry = patch("orchestration.nodes.tlf_generator.complete",
                            side_effect=self._fake_llm)
         self.retry.start()
         self.addCleanup(self.retry.stop)
-        for name, value in (("get_cached", None), ("set_cached", None)):
-            cached = patch(f"orchestration.nodes.tlf_generator.{name}", return_value=value)
-            cached.start()
-            self.addCleanup(cached.stop)
 
-    def _fake_llm(self, *args, **kwargs):
-        self.calls.append(kwargs["messages"][0]["content"])
-        message = types.SimpleNamespace(content="tbl <- basic_table()\n")
-        return types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+    def _fake_llm(self, prompt, *args, **kwargs):
+        self.calls.append(prompt)
+        return Answer("tbl <- basic_table()\n")
 
     def state(self, **overrides):
         base = {
@@ -198,9 +194,8 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
 
     # 6. run completion reflects skipped TLF work
     def test_completion_is_false_while_tlf_is_skipped(self):
-        message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
-        qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
-        with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+        qc = Answer('{"status": "pass", "severity": "none", "issues": []}')
+        with patch("orchestration.nodes.validator.complete", return_value=qc):
             blocked = validator.run(self.state(
                 adam_programs={}, tlf_skipped={"14.1.1": "ADaM not accepted in current run: ADSL"},
                 lot_entries=[self.entry()]))
@@ -266,9 +261,8 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
         blocked = tlf_generator.run(self.state(lot_entries=[entry], **{
             k: executed[k] for k in ("accepted_adam", "adam_execution", "needs_regeneration")}))
 
-        message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
-        qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
-        with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+        qc = Answer('{"status": "pass", "severity": "none", "issues": []}')
+        with patch("orchestration.nodes.validator.complete", return_value=qc):
             result = validator.run(blocked)
 
         self.assertFalse(result["completed"])
@@ -371,11 +365,10 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
 
     # 17. a recorded upstream failure means the run cannot be reported complete
     def test_recorded_pipeline_error_prevents_a_completed_run(self):
-        message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
-        qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
+        qc = Answer('{"status": "pass", "severity": "none", "issues": []}')
         failed_lot = ["lot_generator: failed to parse LLM response"]
 
-        with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+        with patch("orchestration.nodes.validator.complete", return_value=qc):
             blocked = validator.run(self.state(
                 adam_programs={}, lot_entries=[], tlf_skipped={}, errors=failed_lot))
             clean = validator.run(self.state(
@@ -389,9 +382,8 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
     def test_non_object_validator_json_is_recorded_instead_of_crashing(self):
         for content in ("[1, 2, 3]", "null"):
             with self.subTest(content=content):
-                message = types.SimpleNamespace(content=content)
-                qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
-                with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+                qc = Answer(content)
+                with patch("orchestration.nodes.validator.complete", return_value=qc):
                     result = validator.run(self.state(
                         adam_programs={}, lot_entries=[self.entry()],
                         tlf_programs={"14.1.1": "x <- 1"}))
@@ -418,9 +410,8 @@ class TlfAcceptanceBoundaryTest(unittest.TestCase):
         self.assertIn("haven", result["tlf_skipped"]["14.1.1"])
         self.assertEqual(self.calls, [])
 
-        message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
-        qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
-        with patch("orchestration.nodes.validator.create_with_retry", return_value=qc):
+        qc = Answer('{"status": "pass", "severity": "none", "issues": []}')
+        with patch("orchestration.nodes.validator.complete", return_value=qc):
             validated = validator.run(self.state(
                 adam_programs={}, lot_entries=[self.entry()],
                 tlf_skipped=result["tlf_skipped"], tlf_pending=result["tlf_pending"]))

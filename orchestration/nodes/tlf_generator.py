@@ -1,17 +1,14 @@
 import json
 import hashlib
 from pathlib import Path
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from cache.prompt_cache import get_cached, set_cached
 from templates.tlf_templates import TLF_SKELETON
 from r_layer.deterministic_checks import strip_markdown_fences
 from templates.adam_templates import BUILDABLE
 from knowledge.tern_functions import signatures_block
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS, BASE_DIR
+from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, BASE_DIR
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
 TLF_PROMPT = """
 You are an expert clinical programmer generating R code for TLF: {table_number}
@@ -205,20 +202,8 @@ def run(state: SapientState) -> SapientState:
             skeleton=TLF_SKELETON
         )
         prompt += failure_feedback(state, table_number)
-        cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()
-        cached = get_cached(cache_key)
-        if cached:
-            tlf_programs[table_number] = strip_markdown_fences(cached)
-        else:
-            response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
-                model=CODEGEN_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKENS
-            )
-            code = strip_markdown_fences(response.choices[0].message.content.strip())
-            tlf_programs[table_number] = code
-            set_cached(cache_key, code)
+        answer = complete(prompt, CODEGEN_MODEL, fallback=CODEGEN_FALLBACK_MODEL)
+        tlf_programs[table_number] = strip_markdown_fences(answer.text.strip())
         tlf_skipped.pop(table_number, None)
         tlf_pending.pop(table_number, None)
         tlf_blocked.pop(table_number, None)

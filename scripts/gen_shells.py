@@ -6,7 +6,6 @@ Inputs come from the SAP body only: titles from the §13.1.1 table list, never t
 
 Usage: python scripts/gen_shells.py title|sap   -> data/mockshells/<arm>.json
 """
-import hashlib
 import json
 import re
 import subprocess
@@ -17,12 +16,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 sys.path.insert(0, str(BASE_DIR / "scripts"))
 
-from openai import OpenAI
-from cache.prompt_cache import get_cached, set_cached
-from config import (CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, MAX_TOKENS, NO_THINKING,
-                    NVIDIA_API_KEY, NVIDIA_BASE_URL, TEMPERATURE)
+import llm
+from config import CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL
 from gen_spec import SAP_FILE, sap_sections
-from orchestration.llm_retry import create_with_retry
 
 OUT_DIR = BASE_DIR / "data/mockshells"
 LIST_RE = re.compile(r"(?m)^\s*\d+\.\s+(.+?)\(\s*Template\s+(\d+)\s*\)", re.S)
@@ -60,21 +56,12 @@ def sap_block() -> str:
 
 
 def generate(arm: str) -> Path:
-    client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=300.0, max_retries=0)
     context = sap_block() if arm == "sap" else ""
     shells = []
     for num, title in sorted(table_titles().items()):
         prompt = SHELL_PROMPT.format(title=title, sap_block=context)
-        key = hashlib.sha256(f"{CODEGEN_MODEL}\n{NO_THINKING}\n{prompt}".encode()).hexdigest()
-        content = get_cached(key)
-        if content is None:
-            resp = create_with_retry(client, model=CODEGEN_MODEL, fallback_model=CODEGEN_FALLBACK_MODEL,
-                                     messages=[{"role": "user", "content": prompt}],
-                                     temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
-                                     extra_body=NO_THINKING)
-            content = resp.choices[0].message.content
-            if resp.choices[0].finish_reason != "length":
-                set_cached(key, content)
+        content = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL,
+                               timeout=300.0).text
         try:
             shell = json.loads(content.strip().replace("```json", "").replace("```", ""))
         except json.JSONDecodeError:

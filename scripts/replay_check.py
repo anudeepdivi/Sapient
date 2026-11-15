@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import gen_derivations
 import gen_shells
 import gen_spec
+import llm
 from templates.adam_templates import ADAM_INPUTS
 
 counts = {"hit": 0, "miss": 0}
@@ -35,8 +36,8 @@ class Stop(Exception):
     pass
 
 
-def offline(module):
-    real_get = module.get_cached
+def offline():
+    real_get = llm.get_cached
 
     def get_cached(key):
         answer = real_get(key)
@@ -46,16 +47,15 @@ def offline(module):
     def no_call(*args, **kwargs):
         raise Miss
 
-    module.get_cached, module.create_with_retry = get_cached, no_call
-    module.set_cached = lambda *args, **kwargs: None
+    llm.get_cached, llm.create_with_retry = get_cached, no_call
+    llm.set_cached = lambda *args, **kwargs: None
 
 
 def stop(*args, **kwargs):
     raise Stop
 
 
-for module in (gen_derivations, gen_spec, gen_shells):
-    offline(module)
+offline()
 
 real_gen_step = gen_derivations.gen_step
 

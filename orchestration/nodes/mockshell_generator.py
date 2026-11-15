@@ -1,12 +1,8 @@
 import json
-import hashlib
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from cache.prompt_cache import get_cached, set_cached
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
+from config import REASONING_MODEL
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
 
 MOCKSHELL_PROMPT = """
 You are an expert clinical programmer. Generate a mockshell blueprint for this TLF.
@@ -34,19 +30,7 @@ def run(state: SapientState) -> SapientState:
             lot_entry=json.dumps(entry, indent=2),
             metadata=metadata
         )
-        cache_key = hashlib.sha256(prompt.encode()).hexdigest()
-        content = get_cached(cache_key)
-        if content is None:
-            response = create_with_retry(client,
-                model=REASONING_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKENS
-            )
-            print(f"mockshell_generator: response received for {entry['table_number']}")
-            content = response.choices[0].message.content
-            if content:
-                set_cached(cache_key, content)
+        content = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True).text
         if not content:
             mockshells.append({"table_number": entry["table_number"], "error": "Empty response", "raw": ""})
             continue

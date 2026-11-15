@@ -1,13 +1,14 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
-from config import CHROMA_DIR
-from config import HF_TOKEN
+from config import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL, HF_TOKEN
 import os
+if not HF_TOKEN:
+    raise EnvironmentError("HF_TOKEN is not set")
 os.environ["HF_TOKEN"] = HF_TOKEN
-embedder = SentenceTransformer("pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb")
+embedder = SentenceTransformer(EMBEDDING_MODEL)
 client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
-sap_collection = client.get_or_create_collection("sapient_sap_chunks")
+sap_collection = client.get_or_create_collection(COLLECTION_NAME)
 ig_collection = client.get_or_create_collection("sapient_ig_chunks")
 
 

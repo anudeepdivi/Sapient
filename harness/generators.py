@@ -1,13 +1,7 @@
-import hashlib
 
-from openai import OpenAI
 
-from cache.prompt_cache import get_cached, set_cached
-from config import (
-    CODEGEN_MODEL, HARNESS_GENERATOR, MAX_TOKENS, NVIDIA_API_KEY,
-    NVIDIA_BASE_URL, TEMPERATURE,
-)
-from orchestration.llm_retry import create_with_retry
+from llm import complete
+from config import CODEGEN_MODEL, HARNESS_GENERATOR
 from r_layer.deterministic_checks import strip_markdown_fences
 
 IMPL_PLACEHOLDER = "__IMPL_PATH__"
@@ -56,18 +50,7 @@ def _llm(kind, capability):
         name=name, purpose=capability.get("purpose") or name,
         placeholder=IMPL_PLACEHOLDER,
     )
-    cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
-    response = create_with_retry(
-        client, model=CODEGEN_MODEL, temperature=TEMPERATURE, max_tokens=MAX_TOKENS,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    code = strip_markdown_fences(response.choices[0].message.content.strip())
-    set_cached(cache_key, code)
-    return code
+    return strip_markdown_fences(complete(prompt, CODEGEN_MODEL, timeout=60.0).text.strip())
 
 
 def _capability_name(capability):

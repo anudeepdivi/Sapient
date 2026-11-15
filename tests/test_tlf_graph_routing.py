@@ -41,6 +41,7 @@ from orchestration.graph import build_graph
 from orchestration.nodes import tlf_generator
 from templates.adam_templates import render_footer
 from config import R_EXECUTABLE
+from llm import Answer
 
 
 def write_xpt(path, columns):
@@ -92,10 +93,8 @@ def graph_run(adam_outcomes, state=None, execution_dir=".", publish=None):
     tlf_generator._adam_columns_cache = None
     tlf_generator._adam_columns_cache_key = None
     state = state or base_state()
-    message = types.SimpleNamespace(content='{"status": "pass", "severity": "none", "issues": []}')
-    qc = types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)])
-    code = types.SimpleNamespace(content="tbl <- basic_table()\n")
-    generated = types.SimpleNamespace(choices=[types.SimpleNamespace(message=code)])
+    qc = Answer('{"status": "pass", "severity": "none", "issues": []}')
+    generated = Answer("tbl <- basic_table()\n")
 
     calls = {"tlf": 0, "tables": []}
     executor = "orchestration.nodes.adam_executor.run_all_adam_programs"
@@ -119,9 +118,8 @@ def graph_run(adam_outcomes, state=None, execution_dir=".", publish=None):
             }
         return results
 
-    def fake_tlf_llm(*args, **kwargs):
+    def fake_tlf_llm(prompt, *args, **kwargs):
         calls["tlf"] += 1
-        prompt = kwargs["messages"][0]["content"]
         calls["tables"].append(next((line.split(": ", 1)[1] for line in prompt.splitlines()
                                      if line.startswith("TABLE NUMBER: ")), "?"))
         return generated
@@ -143,14 +141,10 @@ def graph_run(adam_outcomes, state=None, execution_dir=".", publish=None):
             stack.enter_context(patch(f"orchestration.nodes.{module}.run_gate",
                                       return_value=clean_gate))
         stack.enter_context(patch(executor, side_effect=fake_execute))
-        stack.enter_context(patch("orchestration.nodes.validator.create_with_retry", return_value=qc))
+        stack.enter_context(patch("orchestration.nodes.validator.complete", return_value=qc))
         stack.enter_context(patch("orchestration.nodes.validator.check_conformance", return_value={}))
         stack.enter_context(patch("orchestration.nodes.validator.compare_reference", return_value={}))
-        stack.enter_context(patch("orchestration.nodes.tlf_generator.create_with_retry", side_effect=fake_tlf_llm))
-        stack.enter_context(patch("orchestration.nodes.tlf_generator.get_cached", return_value=None))
-        stack.enter_context(patch("orchestration.nodes.tlf_generator.set_cached", return_value=None))
-        stack.enter_context(patch("orchestration.nodes.adam_generator.get_cached", return_value=None))
-        stack.enter_context(patch("orchestration.nodes.adam_generator.set_cached", return_value=None))
+        stack.enter_context(patch("orchestration.nodes.tlf_generator.complete", side_effect=fake_tlf_llm))
         return graph.invoke(state), calls
 
 

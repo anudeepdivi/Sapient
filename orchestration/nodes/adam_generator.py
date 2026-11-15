@@ -1,21 +1,16 @@
 import json
-import hashlib
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
 from knowledge.admiral_functions import signatures_block
 from r_layer.deterministic_checks import fix_quoted_symbol_args, strip_markdown_fences
-from cache.prompt_cache import get_cached, set_cached
 from templates.adam_templates import (
     ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
     render_header, render_footer, get_admiral_template, input_columns_block,
     DETERMINISTIC_DERIVATIONS
 )
 from specs.metacore_loader import get_spec_variables, spec_rules_block
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
+from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL
 from knowledge.vector_store import query_ig
-
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
 ADAM_PROMPT = """
 You are an expert clinical programmer generating R code for ADaM dataset: {dataset}
@@ -207,21 +202,8 @@ def run(state: SapientState) -> SapientState:
             )
 
         prompt += failure_feedback(state, dataset)
-        cache_key = hashlib.sha256(prompt.encode()).hexdigest()
-        cached = get_cached(cache_key)
-        if cached:
-            body = cached
-        else:
-            response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
-                model=CODEGEN_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKENS
-            )
-            print(f"adam_generator: response received for {dataset}")
-            body = response.choices[0].message.content.strip().replace("```r", "").replace("```", "")
-            set_cached(cache_key, body)
-
+        answer = complete(prompt, CODEGEN_MODEL, fallback=CODEGEN_FALLBACK_MODEL, legacy_key=True)
+        body = answer.text.strip().replace("```r", "").replace("```", "")
         body = fix_quoted_symbol_args(strip_markdown_fences(body))
         if dataset in ADAM_INPUTS:
             code = f"{header}\n\n{body}\n\n{render_footer(dataset)}"

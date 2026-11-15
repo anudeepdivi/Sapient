@@ -1,0 +1,339 @@
+"""Per-variable derivation codegen experiment (replaces the whole-chain approach
+that hit Nemotron's quality wall). One short LLM call per spec variable produces a
+single pipe step; steps are dependency-ordered, executed incrementally against real
+data, and failing steps regenerate alone with their specific error. Variables that
+never pass are omitted and flagged — the program still builds from the passing set.
+
+Command line: scripts/gen_derivations.py
+"""
+import json
+import os
+import re
+from pathlib import Path
+from typing import NamedTuple
+
+import llm
+from config import CACHE_DIR, CODEGEN_FALLBACK_MODEL, CODEGEN_MODEL, GUARDRAIL_LOG
+from knowledge.adam_registry import classify
+from knowledge.signatures import signatures_block
+from r_layer.deterministic_checks import fix_quoted_symbol_args, run_gate, strip_markdown_fences
+from r_layer import rscript
+from specs.metacore_loader import get_spec_rules
+from study import DATASETS
+from templates.adam_templates import input_columns_block, render_footer, render_header
+
+# Spec-driven CT helper — decode->code map from the study spec codelists. Generic
+# across datasets; prepended to every spine via spine().
+CT_MAP = '''ct_map <- function(dataset, variable) {
+  md <- suppressWarnings(metacore::select_dataset(mc, dataset))
+  cid <- md$value_spec$code_id[match(variable, md$value_spec$variable)]
+  rows <- which(!is.na(cid) & md$codelist$code_id == cid)
+  if (length(rows) == 0) return(setNames(numeric(0), character(0)))
+  codes <- md$codelist$codes[[rows[1]]]
+  if (is.null(codes) || !"code" %in% names(codes)) return(setNames(numeric(0), character(0)))
+  setNames(suppressWarnings(as.numeric(codes$code)), codes$decode)
+}'''
+
+# A spec var already produced by the spine and sourced by a bare `DOMAIN.VAR`
+# reference is inherited (no codegen); anything with real derivation logic is not.
+# (a trailing note such as "(coded per MedDRA)" still counts as a bare reference)
+INHERIT_RE = re.compile(r"^[A-Z][A-Z0-9]*\.[A-Z0-9_]+(\s*\(.*\))?$")
+
+
+def spine(dataset: str) -> str:
+    return CT_MAP + "\n\n" + DATASETS[dataset].spine
+
+# Verified admiral idioms (shapes tested against the installed package) mined from
+# the RConsortium pharma-skills admiral skills (admiral, admiral-adsl, admiral-bds).
+# Class-keyed so a BDS idiom never lands in a SUBJECT/OCCDS prompt for the model to
+# transcribe. Grounds the classes the machinery was missing: --DTC dates, Y/NA flags,
+# windowed occurrence flags, categorical groupings, PARAMCD/BASE/CHG machinery.
+ADMIRAL_CONVENTIONS = """ADMIRAL IDIOMS (verified shapes — a --DTC date, flag, or occurrence-flag step MUST use these):
+- --DTC to numeric date: derive_vars_dt(new_vars_prefix = "<PREFIX>", dtc = <XXDTC>, highest_imputation = "M", date_imputation = "first"|"last", min_dates|max_dates = exprs(...)). The prefix is the target WITHOUT the trailing "DT": prefix "AST" over AESTDTC creates BOTH ASTDT and its imputation flag ASTDTF; prefix "AEN" over AEENDTC creates AENDT + AENDTF. NEVER prefix "ASTDT" (that yields ASTDTDT). Start dates: date_imputation = "first" with min_dates = exprs(TRTSDT). End dates: "last" with max_dates = exprs(TRTEDT). Because this one call also emits the --DTF flag, a separate --DTF step is NOT needed — skip it.
+- NEVER call as.Date() or convert_dtc_to_dt() directly on a --DTC variable (they silently return NA for partial dates).
+- Flag values follow the spec. If the spec says "N otherwise" or its codelist is Y|N (ADSL population/completion flags: SAFFL, ITTFL, EFFFL, COMPxxFL): mutate(XXFL = if_else(<condition>, "Y", "N", missing = "N")). Otherwise ("Null otherwise", record-level flags): mutate(XXFL = if_else(<condition>, "Y", NA_character_)).
+- First/last occurrence flag (AOCC*): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID), order = exprs(ASTDT, AESEQ), new_var = <AOCCxxFL>, mode = "first"), filter = <population condition, e.g. TRTEMFL == "Y">). derive_var_extreme_flag has NO filter/filter_add arg — the population restriction goes in restrict_derivation(filter = ...).
+- A categorical grouping variable is a plain mutate(<VAR> = case_when(...)); NEVER use derive_param_computed or set_values_to (those add PARAMCD rows, not columns). The comparison operators (<, >=, between) apply to the CONTINUOUS source column (AGE, BMIBL), NEVER to a 1/2/3 group code. The numeric group var <VAR>N is case_when over the continuous column returning integers; the text label <VAR> maps the SAME cut-points to strings — either from the continuous column directly, or by case_when(<VAR>N == 1 ~ "...", ...) — but NEVER `<VAR>N < 65`, because <VAR>N holds 1/2/3, not the measurement."""
+
+CLASS_CONVENTIONS = {
+    "SUBJECT": """
+- Planned/actual treatment TEXT: TRT01P = ARM and TRT01A = ACTARM, a plain direct mutate (ARM/ACTARM are ALREADY the decoded labels — do NOT wrap them in ct_map). NEVER source these from EX.EXTRT (raw uppercase).
+- Treatment NUMERIC code ONLY: TRT01PN = unname(ct_map("<ds>", "TRT01PN")[ARM]); TRT01AN = unname(ct_map("<ds>", "TRT01AN")[ACTARM]). ct_map is exclusively for the numeric *N variants, never for the text TRT01P/TRT01A.""",
+    "BDS": """
+- Baseline flag ABLFL (last non-missing on/before TRTSDT): restrict_derivation(result, derivation = derive_var_extreme_flag, args = params(by_vars = exprs(USUBJID, PARAMCD), order = exprs(ADT, VISITNUM), new_var = ABLFL, mode = "last"), filter = !is.na(AVAL) & ADT <= TRTSDT).
+- BASE: derive_var_base(result, by_vars = exprs(USUBJID, PARAMCD), source_var = AVAL, new_var = BASE). BASE must exist before CHG/PCHG.
+- CHG: derive_var_chg(result) — no other args. PCHG: derive_var_pchg(result) — no other args. Both require AVAL and BASE columns.
+- Study day: derive_vars_dy(result, reference_date = TRTSDT, source_vars = exprs(ADY = ADT)).""",
+    "OCCDS": """
+- Treatment-emergent flag: derive_var_trtemfl(result, new_var = TRTEMFL, start_date = ASTDT, end_date = AENDT, trt_start_date = TRTSDT, trt_end_date = TRTEDT, end_window = <days per SAP>).""",
+}
+
+STEP_PROMPT = """You write ONE step of an R derivation pipeline for ADaM dataset {dataset} (CDISC pilot study).
+
+Already in scope:
+- SDTM dataframes (lowercase) with these columns:
+{input_columns}
+- `result`: the {dataset} under construction. It starts from the spine (input SDTM / parent-ADaM columns) and gains one variable per step.
+- Spec variables derived in OTHER steps (you may reference them; steps are reordered automatically): {pending}
+- helper ct_map(dataset, variable): named numeric vector mapping decode labels -> numeric codes from the study spec codelists. Use it for numeric-code variables (e.g. unname(ct_map("{dataset}", "RACEN")[RACE])). NEVER hardcode treatment/arm/race label strings.
+- admiral is loaded. Allowed admiral derivation functions (exact signatures):
+{signatures}
+
+Derive exactly this variable: {var} ({meta})
+Spec derivation rule: "{derivation}"
+
+OUTPUT CONSTRAINTS (a deterministic gate rejects violations):
+- exactly ONE R statement, starting with `result <- result |>` and using the native pipe |>
+- dplyr verbs and the allowed admiral functions only; no library(), no read_xpt, no other assignments
+- reference only columns/variables listed above
+- admiral arg SHAPES (syntax, not task logic): by_vars, new_vars, order take exprs() — e.g. by_vars = exprs(USUBJID), order = exprs(AESEQ), new_vars = exprs(TRT01PN = EXDOSE). filter_add takes a BARE condition, never exprs() — e.g. filter_add = EXSEQ == 1
+- derive_vars_merged has exactly this shape: derive_vars_merged(result, dataset_add = <source sdtm df>, by_vars = exprs(USUBJID), new_vars = exprs(NEW = SRC), filter_add = <condition>) — the SOURCE domain goes in dataset_add (NOT dataset); there is NO `filter` or standalone `new_var` argument
+{conventions}
+Return ONLY the R code. No markdown, no comments, no explanation."""
+
+
+def domain_gap(derivation: str, available: set[str]) -> str | None:
+    doms = set(re.findall(r"\b([A-Z]{2})\.(?=[A-Z])", derivation or ""))
+    missing = doms - available
+    return ",".join(sorted(missing)) if missing else None
+
+
+def gen_step(dataset, var, meta, derivation, pending, feedback, previous_code=""):
+    prompt = STEP_PROMPT.format(
+        dataset=dataset, var=var, meta=meta, derivation=derivation,
+        pending=", ".join(pending), input_columns=input_columns_block(dataset),
+        signatures=signatures_block("admiral"),
+        conventions=ADMIRAL_CONVENTIONS + CLASS_CONVENTIONS.get(classify(dataset) or "", ""))
+    if feedback:
+        prompt += f"\n\nYOUR PREVIOUS ATTEMPT FAILED — fix this exact problem:\n{feedback}\nPrevious attempt:\n{previous_code}"
+    # reasoning-on writes its thinking into content
+    answer = llm.complete(prompt, CODEGEN_MODEL, thinking=False, fallback=CODEGEN_FALLBACK_MODEL)
+    return fix_quoted_symbol_args(strip_markdown_fences(answer.text.strip()))
+
+
+def snippet_gate(code: str) -> str | None:
+    if not code.strip().startswith("result <- result"):
+        return "statement must start with `result <- result |>`"
+    if code.count("<-") != 1:
+        return "exactly one assignment (to result) is allowed"
+    gate = run_gate(code)
+    if not gate["passed"]:
+        return "; ".join(gate["issues"])
+    return None
+
+
+def spec_deps(todo: dict) -> dict[str, set]:
+    names = set(todo)
+    return {var: {t for t in re.findall(r"\b[A-Z][A-Z0-9]{1,7}\b", deriv or "")
+                  if t in names and t != var}
+            for var, (meta, deriv) in todo.items()}
+
+
+def topo_order(snippets: dict[str, str], spec_order: list[str]) -> list[str]:
+    deps = {}
+    for var, code in snippets.items():
+        tokens = set(re.findall(r"\b[A-Z][A-Z0-9]{1,7}\b", code))
+        deps[var] = {t for t in tokens if t in snippets and t != var}
+    ordered, placed = [], set()
+    pool = [v for v in spec_order if v in snippets]
+    while pool:
+        ready = [v for v in pool if deps[v] <= placed]
+        if not ready:  # cycle — fall back to spec order for the remainder
+            ordered.extend(pool)
+            break
+        ordered.extend(ready)
+        placed.update(ready)
+        pool = [v for v in pool if v not in placed]
+    return ordered
+
+
+# Post-execution checks: a step that runs can still be wrong in ways the data and spec
+# reveal for free (no prompt tokens): a type the spec contradicts, values outside the
+# spec codelist, or a string literal that never occurs in the column it is compared to.
+# Failures go back to the model as specific feedback, like any execution error.
+CHECK_R = r"""
+.check <- function(nm, out, kind, ct, lits) {
+  col <- out[[nm]]
+  inputs <- Filter(Negate(is.null), mget(.input_names, envir = globalenv(), ifnotfound = list(NULL)))
+  for (l in lits) {
+    srcs <- Filter(function(d) l$col %in% names(d), c(list(out), inputs))
+    if (length(srcs) && !any(vapply(srcs, function(d) l$val %in% d[[l$col]], logical(1)))) {
+      vals <- unique(unlist(lapply(srcs, function(d) as.character(d[[l$col]]))))
+      return(sprintf('LITERAL: "%s" never occurs in %s (values: %s)', l$val, l$col,
+                     paste(head(vals[!is.na(vals)], 8), collapse = ", ")))
+    }
+  }
+  if (identical(kind, "date") && !inherits(col, "Date"))
+    return(sprintf(paste0('TYPE: %s is %s but the spec says a DATE9 date. Convert the --DTC text with ',
+      'derive_vars_dt(new_vars_prefix = "%s", dtc = <--DTC column>); if the --DTC comes from a merge, ',
+      'merge it under a temporary name, convert, then drop the temporary column.'), nm, class(col)[1], sub("DT$", "", nm)))
+  if (identical(kind, "num") && !(is.numeric(col) || inherits(col, "Date")))
+    return(sprintf("TYPE: %s is %s but the spec says numeric.", nm, class(col)[1]))
+  if (identical(kind, "char") && !is.character(col))
+    return(sprintf("TYPE: %s is %s but the spec says text.", nm, class(col)[1]))
+  if (length(ct)) {
+    bad <- setdiff(unique(as.character(col[!is.na(col)])), ct)
+    if (length(bad)) return(sprintf("VALUES: %s has values outside the spec codelist {%s}: %s",
+                                    nm, paste(ct, collapse = "|"), paste(head(bad, 6), collapse = ", ")))
+  }
+  NULL
+}
+"""
+LIT_EQ_RE = re.compile(r'\b([A-Z][A-Z0-9]+)\s*(?:==|!=)\s*"([^"]*)"')
+LIT_IN_RE = re.compile(r'\b([A-Z][A-Z0-9]+)\s*%in%\s*c\(([^)]*)\)')
+
+
+def literals(code: str) -> list[tuple[str, str]]:
+    found = LIT_EQ_RE.findall(code)
+    for col, vals in LIT_IN_RE.findall(code):
+        found += [(col, v) for v in re.findall(r'"([^"]*)"', vals)]
+    return sorted(set(found))
+
+
+def check_spec(rule: dict) -> tuple[str | None, list[str]]:
+    """(kind, codelist) the produced column must satisfy, from the spec rule."""
+    fmt = rule.get("format") if isinstance(rule.get("format"), str) else ""
+    kind = "date" if "DATE" in fmt else {"integer": "num", "float": "num", "text": "char"}.get(rule.get("type"))
+    ct = rule.get("ct") if isinstance(rule.get("ct"), list) else []
+    return kind, [str(c) for c in ct]
+
+
+def r_str(x: str) -> str:
+    return json.dumps(x)  # a JSON string literal is a valid R string literal
+
+
+def run_steps(dataset, snippets, spec_order, scratch, checks=None):
+    checks = checks or {}
+    order = topo_order(snippets, spec_order)
+    input_names = ", ".join(r_str(v) for v, _ in DATASETS[dataset].inputs)
+    lines = [render_header(dataset), "", spine(dataset), "",
+             f".input_names <- c({input_names})", CHECK_R,
+             ".status <- list()",
+             ".try_step <- function(nm, f, kind = NA, ct = character(0), lits = list()) {",
+             "  out <- tryCatch(f(result), error = function(e) e)",
+             "  if (inherits(out, 'error')) { .status[[nm]] <<- paste0('ERROR: ', conditionMessage(out)); return(invisible()) }",
+             "  if (!nm %in% names(out)) { .status[[nm]] <<- 'ERROR: step ran but did not create the column'; return(invisible()) }",
+             "  bad <- .check(nm, out, kind, ct, lits)",
+             "  if (!is.null(bad)) .status[[nm]] <<- paste0('ERROR: ', bad)",
+             "  else { .status[[nm]] <<- 'OK'; result <<- out }",
+             "}"]
+    for var in order:
+        body = snippets[var].strip().replace("result <- result", "result", 1)
+        kind, ct = checks.get(var, (None, []))
+        lits = ", ".join(f"list(col = {r_str(c)}, val = {r_str(v)})" for c, v in literals(snippets[var]))
+        lines.append(f".try_step({var!r}, function(result) {{\n{body}\n}}, "
+                     f"kind = {r_str(kind) if kind else 'NA'}, ct = c({', '.join(r_str(c) for c in ct)}), "
+                     f"lits = list({lits}))")
+    lines.append("cat('\\n===STEP_STATUS===\\n'); cat(jsonlite::toJSON(.status, auto_unbox = TRUE))")
+    driver = scratch / f"steps_{dataset}.R"
+    driver.write_text("\n".join(lines))
+    r = rscript.run(driver, timeout=600)
+    marker = "===STEP_STATUS==="
+    if marker not in r.stdout:
+        raise RuntimeError(f"step driver crashed:\n{r.stderr[-2000:]}")
+    return json.loads(r.stdout.split(marker, 1)[1].strip()), order
+
+
+# One line per guardrail outcome, so a run report can count what each guardrail caught
+# (scripts/run_report.py). Tagged like llm_usage.jsonl via SAPIENT_RUN_TAG.
+def log_event(dataset, rnd, var, guardrail, outcome, detail=""):
+    with GUARDRAIL_LOG.open("a") as f:
+        f.write(json.dumps({"tag": os.getenv("SAPIENT_RUN_TAG", ""), "dataset": dataset,
+                            "round": rnd, "variable": var, "guardrail": guardrail,
+                            "outcome": outcome, "detail": str(detail)[:200]}) + "\n")
+
+
+def spine_columns(dataset: str, scratch) -> set[str]:
+    probe = "\n".join([render_header(dataset), spine(dataset), "cat(names(result))"])
+    f = scratch / f"probe_{dataset}.R"
+    f.write_text(probe)
+    out = rscript.run(f, timeout=120)
+    if not out.stdout.split():
+        raise RuntimeError(f"spine probe produced no columns:\n{out.stderr[-2000:]}")
+    return set(out.stdout.split())
+
+
+class Derivation(NamedTuple):
+    status: dict[str, str]    # every spec variable: inherited / unavailable-source / generated / failed
+    snippets: dict[str, str]  # the accepted step per generated variable
+    spec_order: list[str]
+
+
+def derive(dataset: str) -> Derivation:
+    """One step per spec variable: generate, gate, execute, check; each failure goes back to
+    the model with its exact error, for up to 5 rounds. Variables that never pass are left out."""
+    scratch = CACHE_DIR
+    scratch.mkdir(exist_ok=True)
+    feedback_code: dict[str, str] = {}
+    available = {Path(p).stem.upper() for _, p in DATASETS[dataset].inputs} | {dataset.upper()}
+    rules = get_spec_rules(dataset)
+    spine_cols = spine_columns(dataset, scratch)
+
+    status: dict[str, str] = {}
+    todo, spec_order = {}, []
+    for r in rules:
+        var, deriv = r["variable"], r.get("derivation") or ""
+        spec_order.append(var)
+        meta = r.get("type", "?") + (f" len<={r['length']}" if r.get("length") else "") + \
+               (f" CT:{{{'|'.join(r['ct'])}}}" if r.get("ct") else "")
+        if var in spine_cols and INHERIT_RE.match(deriv.strip()):
+            status[var] = "inherited (spine)"
+        elif gap := domain_gap(deriv, available):
+            status[var] = f"unavailable-source: no {gap} domain in study data"
+        else:
+            todo[var] = (meta, deriv)
+
+    snippets: dict[str, str] = {}
+    gate_err: dict[str, str] = {}
+    exec_err = {v: None for v in todo}
+    deps = spec_deps(todo)
+    for rnd in range(1, 6):
+        pending = sorted(todo)
+        failing = {v for v in todo if v not in snippets or exec_err[v] is not None}
+        for var in sorted(failing):
+            if deps[var] & failing and var in snippets:
+                continue  # blocked by a failing parent — keep snippet, retry via execution
+            code = gen_step(dataset, var, *todo[var], pending=[p for p in pending if p != var],
+                            feedback=gate_err.get(var) or exec_err.get(var),
+                            previous_code=feedback_code.get(var, ""))
+            err = snippet_gate(code)
+            log_event(dataset, rnd, var, "deterministic_gate", "rejected" if err else "passed", err or "")
+            if err:
+                feedback_code[var] = code
+                gate_err[var] = f"gate: {err}"
+                snippets.pop(var, None)
+                continue
+            gate_err.pop(var, None)
+            snippets[var] = code
+        step_status, _ = run_steps(dataset, snippets, spec_order, scratch,
+                                   {r['variable']: check_spec(r) for r in rules})
+        for var in list(snippets):
+            st = step_status.get(var, "ERROR: step not executed")
+            log_event(dataset, rnd, var, "execution", "passed" if st == "OK" else "failed",
+                      "" if st == "OK" else st)
+            if st == "OK":
+                exec_err[var] = None
+            else:
+                feedback_code[var] = snippets[var]
+                exec_err[var] = st
+        done = [v for v in todo if v in snippets and exec_err[v] is None]
+        print(f"round {rnd}: {len(done)} ok, {len(todo) - len(done)} failing")
+        if len(done) == len(todo):
+            break
+
+    passing = {v for v in todo if v in snippets and exec_err[v] is None}
+    for var in todo:
+        if var in passing:
+            status[var] = "generated"
+        else:
+            why = exec_err.get(var) or gate_err.get(var) or "no output"
+            status[var] = f"failed after 5 rounds: {str(why)[:160]}"
+    return Derivation(status, {v: snippets[v] for v in passing}, spec_order)
+
+
+def program(dataset: str, snippets: dict[str, str], spec_order: list[str]) -> str:
+    """The runnable program for the accepted steps. A partial build is expected (variables
+    that never passed are left out), so the spec's variable check reports instead of aborting."""
+    return "\n\n".join([render_header(dataset), spine(dataset),
+                        *[snippets[v] for v in topo_order(snippets, spec_order)],
+                        render_footer(dataset, check_variables=False)])

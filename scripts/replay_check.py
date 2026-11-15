@@ -3,7 +3,7 @@
 Each step builds its prompts exactly as a real run does. A prompt already in the cache
 replays the saved answer; a prompt that is not counts as a miss and is never sent.
 Nothing is published: proposed specs and shells go to a temporary folder, code
-generation stops before assembling the final program, and the guardrail log is left
+generation ends before a program is assembled, and the guardrail log is left
 alone. Zero misses means a rebuild of these steps makes zero AI calls. Spec drafting
 and shells stop at their first miss, so their miss counts are a lower bound.
 
@@ -17,22 +17,16 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent))
-import gen_derivations
-import gen_shells
-import gen_spec
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import llm
+from adam import derivations
+from specs import drafting, shells
 from study import DATASETS
 
 counts = {"hit": 0, "miss": 0}
 
 
 class Miss(Exception):
-    pass
-
-
-class Stop(Exception):
     pass
 
 
@@ -51,13 +45,9 @@ def offline():
     llm.set_cached = lambda *args, **kwargs: None
 
 
-def stop(*args, **kwargs):
-    raise Stop
-
-
 offline()
 
-real_gen_step = gen_derivations.gen_step
+real_gen_step = derivations.gen_step
 
 
 def gen_step(*args, **kwargs):
@@ -68,21 +58,15 @@ def gen_step(*args, **kwargs):
         return "MISS"
 
 
-gen_derivations.gen_step = gen_step
-gen_derivations.log_event = gen_spec.log_spec_event = lambda *args, **kwargs: None
-gen_derivations.render_footer = stop  # first call after the generation rounds
-
-
-def codegen(dataset):
-    gen_derivations.feedback_code.clear()
-    gen_derivations.main(dataset)
+derivations.gen_step = gen_step
+derivations.log_event = drafting.log_spec_event = lambda *args, **kwargs: None
 
 
 def main(datasets):
-    gen_spec.PROPOSED_DIR = gen_shells.OUT_DIR = Path(tempfile.mkdtemp(prefix="replay_check_"))
-    jobs = ([("spec", ds, gen_spec.propose) for ds in datasets]
-            + [("codegen", ds, codegen) for ds in datasets]
-            + [("shells", arm, gen_shells.generate) for arm in ("title", "sap")])
+    drafting.PROPOSED_DIR = shells.OUT_DIR = Path(tempfile.mkdtemp(prefix="replay_check_"))
+    jobs = ([("spec", ds, drafting.propose) for ds in datasets]
+            + [("codegen", ds, derivations.derive) for ds in datasets]
+            + [("shells", arm, shells.generate) for arm in ("title", "sap")])
     print(f"{'step':<8} {'target':<7} {'prompts':>7} {'misses':>6}")
     total = {"hit": 0, "miss": 0}
     for step, target, run in jobs:
@@ -93,7 +77,7 @@ def main(datasets):
         try:
             with contextlib.redirect_stdout(io.StringIO()):
                 run(target)
-        except (Miss, Stop):
+        except Miss:
             pass
         print(f"{step:<8} {target:<7} {counts['hit'] + counts['miss']:>7} {counts['miss']:>6}")
         for k in total:

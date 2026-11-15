@@ -16,8 +16,10 @@ from pathlib import Path
 
 import fitz
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-SAP_FILE = BASE_DIR / "data/sap/cdiscpilot01_sap.pdf"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from config import BASE_DIR
+from specs.sap import SAP_FILE
+
 REF_FILE = BASE_DIR / "data/reference/pilot_shells.json"
 
 TEMPLATE_RE = re.compile(r"^\s*Template\s+(\d+)\s*$")

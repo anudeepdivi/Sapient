@@ -41,11 +41,15 @@ def input_columns_block(dataset: str) -> str:
     return _input_columns_cache[dataset]
 
 
-def render_footer(dataset: str) -> str:
+def render_footer(dataset: str, check_variables: bool = True) -> str:
+    """check_variables=False: a partial build reports spec variables it lacks instead of stopping."""
+    check = "metatools::check_variables(result, mc_ds)"
+    if not check_variables:
+        check = f"tryCatch({check}, error = function(e) message(conditionMessage(e)))"
     return (
         f'mc_ds <- metacore::select_dataset(mc, "{dataset}")\n'
         "# Metacore compliance check\n"
-        "metatools::check_variables(result, mc_ds)\n"
+        f"{check}\n"
         "# Deterministic type/length/format coercion to spec (format-layer conformance)\n"
         # type coercion always applies; length/format need spec metadata a generated
         # spec may not carry yet, so they degrade gracefully (closed loop stays runnable).

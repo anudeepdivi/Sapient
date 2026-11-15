@@ -100,14 +100,12 @@ class TestAdamOutputIsolation(unittest.TestCase):
             self.assert_diagnostics_and_cleanup(result)
 
     def test_per_variable_caller_writes_experiment_and_reads_canonical_parent(self):
+        from adam import derivations
         from scripts import gen_derivations
 
         canonical = self.root / 'data' / 'adam'
         experiment = self.root / 'data' / 'adam_experiment'
-        scripts = self.root / 'r_layer' / 'scripts'
         canonical.mkdir(parents=True)
-        scripts.mkdir(parents=True)
-        (scripts / 'compare_reference.R').write_text('invisible(NULL)\n')
         parent = canonical / 'ADSL.xpt'
         subprocess.run([R_EXECUTABLE, '-e',
                         f'haven::write_xpt(data.frame(USUBJID="canonical-parent"), {json.dumps(str(parent))})'],
@@ -120,13 +118,11 @@ class TestAdamOutputIsolation(unittest.TestCase):
         export = render_footer('ADAE').splitlines()[-1].replace(
             'xportr::xportr_write', 'haven::write_xpt').replace(', domain = "ADAE"', '')
         with patch.object(gen_derivations, 'BASE_DIR', self.root), \
-                patch.object(gen_derivations, 'get_spec_rules', return_value=[]), \
-                patch.object(gen_derivations, 'spine_columns', return_value=set()), \
-                patch.object(gen_derivations, 'run_steps', return_value=({}, [])), \
-                patch.object(gen_derivations, 'spine', return_value='result <- adsl'), \
-                patch.object(gen_derivations, 'render_header', return_value=parent_line), \
-                patch.object(gen_derivations, 'render_footer', return_value=export), \
-                patch.object(gen_derivations, 'gen_step', side_effect=AssertionError('No LLM calls')), \
+                patch.object(gen_derivations, 'derive', return_value=({}, {}, [])), \
+                patch.object(gen_derivations, 'compare_reference', return_value={'output': ''}), \
+                patch.object(derivations, 'spine', return_value='result <- adsl'), \
+                patch.object(derivations, 'render_header', return_value=parent_line), \
+                patch.object(derivations, 'render_footer', return_value=export), \
                 patch('r_layer.runner.validate_metacore', return_value={'success': True}), \
                 contextlib.redirect_stdout(io.StringIO()) as captured:
             gen_derivations.main('ADAE')

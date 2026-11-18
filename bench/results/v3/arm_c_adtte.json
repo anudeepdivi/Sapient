@@ -1,0 +1,80 @@
+{
+ "arm": "C",
+ "dataset": "ADTTE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 596,
+   "completion_tokens": 43
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 2833,
+   "completion_tokens": 395
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3440,
+   "completion_tokens": 103
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 4213,
+   "completion_tokens": 460
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 4930,
+   "completion_tokens": 226
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 5251,
+   "completion_tokens": 806
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 6167,
+   "completion_tokens": 639
+  }
+ ],
+ "programs_run": 7,
+ "sandbox_rejections": 0,
+ "output_bytes_to_model": 11109,
+ "patient_data_bytes": 0,
+ "api_doc_tokens_est": 329,
+ "final_message": "(all targets accepted or closed)",
+ "score": {
+  "built": true,
+  "targets_correct": 1,
+  "correct": [
+   "PARAMCD"
+  ],
+  "rates": {
+   "PARAMCD": 1,
+   "STARTDT": null,
+   "ADT": null,
+   "CNSR": null,
+   "AVAL": null
+  },
+  "closed": [
+   "STARTDT",
+   "ADT",
+   "CNSR",
+   "AVAL"
+  ],
+  "failed_attempts": {
+   "PARAMCD": 0,
+   "STARTDT": 3,
+   "ADT": 3,
+   "CNSR": 3,
+   "AVAL": 3
+  }
+ },
+ "wall_seconds": 167.8,
+ "n_turns": 7,
+ "prompt_tokens_total": 27430,
+ "completion_tokens_total": 2672,
+ "max_context_tokens": 6167
+}

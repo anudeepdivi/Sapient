@@ -26,13 +26,14 @@ sys.path.insert(0, str(BASE_DIR / "bench"))
 from openai import OpenAI
 from config import CODEGEN_MODEL, MAX_TOKENS, NO_THINKING, NVIDIA_API_KEY, NVIDIA_BASE_URL, TEMPERATURE
 from orchestration.llm_retry import create_with_retry
-from tools import DATASET, SCRATCH, TARGETS, Session
+from tools import DATASET, MAX_ATTEMPTS, SCRATCH, TARGETS, Session
 
-MAX_ROUNDS = 10
+MAX_ROUNDS = 40  # safety cap only, same number of model calls as the MCP arms; the 3-attempt rule ends a run
 ALLOWED_IMPORTS = {"api", "json", "re"}
 FORBIDDEN_NAMES = {"open", "eval", "exec", "compile", "__import__", "getattr", "setattr", "delattr",
                    "globals", "locals", "vars", "input", "breakpoint"}
-RESULTS = BASE_DIR / "bench" / "results" / os.getenv("SAPIENT_BENCH_RESULTS", "v2")
+RESULTS = BASE_DIR / "bench" / "results" / os.getenv("SAPIENT_BENCH_RESULTS", "v3")
+MODEL = os.getenv("SAPIENT_BENCH_MODEL", CODEGEN_MODEL)
 
 
 def api_doc() -> str:
@@ -55,7 +56,8 @@ Each R step passed to api.run_step must be one statement `result <- result |> ..
 Start your first program with print(api.brief(<all targets>)). Your program can look things up, call api.run_step for several variables, and inspect results in code.
 Only what your program prints is shown back to you, so print what you need (for example each run_step result).
 I will run the program and show you its output. If some variables are not accepted yet, reply with a revised
-program; it starts from the steps already accepted. When every target is accepted, reply with the single word DONE.
+program; it starts from the steps already accepted. A variable that fails 3 times is closed and left for a person:
+do not retry it, move on. When every target is accepted or closed, reply with the single word DONE.
 Reply with the program in one ```python block. Allowed imports: api, json, re."""
 
 
@@ -94,12 +96,12 @@ def run() -> dict:
            "PYTHONPATH": str(BASE_DIR / "bench")}
     llm = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=300.0, max_retries=0)
     started = time.monotonic()
-    log = {"arm": "C", "dataset": DATASET, "model": CODEGEN_MODEL, "turns": [], "programs_run": 0,
+    log = {"arm": "C", "dataset": DATASET, "model": MODEL, "turns": [], "programs_run": 0,
            "sandbox_rejections": 0, "output_bytes_to_model": 0, "patient_data_bytes": 0}
     messages = [{"role": "user", "content": TASK.format(dataset=DATASET, targets=", ".join(TARGETS), doc=api_doc())}]
     log["api_doc_tokens_est"] = len(api_doc()) // 4
     for turn in range(1, MAX_ROUNDS + 1):
-        resp = create_with_retry(llm, model=CODEGEN_MODEL, messages=messages, temperature=TEMPERATURE,
+        resp = create_with_retry(llm, model=MODEL, messages=messages, temperature=TEMPERATURE,
                                  max_tokens=MAX_TOKENS, extra_body=NO_THINKING)
         text = resp.choices[0].message.content or ""
         log["turns"].append({"turn": turn, "prompt_tokens": resp.usage.prompt_tokens,
@@ -126,9 +128,12 @@ def run() -> dict:
                                                  if p.strip() and p.strip() in feedback)
                 previews.unlink()
         log["output_bytes_to_model"] += len(feedback.encode())
-        done = state.exists() and all(t in json.loads(state.read_text()) for t in TARGETS)
-        if done:
-            log["final_message"] = "(all targets accepted)"
+        accepted = json.loads(state.read_text()) if state.exists() else {}
+        attempts_file = state.with_suffix(".attempts.json")
+        failures = json.loads(attempts_file.read_text()) if attempts_file.exists() else {}
+        if all(t in accepted or failures.get(t, 0) >= MAX_ATTEMPTS for t in TARGETS):
+            log["final_message"] = ("(all targets accepted)" if all(t in accepted for t in TARGETS)
+                                    else "(all targets accepted or closed)")
             break
         messages.append({"role": "user", "content": f"Program output:\n{feedback or '(no output)'}"})
     log["score"] = Session(state).score()

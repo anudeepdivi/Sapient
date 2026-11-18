@@ -1,0 +1,119 @@
+{
+ "arm": "C",
+ "dataset": "ADSL",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 602,
+   "completion_tokens": 49
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3255,
+   "completion_tokens": 184
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3501,
+   "completion_tokens": 177
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3724,
+   "completion_tokens": 250
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 4021,
+   "completion_tokens": 149
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 4544,
+   "completion_tokens": 97
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 5602,
+   "completion_tokens": 198
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 5859,
+   "completion_tokens": 255
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 6442,
+   "completion_tokens": 463
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 6999,
+   "completion_tokens": 267
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 7588,
+   "completion_tokens": 70
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 7968,
+   "completion_tokens": 431
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 8536,
+   "completion_tokens": 381
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 8962,
+   "completion_tokens": 359
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 9676,
+   "completion_tokens": 150
+  }
+ ],
+ "programs_run": 15,
+ "sandbox_rejections": 0,
+ "output_bytes_to_model": 16013,
+ "patient_data_bytes": 0,
+ "api_doc_tokens_est": 329,
+ "final_message": "(all targets accepted)",
+ "score": {
+  "built": true,
+  "targets_correct": 5,
+  "correct": [
+   "TRTSDT",
+   "AGEGR1",
+   "SAFFL",
+   "EFFFL",
+   "DISCONFL"
+  ],
+  "rates": {
+   "TRTSDT": 1,
+   "AGEGR1": 1,
+   "SAFFL": 1,
+   "EFFFL": 1,
+   "DISCONFL": 1
+  },
+  "closed": [],
+  "failed_attempts": {
+   "TRTSDT": 1,
+   "AGEGR1": 0,
+   "SAFFL": 1,
+   "EFFFL": 2,
+   "DISCONFL": 1
+  }
+ },
+ "wall_seconds": 282.0,
+ "n_turns": 15,
+ "prompt_tokens_total": 87279,
+ "completion_tokens_total": 3480,
+ "max_context_tokens": 9676
+}

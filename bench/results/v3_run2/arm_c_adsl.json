@@ -1,0 +1,118 @@
+{
+ "arm": "C",
+ "dataset": "ADSL",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 602,
+   "completion_tokens": 49
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3255,
+   "completion_tokens": 187
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3482,
+   "completion_tokens": 195
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3724,
+   "completion_tokens": 115
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 3922,
+   "completion_tokens": 68
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 5589,
+   "completion_tokens": 217
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 5934,
+   "completion_tokens": 196
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 6218,
+   "completion_tokens": 364
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 6676,
+   "completion_tokens": 64
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 7046,
+   "completion_tokens": 77
+  },
+  {
+   "turn": 11,
+   "prompt_tokens": 7429,
+   "completion_tokens": 275
+  },
+  {
+   "turn": 12,
+   "prompt_tokens": 7742,
+   "completion_tokens": 364
+  },
+  {
+   "turn": 13,
+   "prompt_tokens": 8207,
+   "completion_tokens": 200
+  },
+  {
+   "turn": 14,
+   "prompt_tokens": 8471,
+   "completion_tokens": 67
+  },
+  {
+   "turn": 15,
+   "prompt_tokens": 8843,
+   "completion_tokens": 203
+  }
+ ],
+ "programs_run": 15,
+ "sandbox_rejections": 0,
+ "output_bytes_to_model": 16423,
+ "patient_data_bytes": 0,
+ "api_doc_tokens_est": 329,
+ "final_message": "(all targets accepted)",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "TRTSDT",
+   "AGEGR1",
+   "SAFFL",
+   "DISCONFL"
+  ],
+  "rates": {
+   "TRTSDT": 1,
+   "AGEGR1": 1,
+   "SAFFL": 1,
+   "EFFFL": 0.0787,
+   "DISCONFL": 1
+  },
+  "closed": [],
+  "failed_attempts": {
+   "TRTSDT": 0,
+   "AGEGR1": 0,
+   "SAFFL": 2,
+   "EFFFL": 1,
+   "DISCONFL": 1
+  }
+ },
+ "wall_seconds": 159.7,
+ "n_turns": 15,
+ "prompt_tokens_total": 87140,
+ "completion_tokens_total": 2641,
+ "max_context_tokens": 8843
+}

@@ -1,0 +1,91 @@
+{
+ "arm": "C",
+ "dataset": "ADSL",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 602,
+   "completion_tokens": 49
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3255,
+   "completion_tokens": 218
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3512,
+   "completion_tokens": 217
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3775,
+   "completion_tokens": 123
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 3980,
+   "completion_tokens": 38
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 4845,
+   "completion_tokens": 175
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 5068,
+   "completion_tokens": 431
+  },
+  {
+   "turn": 8,
+   "prompt_tokens": 5592,
+   "completion_tokens": 71
+  },
+  {
+   "turn": 9,
+   "prompt_tokens": 5951,
+   "completion_tokens": 66
+  },
+  {
+   "turn": 10,
+   "prompt_tokens": 6308,
+   "completion_tokens": 151
+  }
+ ],
+ "programs_run": 10,
+ "sandbox_rejections": 0,
+ "output_bytes_to_model": 11748,
+ "patient_data_bytes": 0,
+ "api_doc_tokens_est": 329,
+ "score": {
+  "built": true,
+  "targets_correct": 3,
+  "correct": [
+   "TRTSDT",
+   "AGEGR1",
+   "SAFFL"
+  ],
+  "rates": {
+   "TRTSDT": 1,
+   "AGEGR1": 1,
+   "SAFFL": 1,
+   "EFFFL": null,
+   "DISCONFL": null
+  },
+  "closed": [],
+  "failed_attempts": {
+   "TRTSDT": 0,
+   "AGEGR1": 0,
+   "SAFFL": 1,
+   "EFFFL": 1,
+   "DISCONFL": 0
+  }
+ },
+ "wall_seconds": 116.9,
+ "n_turns": 10,
+ "prompt_tokens_total": 42888,
+ "completion_tokens_total": 1539,
+ "max_context_tokens": 6308
+}

@@ -1,0 +1,65 @@
+{
+ "arm": "C",
+ "dataset": "ADSL",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 602,
+   "completion_tokens": 49
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3255,
+   "completion_tokens": 991
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 4517,
+   "completion_tokens": 828
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 5940,
+   "completion_tokens": 390
+  }
+ ],
+ "programs_run": 4,
+ "sandbox_rejections": 0,
+ "output_bytes_to_model": 11677,
+ "patient_data_bytes": 0,
+ "api_doc_tokens_est": 329,
+ "final_message": "(all targets accepted or closed)",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "TRTSDT",
+   "AGEGR1",
+   "SAFFL",
+   "DISCONFL"
+  ],
+  "rates": {
+   "TRTSDT": 1,
+   "AGEGR1": 1,
+   "SAFFL": 1,
+   "EFFFL": null,
+   "DISCONFL": 1
+  },
+  "closed": [
+   "EFFFL"
+  ],
+  "failed_attempts": {
+   "TRTSDT": 0,
+   "AGEGR1": 0,
+   "SAFFL": 1,
+   "EFFFL": 3,
+   "DISCONFL": 1
+  }
+ },
+ "wall_seconds": 83.5,
+ "n_turns": 4,
+ "prompt_tokens_total": 14314,
+ "completion_tokens_total": 2258,
+ "max_context_tokens": 5940
+}

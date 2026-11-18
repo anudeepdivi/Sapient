@@ -1,0 +1,25 @@
+{
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "sizes": [
+  {
+   "n_tools": 0,
+   "prompt_tokens": 163
+  },
+  {
+   "n_tools": 8,
+   "prompt_tokens": 1015
+  },
+  {
+   "n_tools": 25,
+   "prompt_tokens": 6908
+  },
+  {
+   "n_tools": 50,
+   "prompt_tokens": 18508
+  },
+  {
+   "n_tools": 144,
+   "prompt_tokens": 53148
+  }
+ ]
+}

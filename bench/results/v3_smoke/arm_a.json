@@ -1,0 +1,141 @@
+{
+ "arm": "A",
+ "dataset": "ADAE",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b",
+ "turns": [
+  {
+   "turn": 1,
+   "prompt_tokens": 1015,
+   "completion_tokens": 41,
+   "menu_size": 8,
+   "tools": [
+    "brief"
+   ]
+  },
+  {
+   "turn": 2,
+   "prompt_tokens": 3442,
+   "completion_tokens": 81,
+   "menu_size": 8,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 3,
+   "prompt_tokens": 3555,
+   "completion_tokens": 83,
+   "menu_size": 8,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 4,
+   "prompt_tokens": 3675,
+   "completion_tokens": 60,
+   "menu_size": 8,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 5,
+   "prompt_tokens": 3776,
+   "completion_tokens": 83,
+   "menu_size": 8,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 6,
+   "prompt_tokens": 3904,
+   "completion_tokens": 99,
+   "menu_size": 8,
+   "tools": [
+    "run_step"
+   ]
+  },
+  {
+   "turn": 7,
+   "prompt_tokens": 4052,
+   "completion_tokens": 3,
+   "menu_size": 8,
+   "tools": []
+  }
+ ],
+ "tool_calls": {
+  "brief": 1,
+  "run_step": 5
+ },
+ "calls": [
+  {
+   "turn": 1,
+   "tool": "brief",
+   "outcome": "SPEC RULES:\n{\"variable\": \"ASTDT\", \"type\": \"integer\", \"length\": 8, \"format\": \"DAT"
+  },
+  {
+   "turn": 2,
+   "tool": "run_step",
+   "outcome": "OK: ASTDT created and kept. Accepted so far: ASTDT"
+  },
+  {
+   "turn": 3,
+   "tool": "run_step",
+   "outcome": "OK: AENDT created and kept. Accepted so far: ASTDT, AENDT"
+  },
+  {
+   "turn": 4,
+   "tool": "run_step",
+   "outcome": "OK: ASTDY created and kept. Accepted so far: ASTDT, AENDT, ASTDY"
+  },
+  {
+   "turn": 5,
+   "tool": "run_step",
+   "outcome": "OK: TRTEMFL created and kept. Accepted so far: ASTDT, AENDT, ASTDY, TRTEMFL"
+  },
+  {
+   "turn": 6,
+   "tool": "run_step",
+   "outcome": "OK: AOCCFL created and kept. Accepted so far: ASTDT, AENDT, ASTDY, TRTEMFL, AOCC"
+  }
+ ],
+ "tools_loaded": [],
+ "tool_result_bytes": 7751,
+ "patient_data_bytes": 0,
+ "n_tools": 8,
+ "n_tools_server": 8,
+ "tool_definition_tokens_est": 673,
+ "final_message": "DONE",
+ "score": {
+  "built": true,
+  "targets_correct": 4,
+  "correct": [
+   "ASTDT",
+   "AENDT",
+   "ASTDY",
+   "AOCCFL"
+  ],
+  "rates": {
+   "ASTDT": 0.9908,
+   "AENDT": 1,
+   "ASTDY": 0.9908,
+   "TRTEMFL": 0.9454,
+   "AOCCFL": 1
+  },
+  "closed": [],
+  "failed_attempts": {
+   "ASTDT": 0,
+   "AENDT": 0,
+   "ASTDY": 0,
+   "TRTEMFL": 0,
+   "AOCCFL": 0
+  }
+ },
+ "wall_seconds": 33.2,
+ "n_turns": 7,
+ "prompt_tokens_total": 23419,
+ "completion_tokens_total": 450,
+ "max_context_tokens": 4052
+}

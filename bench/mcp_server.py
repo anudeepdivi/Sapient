@@ -2,6 +2,7 @@
 
 `score_run` is for the benchmark harness only; the runner never offers it to the model.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -70,6 +71,22 @@ def score_run() -> str:
     """Benchmark harness only: build the dataset and score the targets."""
     import json
     return json.dumps(session.score())
+
+
+# arm AMULTI: run_steps (several steps per call) replaces run_step; the menu stays at 8 tools
+if os.getenv("SAPIENT_BENCH_B_MODE") == "multi":
+    server.remove_tool("run_step")
+    session.submit_hint = ("run_steps(steps) takes a list of {variable, code} steps and runs them together; send "
+                           "every step you are ready to write in one call. Each line of the answer starts with the "
+                           "variable, then 'OK' when that step is kept, or the exact error or failed check.")
+
+    @server.tool()
+    def run_steps(steps: list[dict[str, str]]) -> str:
+        """Execute several R steps in one call, after the steps already accepted. Each item is
+        {"variable": ..., "code": "result <- result |> ..."} creating that variable. Steps run in
+        dependency order; each is kept or fails on its own. Returns one line per variable: OK, or the
+        exact error / check failure."""
+        return session.run_steps(steps)
 
 
 if __name__ == "__main__":

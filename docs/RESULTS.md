@@ -71,13 +71,13 @@ The SAP contains 24 display templates. The AI drafts each shell from the table t
 
 ## 4. What the guardrails caught
 
-Example: ADSL, from the official specification.
+Example: ADSL, from the official specification. The AI had 39 variables to write, with up to 5 rounds per variable.
 
-| Steps checked | Rejected before running | Caught after running | Fixed by feeding the error back | Never passed (left out) |
-|---|---|---|---|---|
-| 75 | 5 | 50 | 15 | 5 |
+| Right first time | Fixed after the exact error was fed back | Never passed (left out for a person) |
+|---|---|---|
+| 19 | 15 | 5 |
 
-Nothing that failed a check reached the final dataset.
+The five left out were AVGDD, COMP24FL, COMP8FL, CUMDOSE and RFENDT. Nothing that failed a check reached the final dataset.
 
 ## 5. Cost
 
@@ -94,20 +94,38 @@ Free-tier rate limits added waiting time on top of these.
 
 ## 6. How the AI should reach the tools: MCP vs code mode
 
-Same job, same AI model, same checks; only the way the AI calls the tools differs. Four datasets, 20 target variables. The code is on the `bench/mcp-vs-code-mode` branch.
+Same job, same AI model (nemotron-3-ultra, temperature 0), same checks; only the way the AI reaches Sapient's functions changes. Four ADaM datasets (ADSL, ADAE, ADLBC, ADTTE), 20 target variables, 3 runs per design. Every design gets the same stopping rule: a variable is left for a person after 3 failed attempts, with a safety cap of 40 model calls.
 
-| Approach | Correct (of 20) | Prompt tokens | Patient rows sent to the AI |
+The code and every result file are on the `bench/mcp-vs-code-mode` branch. `python bench/summarize.py` rebuilds this table from them.
+
+| Design | Correct (of 20) | Prompt tokens | Steps |
 |---|---|---|---|
-| MCP, 6 hand-picked tools | 13 | 171k | none |
-| MCP, all 142 admiral functions as tools | 10 | **5.4 million** | none |
-| Code mode, first API | 10 | 156k | yes, twice |
-| MCP, 6 tools, redesigned API | 13.7 (13–14) | 321k (146k–416k) | none |
-| **Code mode, redesigned API** | **12 (12–12)** | **105k (92k–113k)** | **none, by design** |
+| **Code mode:** the AI writes one program against a small API | **12.3 (10–14)** | **92k** | **21** |
+| MCP, 8 task tools | 12.0 (11–13) | 160k | 42 |
+| MCP, 8 task tools, several steps per call | 11.0 (10–12) | 147k | 34 |
+| MCP, 8 task tools + 136 function tools behind search | 11.3 (11–12) | 164k | 41 |
+| MCP, 8 task tools + 136 unused function tools on the menu | 11.3 (11–12) | 2.5M | 45 |
+| MCP, 136 function tools on the menu | 8.7 (8–9) | 2.7M | 48 |
+| MCP, 136 function tools behind keyword search | 8.7 (7–10) | 477k | 67 |
+| MCP, 136 function tools behind ranked search (BM25), 1 run | 8.0 | 474k | 62 |
+| MCP, 14 approved function tools | 7.7 (7–9) | 610k | 53 |
+| MCP, 14 function tools with typed arguments, behind ranked search | 5.7 (3–7) | 477k | 66 |
 
-- **MCP with everything plugged in:** it re-read about 48k tokens of tool descriptions on every turn, and on two of the four datasets it ran out of turns.
-- **The redesigned API** gives the AI one call with everything it needs, returns column summaries instead of patient rows, and adds a progress check.
-- **The redesigned-API rows are the mean (and range) of 3 runs**; the first three rows are single runs. Even at temperature 0, the live model gave slightly different answers between runs.
-- **MCP's token range comes from one dataset:** on ADTTE, in 2 of the 3 runs, it retried the same step until it ran out of turns (about 300k tokens each time, against 49k in the first run). Code mode never did this.
+Mean (and range) of 3 runs unless noted. The 8 task tools are `brief`, `get_spec_rule`, `get_admiral_signature`, `list_input_columns`, `get_conventions`, `describe_columns`, `run_step` and `status`; none of them is an admiral function. "Function tools" are one MCP tool per admiral function, with no free "run this R" tool and one `assign_column` tool for plain expressions.
+
+What the tool list alone costs on every step, measured with one call per menu size:
+
+| Tools on the menu | 8 | 25 | 50 | 144 |
+|---|---|---|---|---|
+| Prompt tokens per step | 1,015 | 6,908 | 18,508 | 53,148 |
+
+What this shows:
+- **A short MCP menu works.** Eight task tools scored 12.0 of 20.
+- **Everything on the menu is paid for at every step.** The AI keeps no memory between steps, so it re-reads the menu and the whole conversation each time. Adding 136 tools it never used gave the same score at 16 times the tokens. Putting the same tools behind a search tool brought the cost back to 164k, and the AI never needed to search.
+- **One tool per package function scored lower however it was offered** (5.7–8.7 of 20). Search cut its token cost but not its errors: a ranked search returned the exact function first for 11 of its 12 queries and the run still scored 8 of 20. The AI still builds the dataset one function at a time, passing every argument as a string, and each search is one more step.
+- **Code mode ties the task tools on accuracy and wins on cost:** 12.3 against 12.0 of 20, at about 40% fewer tokens and half the steps. It is not more accurate, and its score varied from 10 to 14 between runs.
+- **No patient-level data reached the AI** in any of these runs.
+- **Not measured:** code mode whose functions call an MCP server. Our code mode called the same functions directly; the combination is expected to behave the same but has not been run.
 
 ## Withdrawn figures
 
@@ -116,6 +134,8 @@ These earlier claims were wrong. They're listed here because they show how the e
 - **"94–98% value match":** these numbers were scored against a community dataset (`pharmaverseadam`) that is not the pilot's dataset. A comparison bug also skipped any value missing on only one side.
 - **"Spec F1 0.77":** this mostly measured the standard variable list we gave the model.
 - **The table-list benchmark:** it was scored against the SAP of a different study. It was retired.
+- **The first MCP-vs-code-mode benchmark (v2): "142 tools cost 5.4 million tokens", "MCP 13.7 vs code mode 12 in every run".** In the 142-tool run the instructions told the AI to use `run_step`, so it never called one of the function tools; the designs had different turn limits (40 against 10); and the headline compared two versions of the API. It was rerun fairly as v3 (section 6).
+- **The guardrail table "75 steps checked, 50 caught after running":** it mixed counts of code attempts with repeated failures of the same variable across rounds. Section 4 now counts variables.
 
 ## Not model output
 

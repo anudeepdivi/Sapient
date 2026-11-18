@@ -70,9 +70,10 @@ These are measured on the public CDISC pilot study and compared with the pilot's
 
 MCP (Model Context Protocol) is a standard way to plug tools into an AI. "Code mode" gives the AI a small, documented API and lets it write one program that uses it. We tested both on the same job, over four kinds of ADaM dataset:
 
-- **MCP with a few hand-picked tools** works well.
-- **MCP with everything plugged in** cost about **30× more** for worse results. The AI re-reads every tool's description on every step.
-- **Code mode** is the cheapest, but **only with a carefully designed API.** With our redesigned API it scored 12 of 20 in every run, against 13.7 for MCP with a few tools (3 runs each). It used about a third of the tokens, never got stuck retrying, and never sent patient rows to the AI. With our first API it scored lower and did send patient rows.
+- **MCP with a short menu of task tools** works: 12 of 20 variables right.
+- **Every tool on the menu is paid for at every step,** because the AI re-reads the menu each time. Adding 136 tools it never used gave the same score at 16 times the tokens; hiding them behind a search tool fixed the cost.
+- **One tool per package function** scored lower however we offered it: 6 to 9 of 20.
+- **Code mode** tied the task tools on accuracy (12.3 against 12.0 of 20, 3 runs each) with about 40% fewer tokens and half the steps, and never sent patient rows to the AI. It works **only with a carefully designed API:** our first API scored lower and did send patient rows.
 
 Details: [docs/RESULTS.md](docs/RESULTS.md), section 6. The benchmark code is on the `bench/mcp-vs-code-mode` branch.
 
@@ -83,7 +84,7 @@ Details: [docs/RESULTS.md](docs/RESULTS.md), section 6. The benchmark code is on
 3. **Rules work better than examples.** Shown a worked example, the model copies it, mistakes included. Given rules it can be checked against (real function signatures, real input columns, the spec's types and codelists), it does better. A wrong rule is worse than no rule.
 4. **Running the code is the judge.** A program that runs and passes the checks overrules an AI reviewer that calls it wrong. Three cheap checks after each step took ADSL from 13 to 18 exactly reproduced variables, without making the prompt longer.
 5. **Temperature 0 alone doesn't make answers repeatable.** In our benchmark, the same model at temperature 0 gave slightly different answers between runs. Sapient makes runs repeatable by saving every AI answer and replaying it when the same prompt comes back.
-6. **How the AI reaches your tools matters as much as which AI it is.** Plugging in every function as a tool cost about 30 times more for worse results. Code mode works, but only on top of a carefully designed API.
+6. **How the AI reaches your tools matters as much as which AI it is.** Wrapping every package function as its own tool scored lower, at 3 to 17 times the tokens of a short menu of task tools. A short menu of task tools and code mode both work; code mode is cheaper, and only on top of a carefully designed API.
 7. **Measuring honestly changed our numbers.** Several early figures were wrong and have been withdrawn; [docs/RESULTS.md](docs/RESULTS.md) lists them with the reasons.
 
 ## What's next

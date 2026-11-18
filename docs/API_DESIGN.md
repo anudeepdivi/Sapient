@@ -6,18 +6,18 @@ The goal is to let a statistical programmer point Sapient at their own study and
 
 ## Why an API, and why it has to be designed carefully
 
-We benchmarked three ways of giving an AI model access to Sapient's tools on four kinds of ADaM dataset (subject-level, adverse events, lab, time-to-event):
+We benchmarked several ways of giving an AI model access to Sapient's tools on four kinds of ADaM dataset (subject-level, adverse events, lab, time-to-event):
 
 | Approach | Correct (of 20) | Tokens used | Patient rows sent to the AI |
 |---|---|---|---|
-| MCP, 6 hand-picked tools | 13.7 | 321k | none |
-| MCP, every admiral function as a tool (142) | 10 | 5.4M | none |
+| MCP, 8 task tools | 12.0 | 160k | none |
+| MCP, one tool per admiral function (136) | 8.7 | 2.7M | none |
 | Code mode, first API version | 10 | 156k | yes, twice |
-| **Code mode, redesigned API** | **12** | **105k** | **none, by design** |
+| **Code mode, redesigned API** | **12.3** | **92k** | **none, by design** |
 
-The MCP and redesigned-code-mode rows are the average of 3 runs; the other two are single runs.
+Mean of 3 runs, except the first code-mode API, an earlier single run. Every design we tried is in [RESULTS.md](RESULTS.md), section 6.
 
-Code mode is the cheapest approach, but only when the API it calls is designed for an AI to use. The redesign changed four things, and they are this API's rules:
+Code mode is the cheapest approach, and as accurate as a short MCP menu, but only when the API it calls is designed for an AI to use. The redesign changed four things, and they are this API's rules:
 
 1. **One call gives the AI everything it needs.** `brief()` returns the spec rules, the verified conventions, the input columns and the allowed functions for the variables being derived. The AI doesn't have to discover them.
 2. **Every return value says what it is.** Plain text or JSON is stated in the documentation, never left to guess. One ambiguous return type cost a full benchmark run.

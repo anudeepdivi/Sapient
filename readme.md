@@ -124,6 +124,10 @@ python scripts/harness_case.py tests/cases/TC-R-006.yaml --apply
 
 R packages: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak`, plus `dplyr` and `testthat` for the tests.
 
+Documents are not included in this repository; download them yourself:
+- the second test SAP: the Statistical Analysis Plan posted on [ClinicalTrials.gov for NCT02616185](https://clinicaltrials.gov/study/NCT02616185), saved as `data/sap/SAP_001.pdf`;
+- the ADaM and SDTM Implementation Guides: from [cdisc.org](https://www.cdisc.org/standards), saved as `data/reference/adamig.pdf` and `data/reference/sdtmig.pdf`.
+
 **Coming in January 2027:** one install command, one study config file, and one command per job (`sapient spec ADSL`, `sapient build ADAE`), with a five-minute quickstart on the CDISC pilot. Design: [docs/API_DESIGN.md](docs/API_DESIGN.md).
 
 ## What lives where

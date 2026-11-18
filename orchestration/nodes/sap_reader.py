@@ -1,19 +1,9 @@
 import fitz
 import json
-import hashlib
-from cache.prompt_cache import get_cached, set_cached
-from openai import OpenAI
-from chromadb import PersistentClient
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS, CHROMA_DIR, COLLECTION_NAME
-from config import HF_TOKEN
-import os
-from knowledge.vector_store import embedder
-os.environ["HF_TOKEN"] = HF_TOKEN
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
-chroma_client = PersistentClient(path=str(CHROMA_DIR))
-collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
+from config import REASONING_MODEL
+from knowledge.vector_store import embedder, sap_collection as collection
 
 SECTION_HEADERS = [
     "objective", "endpoint", "population", "statistical method",
@@ -64,19 +54,8 @@ Return as valid JSON only. No explanation.
 SAP TEXT:
 {combined}
 """
-    cache_key = hashlib.sha256(prompt.encode()).hexdigest()
-    content = get_cached(cache_key)
-    if content is None:
-        response = create_with_retry(client,
-            model=REASONING_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS
-        )
-        content = response.choices[0].message.content
-        if content:
-            set_cached(cache_key, content)
-    text = content.strip().replace("```json", "").replace("```", "")
+    answer = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True)
+    text = answer.json_text
     try:
         return json.loads(text)
     except json.JSONDecodeError:

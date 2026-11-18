@@ -1,7 +1,9 @@
 import re
-import subprocess
 from pathlib import Path
-from config import R_EXECUTABLE, BASE_DIR
+from config import BASE_DIR
+from knowledge.signatures import ALLOWED_DERIVE_FUNCTIONS
+from r_layer import rscript
+from study import ADAM_PREFIX
 
 HARDCODED_LABEL_PATTERN = re.compile(
     r'"(placebo|active|drug\s*[a-z0-9]*|treatment\s*[a-z0-9]*|control|n\s*=\s*\d+)"',
@@ -10,15 +12,6 @@ HARDCODED_LABEL_PATTERN = re.compile(
 LIBRARY_CALL_PATTERN = re.compile(r'library\(\s*([A-Za-z0-9._]+)\s*\)')
 READ_XPT_PATTERN = re.compile(r'read_xpt\(\s*["\']([^"\']+)["\']\s*\)')
 DERIVE_CALL_PATTERN = re.compile(r'\b((?:derive_|restrict_)[A-Za-z0-9_]+)\s*\(')
-ALLOWED_DERIVE_FUNCTIONS = {
-    "derive_vars_merged", "derive_var_merged_exist_flag",
-    "derive_vars_dt", "derive_vars_dtm",
-    "derive_var_age_years", "derive_vars_duration",
-    "derive_param_computed", "derive_extreme_records",
-    "derive_var_extreme_flag", "restrict_derivation",
-    "derive_param_exist_flag",
-    "derive_vars_dtm_to_dt", "derive_vars_dy", "derive_var_trtemfl",
-}
 
 _installed_packages_cache = None
 
@@ -27,10 +20,7 @@ def _installed_packages() -> set[str]:
     global _installed_packages_cache
     if _installed_packages_cache is not None:
         return _installed_packages_cache
-    result = subprocess.run(
-        [R_EXECUTABLE, "-e", 'cat(rownames(installed.packages()), sep="\\n")'],
-        capture_output=True, text=True, timeout=30
-    )
+    result = rscript.code('cat(rownames(installed.packages()), sep="\\n")', timeout=30)
     if result.returncode != 0 or not result.stdout.strip():
         # Never cache a failed query: an empty set makes check_package_allowlist report
         # every library() call as uninstalled for the rest of the process.
@@ -47,12 +37,10 @@ def check_ascii(code: str) -> list[str]:
 
 
 def check_syntax(code: str) -> list[str]:
-    check = subprocess.run(
-        [R_EXECUTABLE, "--vanilla", "-e",
-         'x <- readLines("stdin"); tryCatch({parse(text=x); cat("OK")}, '
-         'error=function(e) cat("SYNTAX_ERROR:", conditionMessage(e)))'],
-        input=code, capture_output=True, text=True, timeout=30
-    )
+    check = rscript.run("--vanilla", "-e",
+                        'x <- readLines("stdin"); tryCatch({parse(text=x); cat("OK")}, '
+                        'error=function(e) cat("SYNTAX_ERROR:", conditionMessage(e)))',
+                        input=code, timeout=30)
     if "SYNTAX_ERROR" in check.stdout:
         return [check.stdout.strip()]
     if check.returncode != 0 and "OK" not in check.stdout:
@@ -79,7 +67,7 @@ def check_hardcoded_labels(code: str) -> list[str]:
 def check_input_files_exist(code: str) -> list[str]:
     issues = []
     for path in READ_XPT_PATTERN.findall(code):
-        if path.startswith("data/adam/"):
+        if path.startswith(ADAM_PREFIX):
             continue  # pipeline output, produced at run time
         full_path = BASE_DIR / path
         if not full_path.exists():

@@ -8,13 +8,12 @@ Usage: python scripts/eval_tlf.py   (expects data/adam/*_generated TLF programs 
 """
 import hashlib
 import json
-import subprocess
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(BASE_DIR))
-from config import R_EXECUTABLE
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from config import BASE_DIR
+from r_layer import rscript
 
 FRAMES_DIR = BASE_DIR / "data/tlf_frames"
 REF_DIR = BASE_DIR / "data/reference/tlf"
@@ -26,9 +25,7 @@ def evaluate() -> dict:
     hashes = {}
     for program in sorted(PROGRAMS_DIR.glob("*.R")):
         table = program.stem
-        proc = subprocess.run(
-            [R_EXECUTABLE, str(BASE_DIR / "r_layer/scripts/extract_tlf_frame.R"), str(program), table],
-            capture_output=True, text=True, timeout=120, cwd=BASE_DIR)
+        proc = rscript.script("extract_tlf_frame.R", program, table, timeout=120)
         if proc.returncode != 0:
             results[table] = {"status": "extract_fail", "error": proc.stdout.strip()[-300:] or proc.stderr.strip()[-300:]}
             continue

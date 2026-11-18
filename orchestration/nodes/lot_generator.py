@@ -1,13 +1,9 @@
 import json
-import hashlib
-from openai import OpenAI
-from cache.prompt_cache import get_cached, set_cached
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
 from knowledge.adam_registry import allowed_datasets_block, constrain_data_source
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS
+from config import REASONING_MODEL
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
 
 LOT_PROMPT = """
 You are an expert clinical programmer with deep knowledge of CDISC standards.
@@ -59,22 +55,11 @@ def run(state: SapientState) -> SapientState:
     print("lot_generator: starting")
     prompt = build_prompt(state)
     print(f"lot_generator: prompt built, length: {len(prompt)} chars")
-    cache_key = hashlib.sha256(prompt.encode()).hexdigest()
-    content = get_cached(cache_key)
-    if content is None:
-        response = create_with_retry(client,
-            model=REASONING_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS
-        )
-        print("lot_generator: response received")
-        content = response.choices[0].message.content
-        if content:
-            set_cached(cache_key, content)
+    answer = complete(prompt, REASONING_MODEL, timeout=60.0, legacy_key=True)
+    content = answer.text
     if not content:
         return {**state, "errors": state.get("errors", []) + ["lot_generator: empty response from LLM"], "current_node": "lot_generator"}
-    raw = content.strip().replace("```json", "").replace("```", "")
+    raw = answer.json_text
     try:
         lot_entries = json.loads(raw)
     except json.JSONDecodeError:

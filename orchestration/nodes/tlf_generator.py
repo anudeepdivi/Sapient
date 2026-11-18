@@ -1,17 +1,15 @@
 import json
 import hashlib
 from pathlib import Path
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from cache.prompt_cache import get_cached, set_cached
 from templates.tlf_templates import TLF_SKELETON
 from r_layer.deterministic_checks import strip_markdown_fences
-from templates.adam_templates import BUILDABLE
-from knowledge.tern_functions import signatures_block
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS, BASE_DIR
+from study import DATASETS
+from knowledge.signatures import signatures_block
+from r_layer.rscript import RError, xpt_columns
+from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, BASE_DIR
 
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
 
 TLF_PROMPT = """
 You are an expert clinical programmer generating R code for TLF: {table_number}
@@ -70,21 +68,14 @@ def adam_columns_block(accepted_adam: dict) -> str:
     paths = [accepted_adam[name] for name in sorted(accepted_adam)]
     key = _adam_files_key(paths)
     if _adam_columns_cache is None or _adam_columns_cache_key != key:
-        import os
-        import subprocess
-        from config import R_EXECUTABLE
-        r_code = ('files <- strsplit(Sys.getenv("SAPIENT_ADAM_FILES"), "\\n", fixed=TRUE)[[1]]\n'
-                  'for (f in files) if (file.exists(f)) cat(sub(".xpt","",basename(f)), ": ", '
-                  'paste(names(haven::read_xpt(f)), collapse=", "), "\\n", sep="")')
-        env = {**os.environ, "SAPIENT_ADAM_FILES": "\n".join(paths)}
-        result = subprocess.run([R_EXECUTABLE, "-e", r_code], capture_output=True, text=True,
-                                timeout=120, cwd=BASE_DIR, env=env)
-        if result.returncode != 0:
+        try:
+            columns = xpt_columns(*[p for p in paths if Path(p).exists()], timeout=120)
+        except RError as error:
             # Never cache a failed listing: an empty block would tell the model that no
             # ADaM columns exist, and it would invent them.
-            return (f"{LISTING_UNAVAILABLE} (R exit {result.returncode}): "
-                    f"{result.stderr.strip()[:500]}")
-        _adam_columns_cache = result.stdout.strip()
+            return (f"{LISTING_UNAVAILABLE} (R exit {error.returncode}): "
+                    f"{error.stderr.strip()[:500]}")
+        _adam_columns_cache = "\n".join(f"{name}: {', '.join(cols)}" for name, cols in columns.items())
         _adam_columns_cache_key = key
     return _adam_columns_cache
 
@@ -162,8 +153,8 @@ def run(state: SapientState) -> SapientState:
             # Buildable datasets can still clear a later round (gate, execution or
             # metacore failure); a dataset with no input mapping and no derivation can
             # never be produced, so it blocks terminally rather than retrying forever.
-            retryable = [d for d in missing if d.upper() in BUILDABLE]
-            terminal = [d for d in missing if d.upper() not in BUILDABLE]
+            retryable = [d for d in missing if d.upper() in DATASETS]
+            terminal = [d for d in missing if d.upper() not in DATASETS]
             reasons = []
             # A table moves pending -> blocked between rounds, so the reason that no
             # longer applies must be cleared or the state keeps claiming a dataset is
@@ -198,27 +189,15 @@ def run(state: SapientState) -> SapientState:
         mockshell = mockshell_map.get(table_number, {})
         prompt = TLF_PROMPT.format(
             table_number=table_number,
-            signatures=signatures_block(),
+            signatures=signatures_block("tern"),
             adam_columns=columns_block,
             lot_entry=json.dumps(entry, indent=2),
             mockshell=json.dumps(mockshell, indent=2),
             skeleton=TLF_SKELETON
         )
         prompt += failure_feedback(state, table_number)
-        cache_key = hashlib.sha256(f"{CODEGEN_MODEL}\n{prompt}".encode()).hexdigest()
-        cached = get_cached(cache_key)
-        if cached:
-            tlf_programs[table_number] = strip_markdown_fences(cached)
-        else:
-            response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
-                model=CODEGEN_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKENS
-            )
-            code = strip_markdown_fences(response.choices[0].message.content.strip())
-            tlf_programs[table_number] = code
-            set_cached(cache_key, code)
+        answer = complete(prompt, CODEGEN_MODEL, fallback=CODEGEN_FALLBACK_MODEL)
+        tlf_programs[table_number] = strip_markdown_fences(answer.text.strip())
         tlf_skipped.pop(table_number, None)
         tlf_pending.pop(table_number, None)
         tlf_blocked.pop(table_number, None)

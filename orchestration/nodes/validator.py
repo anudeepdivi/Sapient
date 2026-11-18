@@ -1,13 +1,11 @@
 import json
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, REASONING_MODEL, TEMPERATURE, MAX_TOKENS, MAX_REGENERATIONS
+from config import REASONING_MODEL, MAX_REGENERATIONS
 from r_layer.runner import run_all_adam_programs
 from r_layer.validator import validate_metacore, compare_reference, check_conformance
 from r_layer.deterministic_checks import run_gate
-from templates.adam_templates import ADAM_INPUTS
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=60.0)
+from study import DATASETS
 
 VALIDATOR_PROMPT = """
 You are a clinical programming QC reviewer. Review this R program strictly.
@@ -42,7 +40,7 @@ def run(state: SapientState) -> SapientState:
     prev_results = state.get("validation_results") or {}
     prev_regen = set(state.get("needs_regeneration") or [])
     for name, code in all_programs.items():
-        if name in adam_programs and name not in ADAM_INPUTS:
+        if name in adam_programs and name not in DATASETS:
             validation_results[name] = {"status": "unsupported", "stage": "deterministic_gate",
                                         "issues": [f"{name} has no input mapping/spec — needs human review, excluded from pass rate"],
                                         "severity": "warning"}
@@ -58,19 +56,14 @@ def run(state: SapientState) -> SapientState:
 
         lot_entry = lot_map.get(name, {})
         prompt = VALIDATOR_PROMPT.format(lot_entry=json.dumps(lot_entry, indent=2), program=code)
-        response = create_with_retry(client,
-            model=REASONING_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=TEMPERATURE,
-            max_tokens=MAX_TOKENS
-        )
-        content = response.choices[0].message.content
+        answer = complete(prompt, REASONING_MODEL, timeout=60.0, cache=False)
+        content = answer.text
         if not content:
             result = {"status": "fail", "stage": "llm_validator", "issues": ["Validator: empty response from LLM"], "severity": "error"}
             validation_results[name] = result
             needs_regeneration.append(name)
             continue
-        raw = content.strip().replace("```json", "").replace("```", "")
+        raw = answer.json_text
         try:
             result = json.loads(raw)
         except json.JSONDecodeError:
@@ -89,7 +82,7 @@ def run(state: SapientState) -> SapientState:
     # Real pass-rate: R execution + metacore compliance, for ADaM programs that
     # cleared the deterministic gate. The LLM verdict is advisory — execution is
     # ground truth and overrules an LLM fail (the LLM false-positives on valid R).
-    supported_adam = {name: code for name, code in adam_programs.items() if name in ADAM_INPUTS}
+    supported_adam = {name: code for name, code in adam_programs.items() if name in DATASETS}
     gated_adam = {
         name: code for name, code in supported_adam.items()
         if not (validation_results.get(name, {}).get("status") == "fail"

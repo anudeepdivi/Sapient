@@ -10,12 +10,12 @@ Usage: python scripts/run_report.py [TAG_SUBSTRING ...] [--price-in USD_PER_M --
 import argparse
 import json
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-USAGE = BASE_DIR / "cache_store/llm_usage.jsonl"
-EVENTS = BASE_DIR / "cache_store/guardrail_events.jsonl"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from config import GUARDRAIL_LOG as EVENTS, USAGE_LOG as USAGE
 
 # deterministic_gate rejection detail -> the check that caught it
 GATE_CHECKS = [("shape", r"must start with|exactly one assignment"), ("syntax", r"SYNTAX|syntax"),

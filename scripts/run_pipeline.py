@@ -1,3 +1,11 @@
+"""Run the whole pipeline graph once on the configured SAP and write its outputs under data/.
+
+Usage: python scripts/run_pipeline.py
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from orchestration.graph import pipeline
 state = {
     "study_id": "TEST001",

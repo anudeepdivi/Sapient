@@ -1,7 +1,7 @@
 from orchestration.state import SapientState
 from r_layer.runner import run_all_adam_programs
 from r_layer.deterministic_checks import run_gate
-from templates.adam_templates import ADAM_INPUTS
+from study import DATASETS
 
 
 def run(state: SapientState) -> SapientState:
@@ -12,7 +12,7 @@ def run(state: SapientState) -> SapientState:
     acceptance and is deliberately not consulted here.
     """
     adam_programs = state.get("adam_programs") or {}
-    supported = {name: code for name, code in adam_programs.items() if name in ADAM_INPUTS}
+    supported = {name: code for name, code in adam_programs.items() if name in DATASETS}
     gated = {name: code for name, code in supported.items() if run_gate(code)["passed"]}
 
     r_results = run_all_adam_programs(gated)

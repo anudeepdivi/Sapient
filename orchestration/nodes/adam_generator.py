@@ -1,75 +1,13 @@
 import json
-import hashlib
-from openai import OpenAI
-from orchestration.llm_retry import create_with_retry
+from llm import complete
 from orchestration.state import SapientState
-from knowledge.admiral_functions import signatures_block
+from knowledge.signatures import signatures_block
 from r_layer.deterministic_checks import fix_quoted_symbol_args, strip_markdown_fences
-from cache.prompt_cache import get_cached, set_cached
-from templates.adam_templates import (
-    ADAM_SKELETON, ADAM_INPUTS, ADMIRAL_TEMPLATE_FILES,
-    render_header, render_footer, get_admiral_template, input_columns_block,
-    DETERMINISTIC_DERIVATIONS
-)
-from specs.metacore_loader import get_spec_variables, spec_rules_block
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL, TEMPERATURE, MAX_TOKENS
+from study import DATASETS
+from templates.adam_templates import render_header, render_footer, input_columns_block
+from specs.metacore_loader import spec_rules_block
+from config import CODEGEN_MODEL, CODEGEN_FALLBACK_MODEL
 from knowledge.vector_store import query_ig
-
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=180.0, max_retries=0)
-
-ADAM_PROMPT = """
-You are an expert clinical programmer generating R code for ADaM dataset: {dataset}
-
-STRICT RULES:
-- Use ONLY these admiral functions for derivations:
-  derive_vars_merged(), derive_var_merged_exist_flag(),
-  derive_vars_dt(), derive_vars_dtm(),
-  derive_var_age_years(), derive_vars_duration(),
-  derive_param_computed(), derive_extreme_records(), derive_var_extreme_flag(), restrict_derivation(),
-  derive_param_exist_flag(), derive_vars_dtm_to_dt(), derive_vars_dy(), derive_var_trtemfl()
-- Load spec via: metacore <- metacore::load_metacore("specs/metacore_spec.rds")
-- Export via: xportr::xportr_write(dataset, path = "data/adam/{dataset}.xpt", domain = "{dataset}")
-- NO hardcoded values anywhere — all values from metacore or SDTM input
-- NEVER write a treatment arm name as a string literal (no "PLACEBO", no dose-group names in quotes); treatment variables must come from the ARM/ACTARM columns of dm or from ADSL
-- NO placeholder comments — generate real derivation code
-- For non-standard domains, derive population flag by merging ADSL and using SAFFL, FASFL, or PPROTFL as appropriate per the LoT entry population field
-- Output must contain only ASCII characters. No unicode, no non-English characters anywhere in the code.
-- ONLY generate ADSL's own population flags (SAFFL, FASFL, PPROTFL) when {dataset} IS ADSL, by deriving them directly from SDTM (e.g. treatment start date present). Do NOT read SAFFL.xpt/FASFL.xpt/PPROTFL.xpt as SDTM input files — those are variables, not datasets.
-
-These admiral functions have DIFFERENT argument shapes. Do not copy one function's arguments onto another:
-
-EXAMPLE 1 — merge shape (derive_vars_merged, derive_var_merged_exist_flag):
-adsl <- adsl |>
-  derive_vars_merged(
-    dataset_add = ex,
-    filter_add = !is.na(EXSTDTC),
-    new_vars = exprs(TRTSDT = convert_dtc_to_dt(EXSTDTC)),
-    order = exprs(EXSTDTC),
-    mode = "first",
-    by_vars = exprs(STUDYID, USUBJID)
-  )
-
-EXAMPLE 2 — single-date-column shape (derive_vars_dt, derive_vars_dtm): dtc takes ONE column symbol, never c(...); the prefix is a string, not a new_vars list:
-adsl <- adsl |>
-  derive_vars_dt(
-    new_vars_prefix = "TRTS",
-    dtc = RFSTDTC
-  )
-
-EXAMPLE 3 — named single-variable shape (derive_var_age_years, derive_vars_duration): one input column and one output column, no by_vars/mode:
-adsl <- adsl |>
-  derive_var_age_years(
-    age_var = AGE,
-    new_var = AAGE
-  )
-
-DATASET: {dataset}
-LOT ENTRY: {lot_entry}
-SKELETON: {skeleton}
-ADAMIG CONTEXT: {ig_context}
-
-Return R code only. No explanation. No markdown fences.
-"""
 
 DERIVATION_PROMPT = """
 You are an expert clinical programmer writing ONLY the derivation logic for ADaM dataset: {dataset}
@@ -164,68 +102,39 @@ def run(state: SapientState) -> SapientState:
     for entry in state["lot_entries"]:
         for ds in entry.get("data_source", []):
             datasets.add(ds)
-    # Only generate datasets we can actually build/score (have an input mapping or
-    # a deterministic derivation). Others from the LoT are recorded as unsupported
-    # by the validator; generating them wastes an LLM call and can never pass.
-    supported = set(ADAM_INPUTS) | set(DETERMINISTIC_DERIVATIONS)
-    unsupported = datasets - supported
+    # Only generate datasets the study defines. Others from the LoT are recorded as
+    # unsupported by the validator; generating them wastes an LLM call and can never pass.
+    unsupported = datasets - set(DATASETS)
     if unsupported:
         print(f"adam_generator: skipping unsupported (no input mapping): {sorted(unsupported)}")
-    datasets = datasets & supported
+    datasets = datasets & set(DATASETS)
     regen = set(state.get("needs_regeneration") or [])
     if adam_programs and regen:
         datasets = datasets & regen
     print(f"adam_generator: datasets to generate: {datasets}")
     for dataset in datasets:
         print(f"adam_generator: generating {dataset}")
-        if dataset in DETERMINISTIC_DERIVATIONS:
-            body = DETERMINISTIC_DERIVATIONS[dataset].read_text()
-            adam_programs[dataset] = f"{render_header(dataset)}\n\n{body}\n\n{render_footer(dataset)}"
+        header = render_header(dataset)
+        if DATASETS[dataset].handwritten_body:
+            body = DATASETS[dataset].handwritten_body.read_text()
+            adam_programs[dataset] = f"{header}\n\n{body}\n\n{render_footer(dataset)}"
             continue
         relevant_entries = [e for e in state["lot_entries"] if dataset in e.get("data_source", [])]
         ig_context = query_ig(query=f"{dataset} derivation rules population flags", doc_type="adamig", n_results=5)
         ig_text = "\n\n".join(ig_context)
 
-        if dataset in ADAM_INPUTS:
-            header = render_header(dataset)
-            spec_variables = spec_rules_block(dataset)
-            prompt = DERIVATION_PROMPT.format(
-                dataset=dataset,
-                header=header,
-                spec_variables=spec_variables,
-                signatures=signatures_block(),
-                input_columns=input_columns_block(dataset),
-                lot_entry=json.dumps(relevant_entries[0], indent=2),
-                ig_context=ig_text
-            )
-        else:
-            prompt = ADAM_PROMPT.format(
-                dataset=dataset,
-                lot_entry=json.dumps(relevant_entries[0], indent=2),
-                skeleton=ADAM_SKELETON,
-                ig_context=ig_text
-            )
-
+        prompt = DERIVATION_PROMPT.format(
+            dataset=dataset,
+            header=header,
+            spec_variables=spec_rules_block(dataset),
+            signatures=signatures_block("admiral"),
+            input_columns=input_columns_block(dataset),
+            lot_entry=json.dumps(relevant_entries[0], indent=2),
+            ig_context=ig_text
+        )
         prompt += failure_feedback(state, dataset)
-        cache_key = hashlib.sha256(prompt.encode()).hexdigest()
-        cached = get_cached(cache_key)
-        if cached:
-            body = cached
-        else:
-            response = create_with_retry(client, fallback_model=CODEGEN_FALLBACK_MODEL,
-                model=CODEGEN_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKENS
-            )
-            print(f"adam_generator: response received for {dataset}")
-            body = response.choices[0].message.content.strip().replace("```r", "").replace("```", "")
-            set_cached(cache_key, body)
-
+        answer = complete(prompt, CODEGEN_MODEL, fallback=CODEGEN_FALLBACK_MODEL, legacy_key=True)
+        body = answer.text.strip().replace("```r", "").replace("```", "")
         body = fix_quoted_symbol_args(strip_markdown_fences(body))
-        if dataset in ADAM_INPUTS:
-            code = f"{header}\n\n{body}\n\n{render_footer(dataset)}"
-        else:
-            code = body
-        adam_programs[dataset] = code
+        adam_programs[dataset] = f"{header}\n\n{body}\n\n{render_footer(dataset)}"
     return {**state, "adam_programs": adam_programs, "current_node": "adam_generator"}

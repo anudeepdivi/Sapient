@@ -23,14 +23,10 @@ REASONING_MODEL = "google/diffusiongemma-26b-a4b-it"
 CODEGEN_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"  # mistral-nemotron EOL 2026-09-28; probed 2026-10-28: 3.9s, correct admiral shape
 CODEGEN_FALLBACK_MODEL = "z-ai/glm-5.3-flash"  # probed 2026-10-28: correct but ~70s/call
 # API Keys
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
-if not NVIDIA_API_KEY:
-    raise EnvironmentError("NVIDIA_API_KEY is not set")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")  # checked when a model client is built (llm.py)
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-HF_TOKEN = os.getenv("HF_TOKEN", "")
-if not HF_TOKEN:
-    raise EnvironmentError("HF_TOKEN is not set")
+HF_TOKEN = os.getenv("HF_TOKEN", "")  # checked when the embedder is loaded (knowledge/vector_store.py)
 
 # ChromaDB
 CHROMA_DIR = BASE_DIR / "chroma_store"
@@ -38,6 +34,8 @@ COLLECTION_NAME = "sapient_sap_chunks"
 
 # Cache
 CACHE_DIR = BASE_DIR / "cache_store"
+USAGE_LOG = CACHE_DIR / "llm_usage.jsonl"  # one line per real model call
+GUARDRAIL_LOG = CACHE_DIR / "guardrail_events.jsonl"  # one line per gate / execution outcome
 
 # R Runtime
 R_EXECUTABLE = os.getenv("R_EXECUTABLE", "Rscript")

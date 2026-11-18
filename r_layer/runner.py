@@ -3,23 +3,17 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from config import R_EXECUTABLE, BASE_DIR
+from config import BASE_DIR
+from r_layer import rscript
 from r_layer.validator import validate_metacore
-from templates.adam_templates import ADAM_INPUTS
-
-R_SCRIPTS_DIR = BASE_DIR / "r_layer" / "scripts"
-
-
-def _parents(dataset_name):
-    return {Path(path).stem for _, path in ADAM_INPUTS.get(dataset_name, [])
-            if path.startswith("data/adam/")}
+from study import parents as study_parents
 
 
 def run_adam_program(dataset_name: str, program_code: str, adam_dir=None,
                      parent_inputs=None, timeout=120) -> dict:
     output_dir = Path(adam_dir).resolve() if adam_dir is not None else BASE_DIR / "data" / "adam"
     parents = parent_inputs or {}
-    missing = _parents(dataset_name) - parents.keys()
+    missing = study_parents(dataset_name) - parents.keys()
     if missing:
         return {"dataset": dataset_name, "success": False, "stage": "blocked",
                 "accepted_path": None, "stdout": "", "stderr": "",
@@ -38,12 +32,10 @@ def run_adam_program(dataset_name: str, program_code: str, adam_dir=None,
             inputs, outputs = work / "inputs", work / "outputs"
             inputs.mkdir()
             outputs.mkdir()
-            for name in _parents(dataset_name):
+            for name in study_parents(dataset_name):
                 shutil.copyfile(parents[name], inputs / f"{name}.xpt")
-            execution = subprocess.run(
-                [R_EXECUTABLE, str(R_SCRIPTS_DIR / "run_adam.R"), str(program_path),
-                 dataset_name, str(outputs), str(inputs)],
-                capture_output=True, text=True, timeout=timeout, cwd=BASE_DIR)
+            execution = rscript.script("run_adam.R", program_path, dataset_name, outputs, inputs,
+                                       timeout=timeout)
             result.update(stdout=execution.stdout, stderr=execution.stderr,
                           returncode=execution.returncode)
             if execution.returncode == 0:
@@ -68,14 +60,14 @@ def run_all_adam_programs(adam_programs: dict, adam_dir=None) -> dict:
     results = {}
     pending = dict(adam_programs)
     while pending:
-        ready = [name for name in pending if not (_parents(name) & pending.keys())]
+        ready = [name for name in pending if not (study_parents(name) & pending.keys())]
         if not ready:
             for name in pending:
                 results[name] = {"dataset": name, "success": False, "stage": "blocked",
                                  "accepted_path": None, "issues": ["Unresolved dependency cycle"]}
             break
         for name in ready:
-            parents = {parent: results[parent]["accepted_path"] for parent in _parents(name)
+            parents = {parent: results[parent]["accepted_path"] for parent in study_parents(name)
                        if results.get(parent, {}).get("success")}
             results[name] = run_adam_program(name, pending.pop(name), adam_dir=adam_dir,
                                             parent_inputs=parents)

@@ -43,3 +43,9 @@ harness_runs/
 # Local documentation (untracked)
 project_context.md
 Sapient_Harness_Agent_Handoff.md
+
+# Slides and office lock files (keep decks in ~/Documents, not in the repo)
+*.pptx
+*.ppt
+*.key
+.~lock.*#

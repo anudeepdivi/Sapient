@@ -178,6 +178,18 @@ CHECK_R = r"""
   }
   NULL
 }
+# Report-only: never fed back to the model, so prompts (and saved answers) are unchanged.
+.review_of <- function(nm, out, precise) {
+  col <- out[[nm]]
+  notes <- character(0)
+  empty <- if (is.character(col)) all(is.na(col) | col == "") else all(is.na(col))
+  if (empty)
+    notes <- c(notes, sprintf("EMPTY: %s is missing on every row; check the lookup, join or codelist it depends on.", nm))
+  else if (is.numeric(col) && !inherits(col, "Date") && !precise &&
+           any(abs(col - round(col, 2)) > 1e-9, na.rm = TRUE))
+    notes <- c(notes, sprintf("ROUNDING: %s has more than 2 decimals and the spec states no precision; rounding is sponsor-defined, confirm it.", nm))
+  notes
+}
 """
 LIT_EQ_RE = re.compile(r'\b([A-Z][A-Z0-9]+)\s*(?:==|!=)\s*"([^"]*)"')
 LIT_IN_RE = re.compile(r'\b([A-Z][A-Z0-9]+)\s*%in%\s*c\(([^)]*)\)')
@@ -190,12 +202,16 @@ def literals(code: str) -> list[tuple[str, str]]:
     return sorted(set(found))
 
 
-def check_spec(rule: dict) -> tuple[str | None, list[str]]:
-    """(kind, codelist) the produced column must satisfy, from the spec rule."""
+PRECISION_RE = re.compile(r"round|decimal|significant|precision", re.I)
+
+
+def check_spec(rule: dict) -> tuple[str | None, list[str], bool]:
+    """(kind, codelist, precision stated) for the produced column, from the spec rule."""
     fmt = rule.get("format") if isinstance(rule.get("format"), str) else ""
     kind = "date" if "DATE" in fmt else {"integer": "num", "float": "num", "text": "char"}.get(rule.get("type"))
     ct = rule.get("ct") if isinstance(rule.get("ct"), list) else []
-    return kind, [str(c) for c in ct]
+    precise = bool(PRECISION_RE.search(rule.get("derivation") or "")) or bool(re.fullmatch(r"\d+\.\d+", fmt))
+    return kind, [str(c) for c in ct], precise
 
 
 def r_str(x: str) -> str:
@@ -208,30 +224,32 @@ def run_steps(dataset, snippets, spec_order, scratch, checks=None):
     input_names = ", ".join(r_str(v) for v, _ in DATASETS[dataset].inputs)
     lines = [render_header(dataset), "", spine(dataset), "",
              f".input_names <- c({input_names})", CHECK_R,
-             ".status <- list()",
-             ".try_step <- function(nm, f, kind = NA, ct = character(0), lits = list()) {",
+             ".status <- list()", ".review <- list()",
+             ".try_step <- function(nm, f, kind = NA, ct = character(0), lits = list(), precise = FALSE) {",
              "  out <- tryCatch(f(result), error = function(e) e)",
              "  if (inherits(out, 'error')) { .status[[nm]] <<- paste0('ERROR: ', conditionMessage(out)); return(invisible()) }",
              "  if (!nm %in% names(out)) { .status[[nm]] <<- 'ERROR: step ran but did not create the column'; return(invisible()) }",
              "  bad <- .check(nm, out, kind, ct, lits)",
              "  if (!is.null(bad)) .status[[nm]] <<- paste0('ERROR: ', bad)",
-             "  else { .status[[nm]] <<- 'OK'; result <<- out }",
+             "  else { .status[[nm]] <<- 'OK'; result <<- out; .review[[nm]] <<- .review_of(nm, out, precise) }",
              "}"]
     for var in order:
         body = snippets[var].strip().replace("result <- result", "result", 1)
-        kind, ct = checks.get(var, (None, []))
+        kind, ct, precise = checks.get(var, (None, [], False))
         lits = ", ".join(f"list(col = {r_str(c)}, val = {r_str(v)})" for c, v in literals(snippets[var]))
         lines.append(f".try_step({var!r}, function(result) {{\n{body}\n}}, "
                      f"kind = {r_str(kind) if kind else 'NA'}, ct = c({', '.join(r_str(c) for c in ct)}), "
-                     f"lits = list({lits}))")
+                     f"lits = list({lits}), precise = {'TRUE' if precise else 'FALSE'})")
     lines.append("cat('\\n===STEP_STATUS===\\n'); cat(jsonlite::toJSON(.status, auto_unbox = TRUE))")
+    lines.append("cat('\\n===STEP_REVIEW===\\n'); cat(jsonlite::toJSON(.review))")
     driver = scratch / f"steps_{dataset}.R"
     driver.write_text("\n".join(lines))
     r = rscript.run(driver, timeout=600)
-    marker = "===STEP_STATUS==="
-    if marker not in r.stdout:
+    marker, rmarker = "===STEP_STATUS===", "===STEP_REVIEW==="
+    if marker not in r.stdout or rmarker not in r.stdout:
         raise RuntimeError(f"step driver crashed:\n{r.stderr[-2000:]}")
-    return json.loads(r.stdout.split(marker, 1)[1].strip()), order
+    status_text, review_text = r.stdout.split(marker, 1)[1].split(rmarker, 1)
+    return json.loads(status_text.strip()), order, json.loads(review_text.strip())
 
 
 # One line per guardrail outcome, so a run report can count what each guardrail caught
@@ -305,8 +323,8 @@ def derive(dataset: str) -> Derivation:
                 continue
             gate_err.pop(var, None)
             snippets[var] = code
-        step_status, _ = run_steps(dataset, snippets, spec_order, scratch,
-                                   {r['variable']: check_spec(r) for r in rules})
+        step_status, _, review = run_steps(dataset, snippets, spec_order, scratch,
+                                           {r['variable']: check_spec(r) for r in rules})
         for var in list(snippets):
             st = step_status.get(var, "ERROR: step not executed")
             log_event(dataset, rnd, var, "execution", "passed" if st == "OK" else "failed",
@@ -328,6 +346,12 @@ def derive(dataset: str) -> Derivation:
         else:
             why = exec_err.get(var) or gate_err.get(var) or "no output"
             status[var] = f"failed after 5 rounds: {str(why)[:160]}"
+    notes = [(v, n) for v in spec_order if v in passing for n in review.get(v) or []]
+    if notes:
+        print(f"\nREVIEW ({len(notes)}): these passed every check, but a person should confirm them")
+    for var, note in notes:
+        print(f"  {note}")
+        log_event(dataset, rnd, var, "review", "flagged", note)
     return Derivation(status, {v: snippets[v] for v in passing}, spec_order)
 
 

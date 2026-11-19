@@ -3,7 +3,7 @@ import re
 import subprocess
 from pathlib import Path
 
-import fitz
+import pymupdf
 
 from config import SAP_DIR
 
@@ -18,7 +18,7 @@ SAP_STOP_TITLES = ("references", "attachments")  # display templates/appendices 
 def sap_sections(path: Path = SAP_FILE) -> list[tuple[str, str, str]]:
     """(number, title, text) for each numbered SAP section, TOC pages skipped."""
     sections, last = [], ()
-    for page in fitz.open(path):
+    for page in pymupdf.open(path):
         text = page.get_text()
         if text.count(".....") > 5:  # table-of-contents page
             continue

@@ -1,8 +1,4 @@
-dotenv
-langgraph
 openai
-chromadb
-sentence-transformers
 python-dotenv
 PyMuPDF
 pyyaml

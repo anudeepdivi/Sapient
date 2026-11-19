@@ -1,4 +1,4 @@
-import fitz
+import pymupdf
 import json
 from llm import complete
 from orchestration.state import SapientState
@@ -11,7 +11,7 @@ SECTION_HEADERS = [
 ]
 
 def extract_chunks(sap_path: str) -> list[dict]:
-    doc = fitz.open(sap_path)
+    doc = pymupdf.open(sap_path)
     chunks = []
     current_section = "general"
     buffer = []

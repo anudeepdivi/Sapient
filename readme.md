@@ -107,14 +107,19 @@ If you have a study to test on, get in touch.
 ## Try it
 
 You need:
-- Python 3;
+- Python 3.10 or newer;
 - R, with `Rscript` on your PATH;
 - a free [NVIDIA Build](https://build.nvidia.com) API key.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-printf 'NVIDIA_API_KEY=your_key_here\nHF_TOKEN=your_key_here\n' > .env
+printf 'NVIDIA_API_KEY=your_key_here\n' > .env
+
+# quickstart: checks your set-up, downloads the public CDISC pilot data, has the AI write
+# ADAE one variable at a time and scores it against the pilot's own ADAE (about a minute)
+python scripts/quickstart.py
+python scripts/quickstart.py --check     # only check the set-up: says what is missing and how to fix it
 
 # the automated tests: no AI calls, no data needed
 python -m unittest discover -s tests
@@ -125,11 +130,13 @@ python scripts/harness_case.py tests/cases/TC-R-006.yaml --apply
 
 R packages: `admiral`, `metacore`, `xportr`, `rtables`, `sdtm.oak`, plus `dplyr` and `testthat` for the tests.
 
+`requirements.txt` is the light install (about 350 MB): enough for the quickstart, spec drafting and per-variable ADaM generation. The full LangGraph pipeline (`scripts/run_pipeline.py`) and the SAP search index also need `pip install -r requirements-full.txt` (about 2 GB, CPU only, no GPU needed); without it they stop with a message saying so, and the two tests that need it are skipped.
+
 Documents are not included in this repository; download them yourself:
 - the second test SAP: the Statistical Analysis Plan posted on [ClinicalTrials.gov for NCT02616185](https://clinicaltrials.gov/study/NCT02616185), saved as `data/sap/SAP_001.pdf`;
 - the ADaM and SDTM Implementation Guides: from [cdisc.org](https://www.cdisc.org/standards), saved as `data/reference/adamig.pdf` and `data/reference/sdtmig.pdf`.
 
-**Coming in January 2027:** one install command, one study config file, and one command per job (`sapient spec ADSL`, `sapient build ADAE`), with a five-minute quickstart on the CDISC pilot. Design: [docs/API_DESIGN.md](docs/API_DESIGN.md).
+**Coming in January 2027:** one install command, one study config file, and one command per job (`sapient spec ADSL`, `sapient build ADAE`). The quickstart above is the first piece. Design: [docs/API_DESIGN.md](docs/API_DESIGN.md).
 
 ## What lives where
 

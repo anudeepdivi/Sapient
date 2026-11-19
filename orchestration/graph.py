@@ -1,4 +1,8 @@
-from langgraph.graph import StateGraph, END
+try:
+    from langgraph.graph import StateGraph, END
+except ImportError as e:
+    raise ImportError("The full pipeline needs langgraph, which the light install leaves out.\n"
+                      "Install it with: pip install -r requirements-full.txt") from e
 from config import MAX_REGENERATIONS
 from orchestration.state import SapientState
 from orchestration.nodes import (

@@ -1,0 +1,7 @@
+# Everything in requirements.txt, plus what the full LangGraph pipeline (scripts/run_pipeline.py)
+# and the SAP search index need. Torch comes from the CPU-only index: no GPU needed (2.0 GB installed instead of 6.3 GB).
+-r requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+langgraph
+chromadb
+sentence-transformers

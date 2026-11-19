@@ -22,7 +22,9 @@ Notes:
 - **ADSL remaining gaps:**
   - HEIGHTBL and WEIGHTBL are within 0.1 of the pilot's values, which the pilot stores rounded.
   - SITEGR1's official rule only says "refer to SAP".
-  - VISNUMEN, BMIBL and DURDIS are genuine code-generation misses.
+  - VISNUMEN, BMIBL and DURDIS follow the official spec's text; the pilot used rules the spec never states. VISNUMEN: the spec's rule (misspelt "PROTCOL COMPLETED") covers completers only, while the pilot takes the disposition visit for every subject. BMIBL: computed from height and weight rounded to 1 decimal, then rounded to 1 decimal. DURDIS: (days + 1) / 30.4375, rounded to 1 decimal. Each of these rules reproduces the pilot's values exactly. Rounding is sponsor-defined (CDISC has no rule), so it needs the sponsor's input, not the AI's guess.
+  - The real code-generation misses: TRTEDT skips the spec's imputation (use the discontinuation date when the last dose date is missing), and TRT01A/TRT01AN follow a fixed instruction in our prompt (`TRT01A = ACTARM`) instead of the spec's `TRT01A = TRT01P`.
+- **Two report-only checks** (added 2026-11-20; they flag, never block, and change nothing the AI sees) list for a person any variable that passed every check but is empty on every row, or has more than 2 decimals where the spec states no precision. Replayed from saved answers, they flag BMIBL and DURDIS on ADSL; TRT01PN, TRT01AN and RACEN (empty) on the AI-written ADSL spec; and PARAMN (empty) on ADLBC.
 - **Three cheap checks** after each step, which add nothing to the AI's prompt, took ADSL from 13 of 26 to 18 of 28:
   - is a date really a date;
   - are the values in the spec's codelist;

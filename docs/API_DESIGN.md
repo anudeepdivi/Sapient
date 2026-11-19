@@ -106,6 +106,24 @@ print(study.describe_columns("ADAE", ["AESEV"]))       # a profile, never patien
 
 This is the same API an AI model uses in code mode, which is the point: a human and an AI work through the same well-documented functions.
 
+## Logs: errors first, easy on the eyes (planned, not built)
+
+SAS logs, and the R tools built to copy them, bury the one line that matters under pages of notes. A beginner shouldn't have to read a wall of words to learn whether a run worked. Every Sapient log follows three rules:
+
+1. **Errors on top.** If anything failed, the first lines say what failed, why, and the fix. If nothing failed, the first line says so.
+2. **One screen for the summary.** One row per variable, with a status mark, instead of paragraphs:
+
+   ```
+   ADAE  16 variables  ✓ 16 built  ✗ 0 failed      98.6% match with the reference
+   ASTDT   ✓ first try
+   TRTEMFL ✓ fixed after 1 error   (was: "AESTDTC is text, compare dates with ASTDT")
+   ADURU   ✓ built                  40% match: check this one
+   ```
+
+3. **Detail on request.** The full record (every model call, every check, every R message) still goes to a file for anyone who wants it. It is never the first thing anyone sees.
+
+**Visuals without new dependencies.** The pictures are text: status marks (✓ ✗ !), aligned columns, and bars drawn with characters (`████░░ 70%`), which any terminal shows. If a richer view is wanted later, it is one self-contained HTML file written with Python's standard library: no chart package, nothing extra to install, so nothing new to break.
+
 ## What it will not do (yet)
 
 - Tables, listings and figures (TLFs);

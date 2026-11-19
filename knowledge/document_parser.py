@@ -1,4 +1,4 @@
-import fitz
+import pymupdf
 from pathlib import Path
 
 
@@ -10,7 +10,7 @@ IG_SECTION_HEADERS = [
 
 
 def parse_ig_pdf(pdf_path: str) -> list[dict]:
-    doc = fitz.open(pdf_path)
+    doc = pymupdf.open(pdf_path)
     chunks = []
     current_section = "general"
     buffer = []

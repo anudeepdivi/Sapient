@@ -13,7 +13,7 @@ import re
 import sys
 from pathlib import Path
 
-import fitz
+import pymupdf
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import BASE_DIR
@@ -82,7 +82,7 @@ def parse_page(text: str) -> dict | None:
 
 def build_reference() -> list[dict]:
     shells, last = [], 0
-    for n in range(1, fitz.open(SAP_FILE).page_count + 1):
+    for n in range(1, pymupdf.open(SAP_FILE).page_count + 1):
         # -layout keeps the stub column and cells apart; fitz's reading order does not
         text = layout_text(n)
         shell = parse_page(text)

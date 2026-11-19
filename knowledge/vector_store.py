@@ -1,5 +1,9 @@
-import chromadb
-from sentence_transformers import SentenceTransformer
+try:
+    import chromadb
+    from sentence_transformers import SentenceTransformer
+except ImportError as e:
+    raise ImportError(f"The SAP search index needs {e.name}, which the light install leaves out.\n"
+                      "Install it with: pip install -r requirements-full.txt") from e
 from config import CHROMA_DIR, COLLECTION_NAME, EMBEDDING_MODEL, HF_TOKEN
 import os
 if not HF_TOKEN:

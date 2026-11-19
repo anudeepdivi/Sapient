@@ -6,6 +6,10 @@ import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import importlib.util
+
+if importlib.util.find_spec("langgraph") is None:
+    raise unittest.SkipTest("needs langgraph (full install): pip install -r requirements-full.txt")
 
 os.environ.setdefault("NVIDIA_API_KEY", "test")
 os.environ.setdefault("HF_TOKEN", "test")
@@ -29,7 +33,7 @@ class _Stub:
         return _Stub()
 
 
-_STUBBED = ("chromadb", "sentence_transformers", "fitz")
+_STUBBED = ("chromadb", "sentence_transformers", "pymupdf")
 for _name in _STUBBED:
     if _name not in sys.modules:
         _stub = types.ModuleType(_name)
